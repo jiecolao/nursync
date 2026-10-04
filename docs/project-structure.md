@@ -1,47 +1,88 @@
 # File Tree: nursync
 
-**Generated:** 9/24/2026, 11:12:03 PM
+**Generated:** 10/4/2026, 9:08:14 PM
 **Root Path:** `c:\Dev\Projects\nursync`
 
 ```
-├── 📁 .turbo
-├── 📁 docs
-│   └── 📝 project-structure.md
-├── 📁 prisma
-│   ├── 📁 migrations
-│   ├── 📁 seeds
-│   ├── 📄 schema.prisma
-│   └── 📄 seed.ts
-├── 📁 public
-├── 📁 scripts
-├── 📁 src
-│   ├── 📁 assets
-│   ├── 📁 components
-│   ├── 📁 database
-│   ├── 📁 modules
-│   ├── 📁 pages
-│   ├── 📁 styles
-│   │   └── 🎨 global.css
-│   ├── 📄 app.controller.spec.ts
-│   ├── 📄 app.controller.ts
-│   ├── 📄 app.module.ts
-│   ├── 📄 app.service.ts
-│   └── 📄 main.ts
-├── 📁 test
-│   ├── 📄 app.e2e-spec.ts
-│   └── ⚙️ jest-e2e.json
-├── 📁 utils
-├── ⚙️ .env.example
-├── ⚙️ .gitignore
-├── ⚙️ .prettierrc
-├── 📝 README.md
-├── 📄 jest.config.ts
-├── ⚙️ nest-cli.json
-├── ⚙️ oxlint.json
-├── ⚙️ package-lock.json
-├── ⚙️ package.json
-├── ⚙️ tsconfig.json
-└── ⚙️ turbo.json
+├── .agents
+│   └── skills
+│       ├── prisma-composer-core-concepts
+│       └── prisma-platform-core-concepts
+├── .claude
+│   └── skills
+│       ├── prisma-composer-core-concepts
+│       └── prisma-platform-core-concepts
+├── .devin
+│   └── skills
+│       ├── prisma-composer-core-concepts
+│       └── prisma-platform-core-concepts
+├── .github
+│   └── copilot-instructions.md
+├── .turbo
+├── docs
+│   └── project-structure.md
+├── prisma
+│   ├── migrations
+│   │   ├── 20261004034248_init
+│   │   │   └── migration.sql
+│   │   └── migration_lock.toml
+│   ├── seeds
+│   │   ├── document_type.seed.ts
+│   │   ├── genders.seed.ts
+│   │   ├── index.ts
+│   │   └── user.seed.ts
+│   ├── schema.prisma
+│   └── seed.ts
+├── public
+├── scripts
+├── src
+│   ├── assets
+│   ├── components
+│   ├── integrations
+│   │   └── prisma
+│   │       ├── prisma.filter.ts
+│   │       ├── prisma.module.ts
+│   │       └── prisma.service.ts
+│   ├── modules
+│   │   ├── admin
+│   │   ├── auth
+│   │   │   ├── guards
+│   │   │   └── strategies
+│   │   ├── dashboard
+│   │   ├── student
+│   │   │   ├── documents
+│   │   │   │   └── dto
+│   │   │   ├── dto
+│   │   │   │   ├── create-student.dto.ts
+│   │   │   │   └── update-student.dto.ts
+│   │   │   ├── student.controller.ts
+│   │   │   ├── student.module.ts
+│   │   │   └── student.service.ts
+│   │   └── system_logs
+│   ├── pages
+│   ├── styles
+│   │   └── global.css
+│   ├── app.controller.spec.ts
+│   ├── app.controller.ts
+│   ├── app.module.ts
+│   ├── app.service.ts
+│   └── main.ts
+├── test
+│   ├── app.e2e-spec.ts
+│   └── jest-e2e.json
+├── utils
+├── .env.example
+├── .gitignore
+├── .prettierrc
+├── README.md
+├── jest.config.ts
+├── nest-cli.json
+├── oxlint.json
+├── package-lock.json
+├── package.json
+├── prisma.config.ts
+├── tsconfig.json
+└── turbo.json
 ```
 
 ---
