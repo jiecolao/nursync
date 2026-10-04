@@ -1,0 +1,215 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// ============================================================
+// USERS
+// ============================================================
+
+model User {
+  userId String @id @map("user_id") @db.VarChar(64)
+
+  facultyId String? @unique @map("faculty_id") @db.VarChar(20)
+
+  lastName   String  @map("last_name") @db.VarChar(255)
+  fastName   String  @map("fast_name") @db.VarChar(255)
+  middleName String? @map("middle_name") @db.VarChar(255)
+  suffix     String? @db.VarChar(5)
+
+  genderId Int? @map("gender_id")
+
+  status    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  gender  Gender?      @relation(fields: [genderId], references: [genderId])
+  account UserAccount?
+
+  @@map("Users")
+}
+
+// ============================================================
+// USER ACCOUNTS
+// ============================================================
+
+model UserAccount {
+  userAccId String @id @map("user_acc_id") @db.VarChar(64)
+
+  userId String @unique @map("user_id") @db.VarChar(64)
+
+  username String @unique @db.VarChar(64)
+  hashPass String @map("hash_pass") @db.VarChar(255)
+
+  status Boolean @default(true)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user User             @relation(fields: [userId], references: [userId])
+  role UserAccountRole?
+
+  @@map("User_accounts")
+}
+
+// ============================================================
+// USER ACCOUNT ROLES / PERMISSIONS
+// ============================================================
+//
+// Based on your current ERD, this table stores the custom
+// permissions directly for an account.
+//
+// user_acc_id is UNIQUE, meaning one account has one
+// permission configuration.
+//
+// ============================================================
+
+model UserAccountRole {
+  userAccId String @id @map("user_acc_id") @db.VarChar(64)
+
+  canCreate  Boolean
+  canRead    Boolean
+  canUpdate  Boolean
+  canDisable Boolean
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  userAccount UserAccount @relation(fields: [userAccId], references: [userAccId])
+
+  @@map("User_account_roles")
+}
+
+// ============================================================
+// STUDENTS
+// ============================================================
+
+model Student {
+  studentId String @id @map("student_id") @db.VarChar(64)
+
+  studentNo String? @unique @map("student_no") @db.VarChar(20)
+
+  lastName   String  @map("last_name") @db.VarChar(255)
+  firstName  String  @map("first_name") @db.VarChar(255)
+  middleName String? @map("middle_name") @db.VarChar(255)
+
+  genderId Int?
+  dob      DateTime?
+
+  contactNo String? @map("contact_no") @db.VarChar(50)
+  email     String? @db.VarChar(100)
+
+  provincialAddr String? @map("provincial_addr") @db.Text
+  cityAddr       String? @map("city_addr") @db.Text
+
+  yrAdmitted  Int  @map("yr_admitted")
+  yrResidency Int  @map("yr_residency")
+  yrGraduated Int? @map("yr_graduated")
+
+  isHd   Boolean @default(false) @map("is_HD")
+  status Boolean @default(true)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  gender    Gender?           @relation(fields: [genderId], references: [genderId])
+  documents StudentDocument[]
+
+  @@map("Students")
+}
+
+// ============================================================
+// STUDENT DOCUMENTS
+// ============================================================
+
+model StudentDocument {
+  studentDocId String @id @map("student_doc_id") @db.VarChar(64)
+
+  studentId String @map("student_id") @db.VarChar(64)
+  docuId    Int    @map("docu_id") @db.Int
+
+  filename String? @db.VarChar(255)
+  filepath String? @db.VarChar(255)
+
+  submittedAt DateTime? @map("submitted_at")
+
+  docuStatusId Int @map("docu_status_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  student Student @relation(fields: [studentId], references: [studentId])
+
+  documentCategories DocumentCategories @relation(fields: [docuId], references: [docuId])
+
+  documentStatus DocumentStatus @relation(fields: [docuStatusId], references: [docuStatusId])
+
+  @@map("Student_Documents")
+}
+
+// ============================================================
+// DOCUMENT CATEGORIES
+// ============================================================
+
+model DocumentCategories {
+  docuId Int @id @map("docu_id") @db.Int
+
+  docuName String @unique @map("docu_name") @db.VarChar(20)
+
+  status Boolean @default(true)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  documents StudentDocument[]
+
+  @@map("Document_categories")
+}
+
+// ============================================================
+// DOCUMENT STATUS
+// ============================================================
+
+model DocumentStatus {
+  docuStatusId Int @id @map("docu_status_id") @db.Int
+
+  docuStatusName String @map("docu_status_name") @db.VarChar(20)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  documents StudentDocument[]
+
+  @@map("Document_Status")
+}
+
+// ============================================================
+// GENDERS
+// ============================================================
+
+model Gender {
+  genderId Int @id @map("gender_id") @db.Int
+
+  genderName String @map("gender_name") @db.VarChar(20)
+
+  status Boolean @default(true)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  users    User[]
+  students Student[]
+
+  @@map("Genders")
+}
