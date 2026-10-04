@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { PrismaClientExceptionFilter } from './integrations/prisma/prisma.filter';
