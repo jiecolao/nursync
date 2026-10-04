@@ -65,6 +65,7 @@ model UserAccountRole {
 
   userAccount UserAccount @relation(fields: [userAccId], references: [userAccId])
   role        Role        @relation(fields: [roleId], references: [roleId])
+  auditLogs   AuditLog[]
 
   @@id([userAccId, roleId])
   @@map("User_account_roles")
@@ -98,6 +99,19 @@ model Permission {
   roles Role[]
 
   @@map("Permissions")
+}
+
+model AuditLog {
+  auditUuid String @id @default(uuid()) @map("audit_uuid") @db.VarChar(36)
+  userAccId String @map("user_acc_id") @db.VarChar(36)
+  roleId    Int    @map("role_id") @db.Int
+  action    String @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user_account_role UserAccountRole @relation(fields: [userAccId, roleId], references: [userAccId, roleId])
+
+  @@map("Audit_logs")
 }
 
 // ============================================================
