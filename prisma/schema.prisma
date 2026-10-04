@@ -38,7 +38,7 @@ model User {
 // ============================================================
 
 model UserAccount {
-  userAccId String @id @map("user_acc_id") @db.VarChar(64)
+  userAccId String @id @default(uuid(7)) @map("user_acc_id") @db.VarChar(36)
 
   userId String @unique @map("user_id") @db.VarChar(64)
 
@@ -57,33 +57,47 @@ model UserAccount {
   @@map("User_accounts")
 }
 
-// ============================================================
-// USER ACCOUNT ROLES / PERMISSIONS
-// ============================================================
-//
-// Based on your current ERD, this table stores the custom
-// permissions directly for an account.
-//
-// user_acc_id is UNIQUE, meaning one account has one
-// permission configuration.
-//
-// ============================================================
-
 model UserAccountRole {
-  userAccId String @id @map("user_acc_id") @db.VarChar(64)
+  userAccId String   @unique @map("user_acc_id") @db.VarChar(36)
+  roleId    Int      @map("role_id") @db.Int
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  canCreate  Boolean
-  canRead    Boolean
-  canUpdate  Boolean
-  canDisable Boolean
+  userAccount UserAccount @relation(fields: [userAccId], references: [userAccId])
+  role        Role        @relation(fields: [roleId], references: [roleId])
+
+  @@id([userAccId, roleId])
+  @@map("User_account_roles")
+}
+
+model Role {
+  roleId       Int      @id @default(autoincrement()) @map("role_id")
+  roleName     String   @unique @map("role_name") @db.VarChar(50)
+  permissionId Int      @map("permission_id") @db.Int
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  permission   Permission        @relation(fields: [permissionId], references: [permissionId])
+  userAccounts UserAccountRole[]
+
+  @@map("Roles")
+}
+
+model Permission {
+  permissionId   Int     @id @default(autoincrement()) @map("permission_id")
+  students_read  Boolean
+  students_write Boolean
+  user_read      Boolean
+  user_write     Boolean
+  logs_read      Boolean
+  logs_write     Boolean
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  // Relations
-  userAccount UserAccount @relation(fields: [userAccId], references: [userAccId])
+  roles Role[]
 
-  @@map("User_account_roles")
+  @@map("Permissions")
 }
 
 // ============================================================
@@ -91,9 +105,9 @@ model UserAccountRole {
 // ============================================================
 
 model Student {
-  studentId String @id @map("student_id") @db.VarChar(64)
+  studentUuid String @id @default(uuid(7)) @map("student_uuid") @db.VarChar(36)
 
-  studentNo String? @unique @map("student_no") @db.VarChar(20)
+  studentId String? @unique @map("student_id") @db.VarChar(20)
 
   lastName   String  @map("last_name") @db.VarChar(255)
   firstName  String  @map("first_name") @db.VarChar(255)
@@ -132,8 +146,8 @@ model Student {
 model StudentDocument {
   studentDocId String @id @map("student_doc_id") @db.VarChar(64)
 
-  studentId String @map("student_id") @db.VarChar(64)
-  docuId    Int    @map("docu_id") @db.Int
+  studentUuid String @map("student_uuid") @db.VarChar(255)
+  docuId      Int    @map("docu_id") @db.Int
 
   filename String? @db.VarChar(255)
   filepath String? @db.VarChar(255)
@@ -146,7 +160,7 @@ model StudentDocument {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  student Student @relation(fields: [studentId], references: [studentId])
+  student Student @relation(fields: [studentUuid], references: [studentUuid])
 
   documentCategories DocumentCategories @relation(fields: [docuId], references: [docuId])
 
@@ -173,6 +187,14 @@ model DocumentCategories {
   documents StudentDocument[]
 
   @@map("Document_categories")
+}
+
+model AuditLogs {
+  auditUuid String   @id @default(uuid(7)) @map("audit_uuid") @db.VarChar(36)
+  userId    String   @unique @map("user_id") @db.VarChar(64)
+  role      String   @map("role") @db.VarChar(255)
+  action    String   @map("action") @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
 }
 
 // ============================================================
