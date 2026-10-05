@@ -42,8 +42,9 @@ model UserAccount {
 
   userId String @unique @map("user_id") @db.VarChar(64)
 
-  username String @unique @db.VarChar(64)
-  hashPass String @map("hash_pass") @db.VarChar(255)
+  username           String  @unique @db.VarChar(64)
+  hashedPass         String  @map("hashed_pass") @db.VarChar(255)
+  hashedRefreshToken String? @map("hashed_refresh_token") @db.Text
 
   status Boolean @default(true)
 
