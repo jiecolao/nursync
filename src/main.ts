@@ -5,7 +5,7 @@ import { PrismaClientExceptionFilter } from './integrations/prisma/prisma.filter
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  const port = process.env.PORT ?? 5151 
+  const port = process.env.BACKEND_PORT ?? 5151
 
   // Filter HTTP
   // const { httpAdapter } = app.get(HttpAdapterHost);
