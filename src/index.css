@@ -1,5 +1,21 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "header";
+  src: url('/src/assets//fonts/noto-serif.ttf');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "body";
+  src: url('/src/assets/fonts/noto-sans.ttf');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 @layer base {
   :root {
     --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -20,4 +36,16 @@
     display: flex;
     flex-direction: column;
   }
+}
+
+@theme inline {
+  --font-header: "header";
+  --font-body: "body";
+  
+  /* COLOR */
+  --color-primary: #025034;
+  --color-secondary: #F6F3EC;
+  --color-white: #FFFFFF;
+  --color-mustard: #FFDE59;
+  --color-black: #000000;
 }
