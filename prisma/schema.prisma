@@ -65,9 +65,10 @@ model UserAccountRole {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  userAccount UserAccount @relation(fields: [userAccId], references: [userAccId])
-  role        Role        @relation(fields: [roleId], references: [roleId])
-  auditLogs   AuditLog[]
+  userAccount          UserAccount           @relation(fields: [userAccId], references: [userAccId])
+  role                 Role                  @relation(fields: [roleId], references: [roleId])
+  fileModificationLogs FileModificationLog[]
+  activityLogs         ActivityLog[]
 
   @@id([userAccId, roleId])
   @@map("User_account_roles")
@@ -80,8 +81,10 @@ model Role {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  permission   Permission        @relation(fields: [permissionId], references: [permissionId])
-  userAccounts UserAccountRole[]
+  permission           Permission            @relation(fields: [permissionId], references: [permissionId])
+  userAccounts         UserAccountRole[]
+  fileModificationLogs FileModificationLog[]
+  activityLogs         ActivityLog[]
 
   @@map("Roles")
 }
@@ -103,17 +106,32 @@ model Permission {
   @@map("Permissions")
 }
 
-model AuditLog {
-  auditUuid String @id @default(uuid()) @map("audit_uuid") @db.VarChar(36)
-  userAccId String @map("user_acc_id") @db.VarChar(36)
-  roleId    Int    @map("role_id") @db.Int
-  action    String @db.Text
+model FileModificationLog {
+  fileModUuid  String   @id @default(uuid()) @map("file_mod_uuid") @db.VarChar(36)
+  userAccId    String   @map("user_acc_id") @db.VarChar(36)
+  roleId       Int      @map("role_id")
+  studentName  String   @map("student_name") @db.VarChar(255)
+  fileModified String   @map("file_modified") @db.Text
+  fileLoc      String   @map("file_loc") @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
 
-  createdAt DateTime @default(now()) @map("created_at")
+  role Role            @relation(fields: [roleId], references: [roleId])
+  user UserAccountRole @relation(fields: [userAccId], references: [userAccId])
 
-  user_account_role UserAccountRole @relation(fields: [userAccId, roleId], references: [userAccId, roleId])
+  @@map("File_modification_logs")
+}
 
-  @@map("Audit_logs")
+model ActivityLog {
+  activityUuid String   @id @default(uuid()) @map("activity_uuid") @db.VarChar(36)
+  userAccId    String   @map("user_acc_id") @db.VarChar(36)
+  roleId       Int      @map("role_id")
+  action       String   @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  role Role            @relation(fields: [roleId], references: [roleId])
+  user UserAccountRole @relation(fields: [userAccId], references: [userAccId])
+
+  @@map("Activity_logs")
 }
 
 // ============================================================
@@ -165,8 +183,8 @@ model StudentDocument {
   studentUuid String @map("student_uuid") @db.VarChar(255)
   docuId      Int    @map("docu_id") @db.Int
 
-  filename String? @db.VarChar(255)
-  filepath String? @db.VarChar(255)
+  filename String? @db.Text
+  filepath String? @db.Text
 
   submittedAt DateTime? @map("submitted_at")
 
