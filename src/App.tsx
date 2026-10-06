@@ -5,6 +5,9 @@ import MainLayout from "./pages/MainLayout"
 import { RootLayout } from "./RootLayout"
 import LoginPage from "./pages/Login/LoginPage"
 import HelpPage from "./pages/Help/HelpPage"
+import ForgotPasswordPage from "./pages/Login/ForgotPasswordPage"
+import OtpPage from "./pages/Login/OtpPage"
+import ResetPasswordPage from "./pages/Login/ResetPasswordPage"
 
 
 export default function App() {
@@ -16,6 +19,9 @@ export default function App() {
 
           <Route element={<AuthLayout />}>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/forgot-pass" element={<ForgotPasswordPage />} />
+            <Route path="/otp" element={<OtpPage />} />
+            <Route path="/reset-pass" element={<ResetPasswordPage />} />
           </Route>
 
           <Route element={<MainLayout />}>

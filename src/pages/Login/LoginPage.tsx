@@ -43,33 +43,23 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex items-center justify-center min-h-svh bg-secondary lg:grid-cols-[5fr_6fr]">
-      {/* Brand panel: desktop only. Its rounded right edge echoes the sidebar tab. */}
-      {/* <aside className="hidden flex-col justify-between rounded-r-[2rem] bg-primary p-12 text-secondary lg:flex">
-        <div className="flex items-center gap-3">
-            <img src={LogoWhite} alt="" className="size-8 shrink-0 object-contain rounded-2xl" />
-            <div className="flex flex-col">
-                <span className="font-serif text-lg leading-tight tracking-tight">NurSync</span>
-                <span className="font-header text-xs leading-tight text-mustard">File Management System</span>
-            </div>
-        </div>
-        <p className="max-w-sm font-serif text-4xl leading-tight tracking-tight">
-          Student records, kept in sync.
-        </p>
-      </aside> */}
+    <main className="flex min-h-svh items-center justify-center bg-secondary px-6 py-12">
+      <div className="w-full max-w-md">
+        <img
+          src={LogoFull}
+          alt="Nursync"
+          className="mx-auto mb-8 h-20 w-auto rounded-xl object-contain"
+        />
 
-      <section className="flex flex-col items-center justify-center px-6 py-12 gap-5">
-        <img src={LogoFull} alt="" className="size-3/4 shrink-0 object-contain rounded-2xl" />
-        
-        <div className="w-full max-w-sm justify-center text-center">
-          <h1 className="font-serif text-3xl tracking-tight text-primary">
+        <div className="rounded-2xl border border-primary/10 bg-white/50 p-6 text-center sm:p-8">
+          <h1 className="font-serif text-3xl font-medium tracking-tight text-primary">
             Sign in
           </h1>
-          <p className="mt-2 text-sm text-primary/70">
+          <p className="mt-3 text-sm text-primary/70">
             Enter your email and password to continue.
           </p>
 
-          <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+          <form onSubmit={handleSubmit} className="mt-8 space-y-5 text-left">
             {error && (
               <div
                 role="alert"
@@ -101,7 +91,7 @@ export default function LoginPage() {
                   Password
                 </Label>
                 <Link
-                  to="/forgot-password"
+                  to="/forgot-pass"
                   className="rounded-sm text-sm text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                 >
                   Forgot password?
@@ -118,12 +108,16 @@ export default function LoginPage() {
                   className={`${fieldClass} pr-11`}
                 />
                 <button
-                    type="button"
-                    onClick={() => setShowPassword((prev) => !prev)}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute right-1 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-md text-primary/70 hover:bg-primary/10 hover:text-primary focus-visible:outline-2 focus-visible:outline-primary"
                 >
-                    {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  {showPassword ? (
+                    <EyeOff className="size-4" />
+                  ) : (
+                    <Eye className="size-4" />
+                  )}
                 </button>
               </div>
             </div>
@@ -137,7 +131,7 @@ export default function LoginPage() {
             </Button>
           </form>
         </div>
-      </section>
+      </div>
     </main>
   )
 }
