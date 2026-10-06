@@ -33,7 +33,7 @@ import {
   SidebarSeparator,
   useSidebar,
 } from "@/components/ui/sidebar"
-import LogoWhite from "@/assets/icons/logo-white.png"
+import Logo from "@/assets/icons/logo-transp-w.png"
 import { useState } from "react"
 
 /* -------------------------------------------------------------------------- */
@@ -125,7 +125,7 @@ const handleLogout = async () => {
 function ActiveTab() {
   return (
     <>
-      <span
+      {/* <span
         aria-hidden
         className="absolute inset-y-0 left-0 -right-2 -z-10 rounded-l-[10px] bg-sidebar-primary"
       />
@@ -136,7 +136,7 @@ function ActiveTab() {
       <span
         aria-hidden
         className="absolute -bottom-3 -right-2 -z-10 size-3 rounded-tr-[12px] shadow-[6px_-6px_0_6px_var(--sidebar-primary)]"
-      />
+      /> */}
     </>
   )
 }
@@ -289,16 +289,21 @@ export default function AppSidebar() {
       collapsible="icon"
       className="group-data-[side=left]:border-r-0"
     >
-      <SidebarHeader className="p-2">
-        <div className="flex items-center gap-3 py-2">
+      <SidebarHeader className="overflow-hidden p-2">
+        <div className="flex h-11 min-w-0 items-center gap-2">
           <img
-            src={LogoWhite}
+            src={Logo}
             alt="Nursync logo"
             className="size-8 shrink-0 rounded-lg object-contain"
           />
-          <span className="whitespace-nowrap font-serif text-lg tracking-tight group-data-[collapsible=icon]:hidden">
-            Nursync
-          </span>
+          <div className="flex min-w-0 flex-col group-data-[collapsible=icon]:hidden">
+            <span className="truncate font-serif text-lg leading-tight tracking-tight">
+              Nursync
+            </span>
+            <span className="truncate font-header text-xs leading-tight tracking-tight text-mustard">
+              File Management System
+            </span>
+          </div>
         </div>
       </SidebarHeader>
 
