@@ -19,6 +19,9 @@
     "strict": true,
     "strictPropertyInitialization": false,
     "jsx": "react-jsx",
-    "lib": ["DOM", "DOM.Iterable", "ESNext"]
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   }
 }
