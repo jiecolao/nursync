@@ -6,7 +6,8 @@ import path from 'path';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
-  const backendPort = env.PORT || env.BACKEND_PORT || 5151;
+  const FrontendPort = Number(env.FRONTEND_PORT) || 5173;
+  const backendPort = (env.BACKEND_PORT) || 5151;
 
   return {
     plugins: [
@@ -19,7 +20,7 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
-      port: 5173,
+      port: FrontendPort,
       proxy: {
         '/api': {
           target: `http://localhost:${backendPort}`,
