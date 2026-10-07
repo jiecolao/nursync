@@ -111,6 +111,7 @@ model FileModificationLog {
   userAccId    String   @map("user_acc_id") @db.VarChar(36)
   roleId       Int      @map("role_id")
   studentName  String   @map("student_name") @db.VarChar(255)
+  fileAction   String   @map("file_action") @db.VarChar(100)
   fileModified String   @map("file_modified") @db.Text
   fileLoc      String   @map("file_loc") @db.Text
   createdAt    DateTime @default(now()) @map("created_at")
