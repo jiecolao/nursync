@@ -106,7 +106,7 @@ export default function OtpPage() {
       // if (!res.ok) throw new Error("Invalid code")
       // const { resetToken } = await res.json()
 
-      navigate("/reset-pass", { state: { email, code } })
+      navigate("/reset-password", { state: { email, code } })
     } catch {
       setError("That code isn't right or has expired. Check it and try again.")
       setDigits(Array(CODE_LENGTH).fill(""))
@@ -220,7 +220,7 @@ export default function OtpPage() {
           </p>
 
           <Link
-            to="/forgot-pass"
+            to="/forgot-password"
             className="mt-4 inline-flex items-center gap-1.5 rounded-sm text-sm text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
             <ArrowLeft className="size-4" />

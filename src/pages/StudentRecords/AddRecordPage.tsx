@@ -1,9 +1,9 @@
 
 
-export default function StudentRecordsPage(){
+export default function AddRecordPage(){
     return (
         <div>
-            <h2>Student Records Overview</h2>
+            <h2>Add Record Overview</h2>
             <p>Key metrics and system activity render here.</p>
         </div>
     );

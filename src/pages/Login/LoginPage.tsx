@@ -91,7 +91,7 @@ export default function LoginPage() {
                   Password
                 </Label>
                 <Link
-                  to="/forgot-pass"
+                  to="/forgot-password"
                   className="rounded-sm text-sm text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                 >
                   Forgot password?
