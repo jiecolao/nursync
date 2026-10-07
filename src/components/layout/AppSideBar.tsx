@@ -34,8 +34,8 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import Logo from "@/assets/icons/logo-transp-w.png"
-import { useState } from "react"
-
+import { useState, useEffect } from "react"
+import { Link, useLocation, useNavigate } from "react-router-dom";
 /* -------------------------------------------------------------------------- */
 /*  Data                                                                       */
 /* -------------------------------------------------------------------------- */
@@ -57,8 +57,8 @@ const items1: NavItem[] = [
     icon: GraduationCap,
     items: [
       { title: "Records", url: "/students" },
-      { title: "Add Record", url: "/students/enrollment" },
-      { title: "Recently Deleted", url: "/students/grades" },
+      { title: "Add Record", url: "/students/create" },
+      { title: "Recently Deleted", url: "/students/recently-deleted" },
     ],
   },
 ]
@@ -66,24 +66,24 @@ const items1: NavItem[] = [
 const items2: NavItem[] = [
   {
     title: "User Management",
-    url: "/admin/users",
+    url: "/users",
     icon: UserCog,
     items: [
-      { title: "Users", url: "/admin/users" },
-      { title: "Add Users", url: "/admin/roles" },
+      { title: "Users", url: "/users" },
+      { title: "Add Users", url: "/users/create" },
     ],
   },
-  { title: "Log History", url: "/admin/logs", icon: History },
+  { title: "Activity Logs", url: "/logs", icon: History },
 ]
 
 const items3: NavItem[] = [
   {
     title: "Profile",
-    url: "/admin/users",
+    url: "/profile",
     icon: UserRound,
     items: [
-      { title: "Account", url: "/admin/users" },
-      { title: "Change Password", url: "/admin/users" },
+      { title: "Account", url: "/profile" },
+      { title: "Change Password", url: "/profile/change-password" },
     ],
   },
   { title: "Help", url: "/help", icon: LifeBuoy },
@@ -102,8 +102,8 @@ const initials = (name: string) =>
 
 // Replace with your router hook (useLocation / usePathname).
 // To preview the tab before routing exists, return "/students/enrollment".
-const getPathname = () =>
-  typeof window === "undefined" ? "" : window.location.pathname
+// const getPathname = () =>
+//   typeof window === "undefined" ? "" : window.location.pathname
 
 const handleLogout = async () => {
   // await fetch("/api/auth/logout", { method: "POST", credentials: "include" })
@@ -168,12 +168,13 @@ const activeRoom = "my-2"
 /* -------------------------------------------------------------------------- */
 
 function NavMenuItem({ item }: { item: NavItem }) {
-  const pathname = getPathname()
-  const { state, setOpen } = useSidebar()
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const { state, setOpen } = useSidebar();
 
   // No children -> plain button
   if (!item.items?.length) {
-    const active = pathname === item.url
+    const active = pathname === item.url;
 
     return (
       <SidebarMenuItem className={cn(active && activeRoom)}>
@@ -181,7 +182,7 @@ function NavMenuItem({ item }: { item: NavItem }) {
           tooltip={item.title}
           isActive={active}
           className={tabButton}
-          onClick={() => (window.location.href = item.url)}
+          onClick={() => navigate(item.url)} // ✅ Client-side SPA navigation
         >
           {active && <ActiveTab />}
           <item.icon />
@@ -190,16 +191,24 @@ function NavMenuItem({ item }: { item: NavItem }) {
           </span>
         </SidebarMenuButton>
       </SidebarMenuItem>
-    )
+    );
   }
 
-  // Has children -> collapsible. Opens by default when a child is the current page.
-  const hasActiveChild = item.items.some((sub) => sub.url === pathname)
-  const [expanded, setExpanded] = useState(hasActiveChild)
+  // Has children -> collapsible
+  const hasActiveChild = item.items.some((sub) => sub.url === pathname);
+  const [expanded, setExpanded] = useState(hasActiveChild);
+
+  // Sync expanded state when navigating to a child page
+  useEffect(() => {
+    if (hasActiveChild) {
+      setExpanded(true);
+    }
+  }, [hasActiveChild]);
 
   return (
-    <Collapsible open={expanded} onOpenChange={setExpanded}
-      defaultOpen={hasActiveChild}
+    <Collapsible
+      open={expanded}
+      onOpenChange={setExpanded}
       className="group/collapsible"
     >
       <SidebarMenuItem>
@@ -225,29 +234,32 @@ function NavMenuItem({ item }: { item: NavItem }) {
         <CollapsibleContent>
           <SidebarMenuSub className="mr-0 border-sidebar-border pr-0">
             {item.items.map((sub) => {
-              const active = pathname === sub.url
+              const active = pathname === sub.url;
 
               return (
                 <SidebarMenuSubItem
                   key={sub.title}
                   className={cn(active && activeRoom)}
                 >
+                  {/* ✅ asChild delegates rendering to React Router's <Link> */}
                   <SidebarMenuSubButton
-                    href={sub.url}
+                    // asChild
                     isActive={active}
                     className={subButton}
                   >
-                    {active && <ActiveTab />}
-                    <span>{sub.title}</span>
+                    <Link to={sub.url}>
+                      {active && <ActiveTab />}
+                      <span>{sub.title}</span>
+                    </Link>
                   </SidebarMenuSubButton>
                 </SidebarMenuSubItem>
-              )
+              );
             })}
           </SidebarMenuSub>
         </CollapsibleContent>
       </SidebarMenuItem>
     </Collapsible>
-  )
+  );
 }
 
 function NavGroup({ label, items }: { label?: string; items: NavItem[] }) {
@@ -280,8 +292,6 @@ function NavGroup({ label, items }: { label?: string; items: NavItem[] }) {
 /* -------------------------------------------------------------------------- */
 
 export default function AppSidebar() {
-
-  
   return (
     // border-r-0 removes shadcn's 1px right border, which would otherwise cut
     // a line between the tab and the page.
