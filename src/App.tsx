@@ -18,13 +18,14 @@ import StudentRecordsPage from "./pages/StudentRecords/StudentRecordsPage"
 import RecentlyDeletedPage from "./pages/StudentRecords/RecentlyDeletedPage"
 import UsersPage from "./pages/UserManagement/UsersPage"
 import AddUserPage from "./pages/UserManagement/AddUserPage"
-import HistoryLogsPage from "./pages/HistoryLogs/HistoryLogsPage"
 import ProfilePage from "./pages/Profile/ProfilePage"
 import HelpPage from "./pages/Help/HelpPage"
 import ChangePassPage from "./pages/UserManagement/ChangePassPage"
 import NotFoundPage from "./pages/Error/NotFoundPage"
 import AddRecordPage from "./pages/StudentRecords/AddRecordPage"
 import TestPage from "./pages/TestPage"
+import FileLogsPage from "./pages/HistoryLogs/FileLogsPage"
+import ActivityLogsPage from "./pages/HistoryLogs/ActivityLogsPage"
 
 export default function App() {
   return (
@@ -71,7 +72,9 @@ export default function App() {
               <Route path="change-password" element={<ChangePassPage />} />
             </Route>
 
-            <Route path="logs" element={<HistoryLogsPage />} />
+            <Route path="file-logs" element={<FileLogsPage />} />
+            <Route path="activity-logs" element={<ActivityLogsPage/>} />
+            
             <Route path="help" element={<HelpPage />} />
             <Route path="t" element={<TestPage />} />
           </Route>

@@ -70,19 +70,20 @@ const items2: NavItem[] = [
     icon: UserCog,
     items: [
       { title: "Users", url: "/users" },
-      { title: "Add Users", url: "/users/create" },
+      { title: "Add User", url: "/users/create" },
     ],
   },
-  { title: "Activity Logs", url: "/logs", icon: History },
+  { title: "File Logs", url: "/file-logs", icon: History },
+  { title: "Activity Logs", url: "/activity-logs", icon: History },
 ]
 
 const items3: NavItem[] = [
   {
-    title: "Profile",
+    title: "Account",
     url: "/profile",
     icon: UserRound,
     items: [
-      { title: "Account", url: "/profile" },
+      { title: "Profile Details", url: "/profile" },
       { title: "Change Password", url: "/profile/change-password" },
     ],
   },
@@ -161,7 +162,7 @@ const subButton =
 
 // An active item gets 8px of extra vertical room so the 12px fillets sit in
 // the gaps instead of overlapping the neighbouring rows.
-const activeRoom = "my-2"
+const activeRoom = ""
 
 /* -------------------------------------------------------------------------- */
 /*  Navigation                                                                 */
@@ -276,7 +277,7 @@ function NavGroup({ label, items }: { label?: string; items: NavItem[] }) {
           </SidebarGroupLabel>
         )}
         <SidebarGroupContent>
-          <SidebarMenu>
+          <SidebarMenu className="gap-1">
             {items.map((item) => (
               <NavMenuItem key={item.title} item={item} />
             ))}
