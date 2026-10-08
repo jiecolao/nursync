@@ -12,6 +12,7 @@
   - `src/components/ui/` -> Low-level, headless, or reusable design system primitives.
 - Inspect `prisma/schema.prisma` when a task is related to the database to ensure the code matches the project's schema.
 - Inspect `project-structure.md` to understand the project structure.
+- If the prompt is just a question, simply answer without modifying any file.
 
 ## 3. Operational Boundaries for the Agent
 

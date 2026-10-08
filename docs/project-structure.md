@@ -1,6 +1,6 @@
 # File Tree: nursync
 
-**Generated:** 10/4/2026, 9:08:14 PM
+**Generated:** 10/8/2026, 9:44:05 AM
 **Root Path:** `c:\Dev\Projects\nursync`
 
 ```
@@ -17,64 +17,161 @@
 │       ├── prisma-composer-core-concepts
 │       └── prisma-platform-core-concepts
 ├── .github
+│   ├── ISSUE_TEMPLATE
+│   │   ├── bug_report.md
+│   │   ├── documentation.md
+│   │   └── feature_report.md
 │   └── copilot-instructions.md
 ├── .turbo
 ├── docs
 │   └── project-structure.md
+├── lib
+│   └── utils
 ├── prisma
 │   ├── migrations
-│   │   ├── 20261004034248_init
+│   │   ├── 20261005121232_init
 │   │   │   └── migration.sql
 │   │   └── migration_lock.toml
 │   ├── seeds
+│   │   ├── audit-logs.seed.ts
+│   │   ├── document-status.seed.ts
 │   │   ├── document_type.seed.ts
 │   │   ├── genders.seed.ts
 │   │   ├── index.ts
-│   │   └── user.seed.ts
+│   │   ├── permissions.seed.ts
+│   │   ├── roles.seed.ts
+│   │   ├── student-documents.seed.ts
+│   │   ├── students.seed.ts
+│   │   ├── user-account-roles.seed.ts
+│   │   ├── user-accounts.seed.ts
+│   │   ├── user.seed.ts
+│   │   └── users.seed.ts
 │   ├── schema.prisma
 │   └── seed.ts
 ├── public
 ├── scripts
 ├── src
 │   ├── assets
+│   │   ├── fonts
+│   │   │   ├── noto-sans.ttf
+│   │   │   └── noto-serif.ttf
+│   │   ├── icons
+│   │   │   ├── logo-full.png
+│   │   │   ├── logo-green.png
+│   │   │   ├── logo-transp-w.png
+│   │   │   ├── logo-transp.png
+│   │   │   └── logo-white.png
+│   │   └── images
 │   ├── components
+│   │   ├── common
+│   │   ├── feedback
+│   │   ├── layout
+│   │   │   ├── AppSideBar.tsx
+│   │   │   └── DataTable.tsx
+│   │   └── ui
+│   │       ├── button.tsx
+│   │       ├── calendar.tsx
+│   │       ├── collapsible.tsx
+│   │       ├── data-table.tsx
+│   │       ├── dropdown-menu.tsx
+│   │       ├── input.tsx
+│   │       ├── label.tsx
+│   │       ├── popover.tsx
+│   │       ├── select.tsx
+│   │       ├── separator.tsx
+│   │       ├── sheet.tsx
+│   │       ├── sidebar.tsx
+│   │       ├── skeleton.tsx
+│   │       ├── switch.tsx
+│   │       ├── table.tsx
+│   │       └── tooltip.tsx
+│   ├── hooks
+│   │   └── use-mobile.ts
 │   ├── integrations
 │   │   └── prisma
 │   │       ├── prisma.filter.ts
 │   │       ├── prisma.module.ts
 │   │       └── prisma.service.ts
+│   ├── lib
+│   │   ├── export-table.ts
+│   │   └── utils.ts
 │   ├── modules
 │   │   ├── admin
+│   │   │   ├── dto
+│   │   │   │   ├── create-admin.dto.ts
+│   │   │   │   └── update-admin.dto.ts
+│   │   │   ├── admin.controller.ts
+│   │   │   ├── admin.module.ts
+│   │   │   └── admin.service.ts
+│   │   ├── audit_logs
+│   │   │   ├── dto
+│   │   │   │   └── create-audit-log.dto.ts
+│   │   │   ├── audit_logs.controller.ts
+│   │   │   ├── audit_logs.module.ts
+│   │   │   └── audit_logs.service.ts
 │   │   ├── auth
 │   │   │   ├── guards
-│   │   │   └── strategies
+│   │   │   │   └── jwt.guard.ts
+│   │   │   ├── strategies
+│   │   │   │   └── jwt.strategy.ts
+│   │   │   ├── auth.controller.ts
+│   │   │   ├── auth.module.ts
+│   │   │   └── auth.service.ts
 │   │   ├── dashboard
-│   │   ├── student
-│   │   │   ├── documents
-│   │   │   │   └── dto
-│   │   │   ├── dto
-│   │   │   │   ├── create-student.dto.ts
-│   │   │   │   └── update-student.dto.ts
-│   │   │   ├── student.controller.ts
-│   │   │   ├── student.module.ts
-│   │   │   └── student.service.ts
-│   │   └── system_logs
+│   │   └── student
+│   │       ├── documents
+│   │       │   └── dto
+│   │       ├── dto
+│   │       │   ├── create-student.dto.ts
+│   │       │   └── update-student.dto.ts
+│   │       ├── student.controller.ts
+│   │       ├── student.module.ts
+│   │       └── student.service.ts
 │   ├── pages
-│   ├── styles
-│   │   └── global.css
-│   ├── app.controller.spec.ts
-│   ├── app.controller.ts
+│   │   ├── Dashboard
+│   │   │   └── DashboardPage.tsx
+│   │   ├── Error
+│   │   │   └── NotFoundPage.tsx
+│   │   ├── Help
+│   │   │   └── HelpPage.tsx
+│   │   ├── HistoryLogs
+│   │   │   └── HistoryLogsPage.tsx
+│   │   ├── Login
+│   │   │   ├── ForgotPasswordPage.tsx
+│   │   │   ├── LoginPage.tsx
+│   │   │   ├── OtpPage.tsx
+│   │   │   ├── ResetPasswordPage.tsx
+│   │   │   └── index.ts
+│   │   ├── Profile
+│   │   │   └── ProfilePage.tsx
+│   │   ├── StudentRecords
+│   │   │   ├── AddRecordPage.tsx
+│   │   │   ├── RecentlyDeletedPage.tsx
+│   │   │   └── StudentRecordsPage.tsx
+│   │   ├── UserManagement
+│   │   │   ├── AddUserPage.tsx
+│   │   │   ├── ChangePassPage.tsx
+│   │   │   └── UsersPage.tsx
+│   │   ├── AuthLayout.tsx
+│   │   ├── MainLayout.tsx
+│   │   └── TestPage.tsx
+│   ├── stores
+│   ├── utils
+│   ├── App.tsx
+│   ├── RootLayout.tsx
 │   ├── app.module.ts
-│   ├── app.service.ts
+│   ├── index.css
+│   ├── main.client.tsx
 │   └── main.ts
 ├── test
 │   ├── app.e2e-spec.ts
 │   └── jest-e2e.json
-├── utils
 ├── .env.example
 ├── .gitignore
 ├── .prettierrc
 ├── README.md
+├── components.json
+├── index.html
 ├── jest.config.ts
 ├── nest-cli.json
 ├── oxlint.json
@@ -82,7 +179,8 @@
 ├── package.json
 ├── prisma.config.ts
 ├── tsconfig.json
-└── turbo.json
+├── turbo.json
+└── vite.config.ts
 ```
 
 ---
