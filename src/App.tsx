@@ -24,7 +24,7 @@ import HelpPage from "./pages/Help/HelpPage"
 import ChangePassPage from "./pages/UserManagement/ChangePassPage"
 import NotFoundPage from "./pages/Error/NotFoundPage"
 import AddRecordPage from "./pages/StudentRecords/AddRecordPage"
-import PlacementsPage from "./pages/PlacementsPage"
+import TestPage from "./pages/TestPage"
 
 export default function App() {
   return (
@@ -73,7 +73,7 @@ export default function App() {
 
             <Route path="logs" element={<HistoryLogsPage />} />
             <Route path="help" element={<HelpPage />} />
-            <Route path="t" element={<PlacementsPage />} />
+            <Route path="t" element={<TestPage />} />
           </Route>
 
           {/* 404 Catch-All */}
