@@ -50,7 +50,7 @@ type NavItem = {
 // Replace the urls with your real routes. The item whose url matches the
 // current path becomes the cream "tab".
 const items1: NavItem[] = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
+  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   {
     title: "Student Records",
     url: "/students",
