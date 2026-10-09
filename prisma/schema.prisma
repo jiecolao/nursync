@@ -11,7 +11,7 @@ datasource db {
 // ============================================================
 
 model User {
-  userId String @id @map("user_id") @db.VarChar(64)
+  userId String @id @default(uuid(7)) @map("user_id") @db.VarChar(64)
 
   facultyId String? @unique @map("faculty_id") @db.VarChar(20)
 
