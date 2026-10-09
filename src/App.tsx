@@ -26,6 +26,7 @@ import AddRecordPage from "./pages/StudentRecords/AddRecordPage"
 import TestPage from "./pages/TestPage"
 import FileLogsPage from "./pages/HistoryLogs/FileLogsPage"
 import ActivityLogsPage from "./pages/HistoryLogs/ActivityLogsPage"
+import StudentProfilePage from "./pages/StudentRecords/StudentProfilePage"
 
 export default function App() {
   return (
@@ -58,6 +59,7 @@ export default function App() {
               <Route index element={<StudentRecordsPage />} />
               <Route path="create" element={<AddRecordPage />} />
               <Route path="recently-deleted" element={<RecentlyDeletedPage />} />
+              <Route path="profile" element={<StudentProfilePage />}/>
             </Route>
 
             {/* User Management Group */}
@@ -68,7 +70,7 @@ export default function App() {
 
             {/* Profile Group */}
             <Route path="profile">
-              <Route index element={<ProfilePage />} />
+              <Route index element={<ProfilePage/>} />
               <Route path="change-password" element={<ChangePassPage />} />
             </Route>
 
