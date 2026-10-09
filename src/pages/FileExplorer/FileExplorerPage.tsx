@@ -1,10 +1,11 @@
+import dotenv from 'dotenv';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { io, type Socket } from 'socket.io-client';
 import { Activity, Archive, ArrowDownAZ, ChevronRight, Clock3, File, FileImage, FileText, Folder, FolderOpen, Grid2X2, HardDrive, LayoutList, LoaderCircle, RefreshCw, Search, ShieldCheck, X } from 'lucide-react';
 
 type Node = { name: string; path: string; type: 'file' | 'directory'; size: number; extension: string; modifiedAt: string; children?: Node[] };
 type FsEvent = { event: 'add' | 'unlink' | 'change' | 'addDir' | 'unlinkDir'; path: string; node?: Node };
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5151';
+const API = 'http://localhost:5151';
 const formatSize = (bytes: number) => bytes < 1024 ? `${bytes} B` : bytes < 1048576 ? `${(bytes / 1024).toFixed(1)} KB` : bytes < 1073741824 ? `${(bytes / 1048576).toFixed(1)} MB` : `${(bytes / 1073741824).toFixed(1)} GB`;
 const formatDate = (value: string) => new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(value));
 const byName = (a: Node, b: Node) => a.type === b.type ? a.name.localeCompare(b.name) : a.type === 'directory' ? -1 : 1;
