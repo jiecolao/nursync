@@ -1,7 +1,6 @@
 import { DataTable } from "@/components/layout/DataTable"
 import { ColumnDef } from "@tanstack/react-table"
 import { FileLogsType } from "./logs.type";
-import { ActivityLogsType } from "./logs.type"
 import { MoreHorizontal } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -43,7 +42,7 @@ const columns: ColumnDef<FileLogsType>[] = [
               See Student
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => console.log("view", order)}>
-              See File
+              Go to File
             </DropdownMenuItem>
             {/* <DropdownMenuSeparator />
             <DropdownMenuItem className="text-destructive" onClick={() => console.log("delete", order)}>
@@ -69,10 +68,10 @@ const orders = [
 
 export default function FileLogsPage(){
     return (
-        <>  
-            <h1 className="font-header text-primary font-bold text-2xl w-full h-auto mb-4">
-                File Modification History
-            </h1>
+        <>              
+          <h2 className="text-3xl font-bold text-primary mb-2">File Modification History</h2>
+          <p className="mt-1 mb-8 text-[.95rem] text-stone-600">A detailed record of file interactions made by users.</p>
+
             <DataTable
                 columns={columns}
                 data={orders}

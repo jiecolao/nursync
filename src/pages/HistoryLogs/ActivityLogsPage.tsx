@@ -68,9 +68,8 @@ const orders = [
 export default function ActivityLogsPage(){
     return (
         <>  
-            <h1 className="font-header text-primary font-bold text-2xl w-full h-auto mb-4">
-                Activity Logs
-            </h1>
+            <h2 className="text-3xl font-bold text-primary mb-2">Activity Logs</h2>
+            <p className="mt-1 mb-8 text-[.95rem] text-stone-600">A detailed record of system interactions made by users.</p>
             <DataTable
                 columns={columns}
                 data={orders}
