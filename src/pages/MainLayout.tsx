@@ -5,15 +5,13 @@ import AppSidebar from "../components/layout/AppSideBar";
 
 const pageTitles: Record<string, string> = {
   "/dashboard": "Dashboard",
+  "/directory": "Directory",
   "/students": "Student Records",
-  "/students/create": "Add Student Record",
-  "/students/recently-deleted": "Recently Deleted",
-  "/users": "Users",
-  "/users/create": "Add User",
+  "/trash": "Trash",
+  "/system-users": "System Users",
+  "/file-logs": "File History",
+  "/activity-logs": "Activity Log",
   "/profile": "Profile Details",
-  "/profile/change-password": "Change Password",
-  "/file-logs": "File Logs",
-  "/activity-logs": "Activity Logs",
   "/help": "Help",
 };
 

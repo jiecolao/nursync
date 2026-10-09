@@ -8,6 +8,9 @@ import {
   LogOut,
   UserCog,
   UserRound,
+  FileClock,
+  Folder,
+  Trash,
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -51,42 +54,29 @@ type NavItem = {
 // current path becomes the cream "tab".
 const items1: NavItem[] = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  {
-    title: "Student Records",
-    url: "/students",
-    icon: GraduationCap,
-    items: [
-      { title: "Records", url: "/students" },
-      { title: "Add Record", url: "/students/create" },
-      { title: "Recently Deleted", url: "/students/recently-deleted" },
-    ],
-  },
+  { title: "Directory", url: "/directory", icon: Folder },
+  { title: "Students", url: "/students", icon: GraduationCap },
+  { title: "Trash", url: "/trash", icon: Trash },
+  // {
+  //   title: "Student Records",
+  //   url: "/students",
+  //   icon: GraduationCap,
+  //   items: [
+  //     { title: "Records", url: "/students" },
+  //     { title: "Add Record", url: "/students/create" },
+  //     { title: "Recently Deleted", url: "/students/recently-deleted" },
+  //   ],
+  // },
 ]
 
 const items2: NavItem[] = [
-  {
-    title: "User Management",
-    url: "/users",
-    icon: UserCog,
-    items: [
-      { title: "Users", url: "/users" },
-      { title: "Add User", url: "/users/create" },
-    ],
-  },
-  { title: "File Logs", url: "/file-logs", icon: History },
-  { title: "Activity Logs", url: "/activity-logs", icon: History },
+  { title: "System Users", url: "/system-users", icon: UserCog },
+  { title: "File History", url: "/file-logs", icon: FileClock },
+  { title: "Activity Log", url: "/activity-logs", icon: History },
 ]
 
 const items3: NavItem[] = [
-  {
-    title: "Account",
-    url: "/profile",
-    icon: UserRound,
-    items: [
-      { title: "Profile Details", url: "/profile" },
-      { title: "Change Password", url: "/profile/change-password" },
-    ],
-  },
+  { title: "My Account", url: "/my-account", icon: UserRound },
   { title: "Help", url: "/help", icon: LifeBuoy },
 ]
 
@@ -320,8 +310,8 @@ export default function AppSidebar() {
 
       <SidebarContent>
         <NavGroup items={items1} />
-        <NavGroup label="Administrators" items={items2} />
-        <NavGroup label="Account" items={items3} />
+        <NavGroup label="Administration" items={items2} />
+        <NavGroup label="Support & Settings" items={items3} />
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border p-2">

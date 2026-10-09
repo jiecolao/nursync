@@ -53,30 +53,17 @@ export default function App() {
             }
           >
             <Route path="dashboard" element={<DashboardPage />} />
+            <Route path="directory" element={<DashboardPage />} />
+            <Route path="students" element={<StudentRecordsPage />} />
+            <Route path="trash" element={<></>} />
 
-            {/* Student Records Group */}
-            <Route path="students">
-              <Route index element={<StudentRecordsPage />} />
-              <Route path="create" element={<AddRecordPage />} />
-              <Route path="recently-deleted" element={<RecentlyDeletedPage />} />
-              <Route path="profile" element={<StudentProfilePage />}/>
-            </Route>
-
-            {/* User Management Group */}
-            <Route path="users">
-              <Route index element={<UsersPage />} />
-              <Route path="create" element={<AddUserPage />} />
-            </Route>
-
-            {/* Profile Group */}
-            <Route path="profile">
-              <Route index element={<ProfilePage/>} />
-              <Route path="change-password" element={<ChangePassPage />} />
-            </Route>
-
+            {/* Administration */}
+            <Route path="system-users" element={<UsersPage />} />
             <Route path="file-logs" element={<FileLogsPage />} />
             <Route path="activity-logs" element={<ActivityLogsPage/>} />
-            
+
+            {/* Support & Settings*/}            
+            <Route path="my-account" element={<ProfilePage/>} />
             <Route path="help" element={<HelpPage />} />
             <Route path="t" element={<TestPage />} />
           </Route>
