@@ -14,19 +14,16 @@ import ResetPasswordPage from "./pages/Login/ResetPasswordPage"
 
 // Main App Pages
 import DashboardPage from "./pages/Dashboard/DashboardPage"
-import StudentRecordsPage from "./pages/StudentRecords/StudentRecordsPage"
-import RecentlyDeletedPage from "./pages/StudentRecords/RecentlyDeletedPage"
+import StudentRecordsPage from "./pages/StudentRecords/StudentPage"
 import UsersPage from "./pages/UserManagement/UsersPage"
-import AddUserPage from "./pages/UserManagement/AddUserPage"
 import ProfilePage from "./pages/Profile/ProfilePage"
 import HelpPage from "./pages/Help/HelpPage"
-import ChangePassPage from "./pages/UserManagement/ChangePassPage"
 import NotFoundPage from "./pages/Error/NotFoundPage"
-import AddRecordPage from "./pages/StudentRecords/AddRecordPage"
 import TestPage from "./pages/TestPage"
 import FileLogsPage from "./pages/HistoryLogs/FileLogsPage"
 import ActivityLogsPage from "./pages/HistoryLogs/ActivityLogsPage"
-import StudentProfilePage from "./pages/StudentRecords/StudentProfilePage"
+import TrashPage from "./pages/StudentRecords/TrashPage"
+import DirectoryPage from "./pages/StudentRecords/DirectoryPage"
 
 export default function App() {
   return (
@@ -53,9 +50,9 @@ export default function App() {
             }
           >
             <Route path="dashboard" element={<DashboardPage />} />
-            <Route path="directory" element={<DashboardPage />} />
+            <Route path="directory" element={<DirectoryPage />} />
             <Route path="students" element={<StudentRecordsPage />} />
-            <Route path="trash" element={<></>} />
+            <Route path="trash" element={<TrashPage />} />
 
             {/* Administration */}
             <Route path="system-users" element={<UsersPage />} />
