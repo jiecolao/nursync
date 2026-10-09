@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import LogoFull from "@/assets/icons/logo-full.png"
+import { notify } from "@/components/layout/Toasty"
 
 // White fields sit on the cream page; the border and focus ring use the brand green.
 const fieldClass =
@@ -34,7 +35,9 @@ export default function LoginPage() {
       //   body: JSON.stringify({ email, password }),
       // })
       // if (!res.ok) throw new Error("Invalid credentials")
-      navigate("/dashboard")
+      
+      // navigate("/dashboard")
+      notify.success("Login Successful");
     } catch {
       setError("Your email or password is incorrect. Try again.")
     } finally {
