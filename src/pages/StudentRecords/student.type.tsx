@@ -1,0 +1,20 @@
+export type StudentTableType = {
+  student_uuid: string;
+  student_id: string;
+  last_name: string;
+  first_name: string;
+  middle_name: string;
+  gender_id: number;
+  dob: Date | string;
+  contact_no: string;
+  email: string;
+  provincial_addr: string;
+  city_addr: string;
+  yr_admitted: number;
+  yr_residency: number;
+  yr_graduated: number;
+  is_HD: boolean;
+  status: boolean;
+  created_at: Date | string;
+  date_modified: Date | string;
+};
