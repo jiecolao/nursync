@@ -84,7 +84,6 @@ export function DataTable<TData>({
 
   // Table settings
   const [density, setDensity] = React.useState<Density>("comfortable")
-  const [striped, setStriped] = React.useState(true)
   const [bordered, setBordered] = React.useState(false)
   const [stickyHeader, setStickyHeader] = React.useState(false)
 
@@ -176,7 +175,7 @@ export function DataTable<TData>({
 
   /* ---------- Render ---------- */
 
-  const cell = density === "compact" ? "py-1.5" : "py-3.5"
+  const cell = density === "compact" ? "px-5 py-0" : "px-5 py-0"
   const rows = table.getRowModel().rows
   const { pageIndex, pageSize } = table.getState().pagination
   const total = table.getFilteredRowModel().rows.length
@@ -273,7 +272,6 @@ export function DataTable<TData>({
                 </Select>
               </div>
               {([
-                ["Striped rows", striped, setStriped],
                 ["Cell borders", bordered, setBordered],
                 ["Sticky header", stickyHeader, setStickyHeader],
               ] as const).map(([label, value, set]) => (
@@ -299,13 +297,13 @@ export function DataTable<TData>({
       </div>
 
       {/* Table */}
-      <div className={cn("rounded-lg border bg-background", stickyHeader && "max-h-[560px] overflow-auto")}>
-        <Table>
-          <TableHeader className={cn("bg-secondary", stickyHeader && "sticky top-0 z-10")}>
+      <div className={cn("overflow-hidden bg-background", stickyHeader && "max-h-[560px] overflow-auto")}>
+        <Table className="border-separate border-spacing-y-1">
+          <TableHeader className={cn("[&>tr]:border-b-0 bg-primary text-white", stickyHeader && "sticky top-0 z-10")}>
             {table.getHeaderGroups().map((hg) => (
-              <TableRow key={hg.id} className="hover:bg-secondary">
+              <TableRow key={hg.id} className="border-b-0 bg-primary hover:bg-primary [&>th:first-child]:rounded-tl-lg [&>th:first-child]:rounded-bl-lg [&>th:last-child]:rounded-tr-lg [&>th:last-child]:rounded-br-lg">
                 {hg.headers.map((h) => (
-                  <TableHead key={h.id} className={cn("font-semibold text-primary", bordered && "border-r last:border-r-0")}>
+                  <TableHead key={h.id} className={cn("font-semibold text-white px-5", bordered && "border-r last:border-r-0")}>
                     {h.isPlaceholder ? null : h.column.getCanSort() ? (
                       <button
                         className="inline-flex items-center gap-1.5 hover:underline"
@@ -325,7 +323,7 @@ export function DataTable<TData>({
           <TableBody>
             {rows.length ? (
               rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"} className={cn("data-[state=selected]:bg-primary/10", striped && "odd:bg-secondary/40", "hover:bg-secondary/70")}>
+                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"} className="bg-white data-[state=selected]:bg-white hover:bg-secondary/70 [&>td:first-child]:rounded-l-lg [&>td:last-child]:rounded-r-lg border-0">
                   {row.getVisibleCells().map((c) => (
                     <TableCell key={c.id} className={cn(cell, bordered && "border-r last:border-r-0")}>
                       {flexRender(c.column.columnDef.cell, c.getContext())}
