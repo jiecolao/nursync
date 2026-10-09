@@ -23,16 +23,14 @@ export default function MainLayout() {
 
   return (
     <SidebarProvider>
-      <AppSidebar/>
-      <SidebarInset className="flex flex-col flex-1 min-h-screen">
-        {/* Top Navbar / Header */}
+      <AppSidebar />
+      <SidebarInset className="flex flex-col flex-1 min-h-screen min-w-0 w-full">
         <header className="flex h-14 items-center gap-4 border-b bg-background px-6">
           <SidebarTrigger />
           <div className="font-bold text-sm text-primary">{pageTitle}</div>
         </header>
 
-        {/* Page Content */}
-        <main className="flex-1 p-6">
+        <main className="flex-1 min-w-0 w-full max-w-full px-6 py-5 overflow-x-auto">
           <Outlet />
         </main>
       </SidebarInset>
