@@ -27,14 +27,16 @@ type DirectoryState = {
   applyEvent: (event: DirectoryEvent) => void;
 };
 
-function updateTree(
-  tree: DirectoryEntry[],
-  event: DirectoryEvent,
-): DirectoryEntry[] {
-  const parentPath = event.path.includes('/') ? event.path.slice(0, event.path.lastIndexOf('/')) : '';
-  const name = event.path.split('/').pop() ?? event.path;
+function sortEntries(a: DirectoryEntry, b: DirectoryEntry) {
+  if (a.type !== b.type) return a.type === 'directory' ? -1 : 1;
+  return a.name.localeCompare(b.name);
+}
+
+function updateTree(tree: DirectoryEntry[], event: DirectoryEvent): DirectoryEntry[] {
+  const parentPath = event.path.includes('/')
+    ? event.path.slice(0, event.path.lastIndexOf('/'))
+    : '';
   const remove = event.type === 'unlink' || event.type === 'unlinkDir';
-  const isDirectory = event.type === 'addDir' || event.type === 'unlinkDir';
 
   if (!parentPath) {
     const without = tree.filter((item) => item.path !== event.path);
@@ -42,11 +44,9 @@ function updateTree(
     return [...without, event.entry].sort(sortEntries);
   }
 
-  let parentFound = false;
   const walk = (items: DirectoryEntry[]): DirectoryEntry[] =>
     items.map((item) => {
       if (item.path === parentPath && item.type === 'directory') {
-        parentFound = true;
         const children = item.children ?? [];
         const without = children.filter((child) => child.path !== event.path);
         const nextChildren = remove || !event.entry
@@ -60,18 +60,9 @@ function updateTree(
       return item;
     });
 
-  const next = walk(tree);
-  // A watcher may report a child before its parent has appeared in the tree.
-  // Ignore that event; the parent's addDir event or next snapshot will reconcile it.
-  void parentFound;
-  void name;
-  void isDirectory;
-  return next;
-}
-
-function sortEntries(a: DirectoryEntry, b: DirectoryEntry) {
-  if (a.type !== b.type) return a.type === 'directory' ? -1 : 1;
-  return a.name.localeCompare(b.name);
+  // If a parent is not in the snapshot yet, ignore the child event. The parent
+  // addDir payload includes its current children and reconciles the subtree.
+  return walk(tree);
 }
 
 export const useDirectoryStore = create<DirectoryState>((set) => ({
