@@ -83,7 +83,10 @@ export class DirectoryService implements OnModuleInit, OnModuleDestroy {
       this.watcher.on('error', (error) =>
         this.logger.error(`Directory watcher error: ${error.message}`),
       );
-      await this.watcher.waitFor('ready');
+      await new Promise<void>((resolve, reject) => {
+        this.watcher!.once('ready', resolve);
+        this.watcher!.once('error', reject);
+      });
       this.logger.log(`Watching ${this.root}`);
     } catch (error) {
       this.logger.error(
@@ -103,7 +106,6 @@ export class DirectoryService implements OnModuleInit, OnModuleDestroy {
       ...(entry ? { entry } : {}),
       timestamp: new Date().toISOString(),
     };
-    // Gateway subscribes to this event through the service callback.
     this.onEvent?.(event);
   }
 
