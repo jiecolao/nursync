@@ -339,8 +339,8 @@ export default function ProfilePage() {
   const genderLabel = GENDERS.find((g) => g.id === f.genderId)?.label;
 
   return (
-    <div className="min-h-screen px-4 py-8 md:px-8" style={{ backgroundColor: SECONDARY }}>
-      <div className="mx-auto max-w-5xl space-y-6">
+    <div className="min-h-screen" style={{ backgroundColor: SECONDARY }}>
+      <div className="mx-auto max-w space-y-6">
         <h2 className="text-2xl font-semibold tracking-tight" style={{ color: PRIMARY }}>
           Profile Overview
         </h2>
@@ -366,7 +366,7 @@ export default function ProfilePage() {
         <div className="grid items-start gap-6 lg:grid-cols-[300px_1fr]">
           {/* ---------------- Identity + actions ---------------- */}
           <aside
-            className="space-y-6 rounded-2xl p-6 text-center lg:sticky lg:top-8"
+            className="space-y-6 rounded-2xl p-6 text-center lg:sticky lg:top-8 h-full"
             style={{ backgroundColor: PRIMARY, color: SECONDARY }}
           >
             <div className="space-y-4">
@@ -402,7 +402,7 @@ export default function ProfilePage() {
               <div className="space-y-1">
                 <h1 className="text-xl leading-tight font-semibold">{fullName}</h1>
                 <p className="text-sm opacity-80">@{saved.username}</p>
-                <p className="text-sm opacity-80">{saved.faculty_id}</p>
+                <p className="text-sm opacity-80">Role: {saved.faculty_id}</p>
               </div>
 
               <Badge variant="outline" className={`capitalize ${STATUS_STYLES[saved.status]}`}>
@@ -446,9 +446,9 @@ export default function ProfilePage() {
                   <Button variant="outline" onClick={() => setPasswordOpen(true)} className={onPrimaryBtn}>
                     <KeyRound className="size-4" /> Change password
                   </Button>
-                  <Button variant="outline" onClick={() => setConfirmDisable(true)} className={onPrimaryBtn}>
+                  {/* <Button variant="outline" onClick={() => setConfirmDisable(true)} className={onPrimaryBtn}>
                     <Ban className="size-4" /> Disable account
-                  </Button>
+                  </Button> */}
                 </>
               )}
             </div>
@@ -474,7 +474,7 @@ export default function ProfilePage() {
             <Section title="Name">
               <Field label="Last name" htmlFor="last_name" error={errors.last_name} className="sm:col-span-3">
                 {editing ? (
-                  <Input id="last_name" value={f.last_name} onChange={(e) => set("last_name", e.target.value)} />
+                  <Input id="last_name" disabled value={f.last_name} onChange={(e) => set("last_name", e.target.value)} />
                 ) : (
                   <ReadValue value={f.last_name} />
                 )}
