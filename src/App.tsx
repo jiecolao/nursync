@@ -24,6 +24,7 @@ import FileLogsPage from "./pages/HistoryLogs/FileLogsPage"
 import ActivityLogsPage from "./pages/HistoryLogs/ActivityLogsPage"
 import TrashPage from "./pages/StudentRecords/TrashPage"
 import DirectoryPage from "./pages/StudentRecords/DirectoryPage"
+import FileExplorerPage from "./pages/FileExplorer/FileExplorerPage"
 
 export default function App() {
   return (
@@ -51,6 +52,7 @@ export default function App() {
           >
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="directory" element={<DirectoryPage />} />
+            <Route path="file-explorer" element={<FileExplorerPage />} />
             <Route path="students" element={<StudentRecordsPage />} />
             <Route path="trash" element={<TrashPage />} />
 
