@@ -23,8 +23,6 @@ export class StudentService {
 
     async getAllProfiles(){
         return await this.prisma.student.findMany({
-            skip: 10,
-            take: 10,
             orderBy: {
                 studentId: 'asc'
             }
