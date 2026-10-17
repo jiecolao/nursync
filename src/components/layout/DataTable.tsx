@@ -286,7 +286,9 @@ export function DataTable<TData>({
           {/* Export */}
           <DropdownMenu>
             <DropdownMenuTrigger >
-              <Button><Download className="mr-2 size-4" />Export</Button>
+              <Button className="border-primary bg-transparent text-primary hover:text-white hover:bg-primary hover:border-transparent">
+                <Download className="mr-2 size-4" />Export
+              </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => exportAs("csv")}>Export as CSV</DropdownMenuItem>
