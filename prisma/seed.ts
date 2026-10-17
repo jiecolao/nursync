@@ -12,7 +12,8 @@ import {
   seedStudents,
   seedDocumentStatus,
   seedStudentDocuments,
-  seedAuditLogs,
+  seedActivityLogs,
+  seedFileModificationLogs,
 } from './seeds/index';
 import { Logger } from '@nestjs/common';
 
@@ -61,8 +62,11 @@ async function seed() {
   await seedStudentDocuments(prisma);
   logger.log('Student Documents seeding complete.')
 
-  await seedAuditLogs(prisma);
+  await seedActivityLogs(prisma);
   logger.log('Audit Logs seeding complete.')
+
+  await seedFileModificationLogs(prisma);
+  logger.log('File Modification Logs seeding complete.')
 
   logger.log('All seeds are completed.')
 }

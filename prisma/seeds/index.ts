@@ -8,4 +8,5 @@ export * from './user-account-roles.seed';
 export * from './students.seed';
 export * from './document-status.seed';
 export * from './student-documents.seed';
-export * from './audit-logs.seed';
+export * from './activity-logs.seed';
+export * from './file-modification-logs.seed';
