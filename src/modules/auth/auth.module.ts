@@ -15,7 +15,7 @@ import { HashService } from './hash.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
-  exports: [AuthService, HashService],
+  providers: [AuthService, JwtStrategy, HashService],
+  exports: [AuthService],
 })
 export class AuthModule {}
