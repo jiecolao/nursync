@@ -3,6 +3,8 @@ import { PrismaService } from '../../integrations/prisma/prisma.service';
 import { CreateAdminDto } from './dto/create-admin.dto';
 import { UpdateAdminDto } from './dto/update-admin.dto';
 import { HashService } from '../auth/hash.service';
+import { AuditLogsService } from '../audit_logs/audit_logs.service';
+
 
 const adminSelect = {
   userId: true,
@@ -43,7 +45,8 @@ const adminSelect = {
 export class AdminService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly hashService: HashService
+    private readonly hashService: HashService,
+    private readonly LogsService: AuditLogsService
   ) {}
 
   getAllAdmins() {
@@ -68,32 +71,48 @@ export class AdminService {
 
     const hashed_pass = await this.hashService.hash(body.password);    
 
-    return this.prisma.user.create({
-      data: {
-        userId: body.userId,
-        facultyId: body.facultyId,
-        lastName: body.lastName,
-        fastName: body.fastName,
-        middleName: body.middleName,
-        suffix: body.suffix,
-        genderId: body.genderId,
-        account: {
-          create: {
-            username: body.username,
-            email: body.email,
-            hashedPass: hashed_pass,
-            hashedRefreshToken: body.hashedRefreshToken,
-            status: true,
-            role: {
-              create: {
-                roleId: body.roleId,
+    return this.prisma.$transaction(async (tx) => {
+      return await tx.user.create({
+        data: {
+          userId: body.userId,
+          facultyId: body.facultyId,
+          lastName: body.lastName,
+          fastName: body.fastName,
+          middleName: body.middleName,
+          suffix: body.suffix,
+          genderId: body.genderId,
+          account: {
+            create: {
+              username: body.username,
+              email: body.email,
+              hashedPass: hashed_pass,
+              hashedRefreshToken: body.hashedRefreshToken,
+              status: true,
+              role: {
+                create: {
+                  roleId: body.roleId,
+                },
               },
             },
           },
         },
-      },
-      select: adminSelect,
-    });
+        select: adminSelect,
+      });
+
+      // return tx.activityLog.create({
+      //   data: {
+      //     user: {
+      //       connect: {
+      //         userAccId_roleId: {
+      //           userAccId: "TEST",
+      //           roleId: 1
+      //         }
+      //       }
+      //     },
+      //     action: `Created Admin Account (${body.username})`,
+      //   }
+      // })
+    })
   }
 
   async updateAdmin(userId: string, body: UpdateAdminDto) {
