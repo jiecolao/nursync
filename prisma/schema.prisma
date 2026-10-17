@@ -80,10 +80,8 @@ model Role {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  permission           Permission            @relation(fields: [permissionId], references: [permissionId])
-  userAccounts         UserAccountRole[]
-  fileModificationLogs FileModificationLog[]
-  activityLogs         ActivityLog[]
+  permission   Permission        @relation(fields: [permissionId], references: [permissionId])
+  userAccounts UserAccountRole[]
 
   @@map("Roles")
 }
@@ -109,14 +107,14 @@ model FileModificationLog {
   fileModUuid  String   @id @default(uuid()) @map("file_mod_uuid") @db.VarChar(36)
   userAccId    String   @map("user_acc_id") @db.VarChar(36)
   roleId       Int      @map("role_id")
+  adminName    String   @map("admin_name") @db.VarChar(255)
   studentName  String   @map("student_name") @db.VarChar(255)
   fileAction   String   @map("file_action") @db.VarChar(100)
   fileModified String   @map("file_modified") @db.Text
   fileLoc      String   @map("file_loc") @db.Text
   createdAt    DateTime @default(now()) @map("created_at")
 
-  role Role            @relation(fields: [roleId], references: [roleId])
-  user UserAccountRole @relation(fields: [userAccId], references: [userAccId])
+  user UserAccountRole @relation(fields: [userAccId, roleId], references: [userAccId, roleId])
 
   @@map("File_modification_logs")
 }
@@ -125,11 +123,12 @@ model ActivityLog {
   activityUuid String   @id @default(uuid()) @map("activity_uuid") @db.VarChar(36)
   userAccId    String   @map("user_acc_id") @db.VarChar(36)
   roleId       Int      @map("role_id")
+  adminName    String   @map("admin_name") @db.VarChar(255)
   action       String   @db.Text
+  description  String   @db.Text
   createdAt    DateTime @default(now()) @map("created_at")
 
-  role Role            @relation(fields: [roleId], references: [roleId])
-  user UserAccountRole @relation(fields: [userAccId], references: [userAccId])
+  user UserAccountRole @relation(fields: [userAccId, roleId], references: [userAccId, roleId])
 
   @@map("Activity_logs")
 }
