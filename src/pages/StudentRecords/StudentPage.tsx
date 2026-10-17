@@ -1,85 +1,133 @@
 import { DataTable } from "@/components/layout/DataTable";
 import { StudentTableType } from "./student.type";
 import { ColumnDef } from "@tanstack/react-table";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button"
 
 export const columns: ColumnDef<StudentTableType>[] = [
-  { accessorKey: "student_uuid", header: "Student UUID" },
+  // { accessorKey: "student_uuid", header: "Student UUID" },
   { accessorKey: "student_id", header: "Student ID" },
-  { accessorKey: "last_name", header: "Last Name" },
-  { accessorKey: "first_name", header: "First Name" },
-  { accessorKey: "middle_name", header: "Middle Name" },
-  { accessorKey: "gender_id", header: "Gender ID" },
+  // { accessorKey: "last_name", header: "Last Name" },
+  // { accessorKey: "first_name", header: "First Name" },
+  // { accessorKey: "middle_name", header: "Middle Name" },
+  {
+    id: "full_name",
+    header: "Full Name",
+    accessorFn: (row) => `${row.last_name.toUpperCase()}, ${row.first_name} ${row.middle_name}`,
+  },
+  // { accessorKey: "gender_id", header: "Gender ID" },
   { accessorKey: "dob", header: "Date of Birth" },
   { accessorKey: "contact_no", header: "Contact No." },
   { accessorKey: "email", header: "Email" },
-  { accessorKey: "provincial_addr", header: "Provincial Address" },
-  { accessorKey: "city_addr", header: "City Address" },
+  // { accessorKey: "provincial_addr", header: "Provincial Address" },
+  // { accessorKey: "city_addr", header: "City Address" },
   { accessorKey: "yr_admitted", header: "Year Admitted" },
   { accessorKey: "yr_residency", header: "Year Residency" },
   { accessorKey: "yr_graduated", header: "Year Graduated" },
-  { accessorKey: "is_HD", header: "Is HD" },
-  { accessorKey: "status", header: "Status" },
-  { accessorKey: "created_at", header: "Created At" },
-  { accessorKey: "updated_at", header: "Updated At" },
+  // { accessorKey: "is_HD", header: "Is HD" },
+  // { accessorKey: "status", header: "Status" },
+  // { accessorKey: "created_at", header: "Created At" },
+  // { accessorKey: "updated_at", header: "Updated At" },
 ];
 
-export const students: StudentTableType[] = [
-  {
-    student_uuid: "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
-    student_id: "2024-00101",
-    last_name: "Dela Cruz",
-    first_name: "Juan",
-    middle_name: "Santos",
-    gender_id: 1,
-    dob: "2003-05-14",
-    contact_no: "+639171234567",
-    email: "juan.delacruz@example.com",
-    provincial_addr: "Brgy. San Jose, Antipolo, Rizal",
-    city_addr: "123 Taft Ave, Ermita, Manila",
-    yr_admitted: 2021,
-    yr_residency: 4,
-    yr_graduated: 2025,
-    is_HD: false,
-    status: true,
-    created_at: "2021-08-15T08:30:00.000Z",
-    date_modified: "2024-01-10T10:15:00.000Z",
-  },
-  {
-    student_uuid: "b2c3d4e5-f6a7-8b9c-0d1e-2f3a4b5c6d7e",
-    student_id: "2024-00102",
-    last_name: "Santos",
-    first_name: "Maria",
-    middle_name: "Reyes",
-    gender_id: 2,
-    dob: "2004-11-22",
-    contact_no: "+639189876543",
-    email: "maria.santos@example.com",
-    provincial_addr: "Poblacion, San Fernando, Pampanga",
-    city_addr: "456 España Blvd, Sampaloc, Manila",
-    yr_admitted: 2022,
-    yr_residency: 3,
-    yr_graduated: 2026,
-    is_HD: true,
-    status: true,
-    created_at: "2022-08-10T09:00:00.000Z",
-    date_modified: "2024-02-01T14:45:00.000Z",
-  },
-];
+type StudentApiRecord = {
+  studentUuid: string;
+  studentId: string | null;
+  lastName: string;
+  firstName: string;
+  middleName: string | null;
+  genderId: number | null;
+  dob: string | null;
+  contactNo: string | null;
+  email: string | null;
+  provincialAddr: string | null;
+  cityAddr: string | null;
+  yrAdmitted: number;
+  yrResidency: number;
+  yrGraduated: number | null;
+  isHd: boolean;
+  status: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+function toStudentTableRecord(student: StudentApiRecord): StudentTableType {
+  return {
+    student_uuid: student.studentUuid,
+    student_id: student.studentId ?? "",
+    last_name: student.lastName,
+    first_name: student.firstName,
+    middle_name: student.middleName ?? "",
+    gender_id: student.genderId ?? 0,
+    dob: student.dob ? student.dob.slice(0, 10) : "",
+    contact_no: student.contactNo ?? "",
+    email: student.email ?? "",
+    provincial_addr: student.provincialAddr ?? "",
+    city_addr: student.cityAddr ?? "",
+    yr_admitted: student.yrAdmitted,
+    yr_residency: student.yrResidency,
+    yr_graduated: student.yrGraduated ?? 0,
+    is_HD: student.isHd,
+    status: student.status,
+    created_at: student.createdAt,
+    date_modified: student.updatedAt,
+  };
+}
 
 export default function StudentsPage(){
-    return (
-        <>
-            <div className="flex flex-col">
-                <h2 className="text-3xl font-bold text-primary mb-2">Student Record</h2>
-                <p className="mt-1 mb-8 text-[.95rem] text-stone-600">Manage, organize, and track student profiles.</p>
-                <DataTable
-                    columns={columns}
-                    data={students}
-                    dateKey="date_modified"
-                    searchPlaceholder="Search uuid, user, or action"
-                    exportFileName="orders"
-                    />
-            </div>
-        </>
-    );
+  const [students, setStudents] = useState<StudentTableType[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function fetchStudents() {
+      try {
+        const response = await fetch("/api/student", {
+          signal: controller.signal,
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          throw new Error(`Unable to fetch student records (${response.status})`);
+        }
+
+        const records: StudentApiRecord[] = await response.json();
+        setStudents(records.map(toStudentTableRecord));
+      } catch (requestError) {
+        if (requestError instanceof DOMException && requestError.name === "AbortError") {
+          return;
+        }
+
+        setError(requestError instanceof Error ? requestError.message : "Unable to fetch student records");
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void fetchStudents();
+    return () => controller.abort();
+  }, []);
+
+  return (
+      <>
+          <div className="flex flex-col">
+              <h2 className="text-3xl font-bold text-primary mb-2">Student Record</h2>
+              <p className="mt-1 mb-8 text-[.95rem] text-stone-600">Manage, organize, and track student profiles.</p>
+              {isLoading && <p>Loading student records...</p>}
+              {error && <p className="text-red-600">{error}</p>}
+              {/* <Button>Export</Button> */}
+              <DataTable
+                  columns={columns}
+                  data={students}
+                  dateKey="date_modified"
+                  searchPlaceholder="Search student"
+                  exportFileName="Student Records"
+                  />
+          </div>
+      </>
+  );
 }
