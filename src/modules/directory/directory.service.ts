@@ -80,9 +80,10 @@ export class DirectoryService implements OnModuleInit, OnModuleDestroy {
           void this.publish(type, absolutePath);
         });
       }
-      this.watcher.on('error', (error) =>
-        this.logger.error(`Directory watcher error: ${error.message}`),
-      );
+      this.watcher.on('error', (error: unknown) => {
+        const message = error instanceof Error ? error.message : String(error);
+        this.logger.error(`Directory watcher error: ${message}`);
+      });
       await new Promise<void>((resolve, reject) => {
         this.watcher!.once('ready', resolve);
         this.watcher!.once('error', reject);
