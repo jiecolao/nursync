@@ -50,7 +50,9 @@ export class AuditLogsService {
       data: {
         userAccId: body.userAccId,
         roleId: body.roleId,
+        adminName: "A1",
         action: body.action,
+        description: "",
       },
       include: activityLogInclude,
     });
@@ -81,6 +83,7 @@ export class AuditLogsService {
       data: {
         userAccId: body.userAccId,
         roleId: body.roleId,
+        adminName: "A1",
         studentName: body.studentName,
         fileAction: body.fileAction,
         fileModified: body.fileModified,
