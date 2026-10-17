@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../../integrations/prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
+import { HashService } from './hash.service';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -9,6 +9,7 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private hashService: HashService
   ) {}
 
   // -------------------------------------------------------------
@@ -25,8 +26,8 @@ export class AuthService {
     const user = await this.prisma.userAccount.findUnique({ where: { email } });
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
-    // 1. Verify password using bcrypt
-    const isMatch = await bcrypt.compare(pass, user.hashedPass);
+    // 1. Verify password using argon
+    const isMatch = await this.hashService.verify(user.hashedPass, pass)
     if (!isMatch) throw new UnauthorizedException('Invalid credentials');
 
     // 2. Generate tokens
