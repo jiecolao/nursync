@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../integrations/prisma/prisma.service';
 import { CreateAdminDto } from './dto/create-admin.dto';
 import { UpdateAdminDto } from './dto/update-admin.dto';
+import { HashService } from '../auth/hash.service';
 
 const adminSelect = {
   userId: true,
@@ -18,6 +19,7 @@ const adminSelect = {
     select: {
       userAccId: true,
       username: true,
+      email: true,
       status: true,
       createdAt: true,
       updatedAt: true,
@@ -39,7 +41,10 @@ const adminSelect = {
 
 @Injectable()
 export class AdminService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly hashService: HashService
+  ) {}
 
   getAllAdmins() {
     return this.prisma.user.findMany({
@@ -59,7 +64,10 @@ export class AdminService {
     return admin;
   }
 
-  createAdmin(body: CreateAdminDto) {
+  async createAdmin(body: CreateAdminDto) {
+
+    const hashed_pass = await this.hashService.hash(body.password);    
+
     return this.prisma.user.create({
       data: {
         userId: body.userId,
@@ -69,12 +77,13 @@ export class AdminService {
         middleName: body.middleName,
         suffix: body.suffix,
         genderId: body.genderId,
-        status: body.status,
         account: {
           create: {
             username: body.username,
-            hashPass: body.hashPass,
-            status: body.status,
+            email: body.email,
+            hashedPass: hashed_pass,
+            hashedRefreshToken: body.hashedRefreshToken,
+            status: true,
             role: {
               create: {
                 roleId: body.roleId,
@@ -90,6 +99,12 @@ export class AdminService {
   async updateAdmin(userId: string, body: UpdateAdminDto) {
     await this.getAdmin(userId);
 
+    if (!body.password) {
+      throw new BadRequestException('Password is required');
+    }
+
+    const hashed_pass = await this.hashService.hash(body.password);
+
     return this.prisma.user.update({
       where: { userId },
       data: {
@@ -99,12 +114,12 @@ export class AdminService {
         middleName: body.middleName,
         suffix: body.suffix,
         genderId: body.genderId,
-        status: body.status,
         account: {
           update: {
             username: body.username,
-            hashPass: body.hashPass,
-            status: body.status,
+            email: body.email,
+            hashedPass: hashed_pass,
+            hashedRefreshToken: body.hashedRefreshToken,
             role: body.roleId === undefined
               ? undefined
               : { update: { roleId: body.roleId } },
@@ -113,6 +128,38 @@ export class AdminService {
       },
       select: adminSelect,
     });
+  }
+
+  async updatePass(userId: string, pass: string) {
+    await this.getAdmin(userId);
+
+    const hashed_pass = await this.hashService.hash(pass);
+
+    return this.prisma.user.update({
+      where: { userId },
+      data: {
+        account: {
+          update: {
+            hashedPass: hashed_pass
+          }
+        }
+      }
+    })
+  }
+
+  async updateStatus(userId: string, status: boolean) {
+    await this.getAdmin(userId);
+
+    return this.prisma.user.update({
+      where: { userId },
+      data: {
+        account: {
+          update: {
+            status: status
+          }
+        }
+      }
+    })
   }
 
   async deleteAdmin(userId: string) {
