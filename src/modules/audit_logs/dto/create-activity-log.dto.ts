@@ -1,6 +1,6 @@
 import { IsInt, IsNotEmpty, IsString, MaxLength } from 'class-validator';
 
-export class CreateAuditLogDto {
+export class CreateActivityLogDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(36)

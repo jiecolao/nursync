@@ -1,7 +1,6 @@
 import {
   Body,
   Controller,
-  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -9,30 +8,42 @@ import {
   Post,
 } from '@nestjs/common';
 import { AuditLogsService } from './audit_logs.service';
-import { CreateAuditLogDto } from './dto/create-audit-log.dto';
+import { CreateActivityLogDto } from './dto/create-activity-log.dto';
+import { CreateFileModificationLogDto } from './dto/create-file-modification-log.dto';
 
 @Controller('audit-logs')
 export class AuditLogsController {
   constructor(private readonly auditLogsService: AuditLogsService) {}
 
-  @Get()
-  getAllLogs() {
-    return this.auditLogsService.getAllLogs();
+  @Get('activity')
+  getActivityLogs() {
+    return this.auditLogsService.getActivityLogs();
   }
 
-  @Get(':id')
-  getLog(@Param('id') id: string) {
-    return this.auditLogsService.getLog(id);
+  @Get('activity/:id')
+  getActivityLog(@Param('id') id: string) {
+    return this.auditLogsService.getActivityLog(id);
   }
 
-  @Post()
+  @Post('activity')
   @HttpCode(HttpStatus.CREATED)
-  createLog(@Body() log: CreateAuditLogDto) {
-    return this.auditLogsService.createLog(log);
+  createActivityLog(@Body() body: CreateActivityLogDto) {
+    return this.auditLogsService.createActivityLog(body);
   }
 
-  @Delete(':id')
-  deleteLog(@Param('id') id: string) {
-    return this.auditLogsService.deleteLog(id);
+  @Get('file-modifications')
+  getFileModificationLogs() {
+    return this.auditLogsService.getFileModificationLogs();
+  }
+
+  @Get('file-modifications/:id')
+  getFileModificationLog(@Param('id') id: string) {
+    return this.auditLogsService.getFileModificationLog(id);
+  }
+
+  @Post('file-modifications')
+  @HttpCode(HttpStatus.CREATED)
+  createFileModificationLog(@Body() body: CreateFileModificationLogDto) {
+    return this.auditLogsService.createFileModificationLog(body);
   }
 }

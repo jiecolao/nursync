@@ -1,24 +1,22 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../integrations/prisma/prisma.service';
-import { CreateAuditLogDto } from './dto/create-audit-log.dto';
+import { CreateActivityLogDto } from './dto/create-activity-log.dto';
+import { CreateFileModificationLogDto } from './dto/create-file-modification-log.dto';
 
-const auditLogInclude = {
-  user_account_role: {
+const activityLogInclude = {
+  role: true,
+  user: {
     include: {
-      userAccount: {
-        select: {
-          userAccId: true,
-          username: true,
-          user: {
-            select: {
-              userId: true,
-              lastName: true,
-              fastName: true,
-            },
-          },
-        },
-      },
-      role: true,
+      userAccount: true,
+    },
+  },
+} as const;
+
+const fileModificationLogInclude = {
+  role: true,
+  user: {
+    include: {
+      userAccount: true,
     },
   },
 } as const;
@@ -27,36 +25,68 @@ const auditLogInclude = {
 export class AuditLogsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  getAllLogs() {
-    return this.prisma.auditLog.findMany({
-      include: auditLogInclude,
+  getActivityLogs() {
+    return this.prisma.activityLog.findMany({
+      include: activityLogInclude,
       orderBy: { createdAt: 'desc' },
     });
   }
 
-  async getLog(auditUuid: string) {
-    const log = await this.prisma.auditLog.findUnique({
-      where: { auditUuid },
-      include: auditLogInclude,
+  async getActivityLog(activityUuid: string) {
+    const log = await this.prisma.activityLog.findUnique({
+      where: { activityUuid },
+      include: activityLogInclude,
     });
 
-    if (!log) throw new NotFoundException('Audit log not found');
+    if (!log) {
+      throw new NotFoundException('Activity log not found');
+    }
+
     return log;
   }
 
-  createLog(body: CreateAuditLogDto) {
-    return this.prisma.auditLog.create({
+  createActivityLog(body: CreateActivityLogDto) {
+    return this.prisma.activityLog.create({
       data: {
         userAccId: body.userAccId,
         roleId: body.roleId,
         action: body.action,
       },
-      include: auditLogInclude,
+      include: activityLogInclude,
     });
   }
 
-  async deleteLog(auditUuid: string) {
-    await this.getLog(auditUuid);
-    return this.prisma.auditLog.delete({ where: { auditUuid } });
+  getFileModificationLogs() {
+    return this.prisma.fileModificationLog.findMany({
+      include: fileModificationLogInclude,
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async getFileModificationLog(fileModUuid: string) {
+    const log = await this.prisma.fileModificationLog.findUnique({
+      where: { fileModUuid },
+      include: fileModificationLogInclude,
+    });
+
+    if (!log) {
+      throw new NotFoundException('File modification log not found');
+    }
+
+    return log;
+  }
+
+  createFileModificationLog(body: CreateFileModificationLogDto) {
+    return this.prisma.fileModificationLog.create({
+      data: {
+        userAccId: body.userAccId,
+        roleId: body.roleId,
+        studentName: body.studentName,
+        fileAction: body.fileAction,
+        fileModified: body.fileModified,
+        fileLoc: body.fileLoc,
+      },
+      include: fileModificationLogInclude,
+    });
   }
 }
