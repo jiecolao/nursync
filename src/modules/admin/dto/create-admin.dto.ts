@@ -1,9 +1,12 @@
 import {
   IsBoolean,
+  IsEmail,
   IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
+  Matches,
+  MinLength,
   MaxLength,
 } from 'class-validator';
 
@@ -46,16 +49,24 @@ export class CreateAdminDto {
   @IsNotEmpty()
   @MaxLength(64)
   username: string;
+  
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
 
   @IsString()
   @IsNotEmpty()
+  @MinLength(12, { message: 'Password must be at least 12 characters long' })
+  @MaxLength(128, { message: 'Password cannot exceed 128 characters' })
+  @Matches(/((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/, {
+    message: 'Password is too weak. It must include uppercase, lowercase, and numbers/special characters.',
+  })
+  password: string;
+
+  @IsString()
   @MaxLength(255)
-  hashPass: string;
+  hashedRefreshToken: string;
 
   @IsInt()
   roleId: number;
-
-  @IsOptional()
-  @IsBoolean()
-  status?: boolean;
 }
