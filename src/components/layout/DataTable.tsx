@@ -20,6 +20,7 @@ import {
   ArrowUpDown, CalendarIcon, ChevronLeft, ChevronRight,
   Download, Eye, Search, Settings2, X,
 } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -41,6 +42,27 @@ import {
 
 /* ---------- Types ---------- */
 
+export interface DataTableActionContext<TData> {
+  /** All rows passed to the table, before table filtering and pagination. */
+  data: TData[]
+  /** Currently selected rows. */
+  selectedRows: TData[]
+}
+
+export interface DataTableAction<TData> {
+  /** Stable key for React rendering. */
+  id: string
+  label: string
+  /** Pass a Lucide icon component, e.g. Download or Plus. */
+  icon?: LucideIcon
+  onClick: (context: DataTableActionContext<TData>) => void
+  variant?: React.ComponentProps<typeof Button>["variant"]
+  className?: string
+  /** Hide the action or compute visibility from the current table context. */
+  visible?: boolean | ((context: DataTableActionContext<TData>) => boolean)
+  disabled?: boolean | ((context: DataTableActionContext<TData>) => boolean)
+}
+
 export interface DataTableProps<TData> {
   /** Your column definitions. Set `meta: { exportable: false }` to leave a column out of exports. */
   columns: ColumnDef<TData, any>[]
@@ -58,6 +80,8 @@ export interface DataTableProps<TData> {
   onSelectionChange?: (rows: TData[]) => void
   /** Stable id per row (e.g. row => row.id). Recommended with selection so it survives filtering and sorting. */
   getRowId?: (row: TData, index: number) => string
+  /** Extra toolbar actions rendered after the built-in filters and before view/export controls. */
+  actions?: DataTableAction<TData>[]
 }
 
 type Density = "compact" | "comfortable"
@@ -75,6 +99,7 @@ export function DataTable<TData>({
   enableRowSelection = false,
   onSelectionChange,
   getRowId,
+  actions = [],
 }: DataTableProps<TData>) {
   const [globalFilter, setGlobalFilter] = React.useState("")
   const [sorting, setSorting] = React.useState<SortingState>([])
@@ -179,6 +204,10 @@ export function DataTable<TData>({
   const rows = table.getRowModel().rows
   const { pageIndex, pageSize } = table.getState().pagination
   const total = table.getFilteredRowModel().rows.length
+  const actionContext: DataTableActionContext<TData> = {
+    data,
+    selectedRows: table.getSelectedRowModel().flatRows.map((row) => row.original),
+  }
 
   return (
     <div className={cn("space-y-4", className)}>
@@ -223,7 +252,35 @@ export function DataTable<TData>({
           </Button>
         )}
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          {actions.map((action) => {
+            const visible =
+              typeof action.visible === "function"
+                ? action.visible(actionContext)
+                : action.visible ?? true
+            if (!visible) return null
+
+            const disabled =
+              typeof action.disabled === "function"
+                ? action.disabled(actionContext)
+                : action.disabled ?? false
+            const Icon = action.icon
+
+            return (
+              <Button
+                key={action.id}
+                type="button"
+                variant={action.variant ?? "outline"}
+                className={action.className}
+                disabled={disabled}
+                onClick={() => action.onClick(actionContext)}
+              >
+                {Icon && <Icon className="mr-2 size-4" aria-hidden="true" />}
+                {action.label}
+              </Button>
+            )
+          })}
+
           {/* View settings: which columns show */}
           <Popover>
             <PopoverTrigger >
