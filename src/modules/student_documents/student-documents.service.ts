@@ -66,7 +66,7 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
     await fs.mkdir(directory, { recursive: true });
     const stageDir = path.join(directory, `.upload-${randomUUID()}`);
     await fs.mkdir(stageDir, { recursive: false });
-    const staged: Array<{ stage: string; destination: string; backup?: string; relativePath: string; name: string }> = [];
+    const staged: Array<{ stage: string; destination: string; backup?: string; installed?: boolean; relativePath: string; name: string }> = [];
     try {
       for (const file of files) {
         const name = sanitize(path.basename(file.originalname));
@@ -88,6 +88,7 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
             if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
           }
           await fs.rename(item.stage, item.destination);
+          item.installed = true;
           const existing = await tx.studentDocument.findFirst({ where: { studentUuid: uuid, filepath: item.relativePath } });
           const record = existing
             ? await tx.studentDocument.update({ where: { studentDocId: existing.studentDocId }, data: { filename: item.name, filepath: item.relativePath, submittedAt: new Date(), docuId: categoryRecord.docuId, docuStatusId: status.docuStatusId } })
@@ -106,7 +107,7 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
     } catch (error) {
       for (const item of [...staged].reverse()) {
         try {
-          await fs.rm(item.destination, { force: true });
+          if (item.installed) await fs.rm(item.destination, { force: true });
           if (item.backup) await fs.rename(item.backup, item.destination);
         } catch (cleanupError) {
           this.logger.error(`Upload compensation failed for ${item.destination}: ${String(cleanupError)}`);
