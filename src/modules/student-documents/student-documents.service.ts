@@ -86,7 +86,9 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
     const target = path.resolve(process.cwd(), doc.filepath);
     if (!target.startsWith(this.root + path.sep)) throw new BadRequestException('Document path is outside the managed directory');
     await fs.access(target);
-    return new StreamableFile(createReadStream(target), { disposition: `inline; filename="${path.basename(doc.filename ?? target).replace(/["\\\r\n]/g, '_')}"` });
+    const extension = path.extname(target).toLowerCase();
+    const type = extension === '.pdf' ? 'application/pdf' : extension === '.txt' ? 'text/plain; charset=utf-8' : 'application/octet-stream';
+    return new StreamableFile(createReadStream(target), { type, disposition: `inline; filename="${path.basename(doc.filename ?? target).replace(/["\\\r\n]/g, '_')}"` });
   }
 
   async delete(uuid: string, docId: string) {
