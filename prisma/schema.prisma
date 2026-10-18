@@ -209,7 +209,7 @@ model StudentDocument {
 model DocumentCategories {
   docuId Int @id @map("docu_id") @db.Int
 
-  docuName String @unique @map("docu_name") @db.VarChar(20)
+  docuName String @unique @map("docu_name") @db.VarChar(50)
 
   status Boolean @default(true)
 
