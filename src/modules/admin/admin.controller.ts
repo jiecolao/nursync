@@ -1,6 +1,8 @@
 import {
-  Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Put, UseGuards,
+  Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Put, UseGuards, Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
+type AuthenticatedRequest = Request & { user: { sub: string } };
 import { AdminService } from './admin.service';
 import { CreateAdminDto } from './dto/create-admin.dto';
 import { UpdateAdminDto } from './dto/update-admin.dto';
@@ -24,13 +26,13 @@ export class AdminController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @RequirePermissions('user_write')
-  createAdmin(@Body() admin: CreateAdminDto) { return this.adminService.createAdmin(admin); }
+  createAdmin(@Body() admin: CreateAdminDto, @Req() req: AuthenticatedRequest) { return this.adminService.createAdmin(admin, req.user.sub); }
 
   @Put(':id')
   @RequirePermissions('user_write')
-  updateAdmin(@Param('id') id: string, @Body() admin: UpdateAdminDto) { return this.adminService.updateAdmin(id, admin); }
+  updateAdmin(@Param('id') id: string, @Body() admin: UpdateAdminDto, @Req() req: AuthenticatedRequest) { return this.adminService.updateAdmin(id, admin, req.user.sub); }
 
   @Delete(':id')
   @RequireRoles('Superadmin')
-  deleteAdmin(@Param('id') id: string) { return this.adminService.deleteAdmin(id); }
+  deleteAdmin(@Param('id') id: string, @Req() req: AuthenticatedRequest) { return this.adminService.deleteAdmin(id, req.user.sub); }
 }
