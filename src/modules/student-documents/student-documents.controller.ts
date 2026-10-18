@@ -1,4 +1,4 @@
-import { BadRequestException, Controller, Delete, Get, Param, Post, UploadedFiles, UseInterceptors } from '@nestjs/common';
+import { BadRequestException, Controller, Delete, Get, Param, Post, Query, UploadedFiles, UseInterceptors } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { StudentDocumentsService } from './student-documents.service';
 
@@ -17,9 +17,8 @@ export class StudentDocumentsController {
       callback(null, true);
     },
   }))
-  upload(@Param('uuid') uuid: string, @UploadedFiles() files: Express.Multer.File[], @Param() _params: Record<string, string>, @UploadedFiles() _unused?: Express.Multer.File[]) {
-    // Category is supplied as a query parameter by the uploader.
-    return this.documents.upload(uuid, (arguments as any).category ?? 'Others', files);
+  upload(@Param('uuid') uuid: string, @Query('category') category: string, @UploadedFiles() files: Express.Multer.File[]) {
+    return this.documents.upload(uuid, category, files);
   }
 
   @Delete(':docId')
