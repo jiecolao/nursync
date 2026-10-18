@@ -38,7 +38,7 @@ export default function OtpPage() {
   }, [secondsLeft])
 
   // Someone landing here directly has no email to verify, so send them back.
-//   if (!email) return <Navigate to="/forgot-password" replace />
+  if (!email) return <Navigate to="/forgot-password" replace />
 
   const code = digits.join("")
   const isComplete = code.length === CODE_LENGTH
