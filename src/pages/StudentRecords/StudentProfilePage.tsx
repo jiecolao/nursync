@@ -1,9 +1,8 @@
 "use client";
 
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from "react";
 import { 
-  Ban, Camera, Pencil, RotateCcw, Save, X,
-  KeyRound, RotateCcwKey, UserKey
+  Camera, Pencil, RotateCcw, Save, X, Trash
  } from "lucide-react";
 
 import {
@@ -20,7 +19,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Field } from "@/components/layout/Field";
 import {
   Select,
   SelectContent,
@@ -31,6 +30,9 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { useNavigate, useParams } from "react-router-dom";
+import { formatDateTime, formatDate } from "@/lib/utils";
+import { notify } from "@/components/layout/Toasty";
 
 /* ------------------------------------------------------------------ */
 /* Types (mirrors the ERD)                                             */
@@ -60,34 +62,35 @@ interface Student {
   updated_at: string; // ISO
 }
 
-// TODO: replace with your gender lookup table (fetched from the API).
-const GENDERS = [
-  { id: 1, label: "Male" },
-  { id: 2, label: "Female" },
-  { id: 3, label: "Other" },
-];
+type ApiStudent = {
+  studentUuid: string;
+  studentId: string | null;
+  lastName: string;
+  firstName: string;
+  middleName: string | null;
+  genderId: number | null;
+  dob: string | null;
+  contactNo: string | null;
+  email: string | null;
+  provincialAddr: string | null;
+  cityAddr: string | null;
+  yrAdmitted: number;
+  yrResidency: number;
+  yrGraduated: number | null;
+  isNonGraduate: boolean;
+  status: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
 
-// TODO: replace with data from your API.
-const INITIAL_STUDENT: Student = {
-  image: null,
-  student_uuid: "3f2b8c1e-7a4d-4e9b-9c6a-1d2e5f8a0b34",
-  student_id: "2023-00123",
-  last_name: "Dela Cruz",
-  first_name: "Juan",
-  middle_name: "Santos",
-  gender_id: 1,
-  dob: "2003-05-14",
-  contact_no: "0917 123 4567",
-  email: "juan.delacruz@example.com",
-  provincial_addr: "Brgy. San Isidro, Tarlac City, Tarlac",
-  city_addr: "Unit 4B, Katipunan Ave., Quezon City",
-  yr_admitted: 2023,
-  yr_residency: 2,
-  yr_graduated: null,
-  is_non_graduate: false,
-  status: "active",
-  created_at: "2023-06-01T08:30:00.000Z",
-  updated_at: "2026-09-12T14:05:00.000Z",
+type Gender = { genderId: number; genderName: string };
+
+const EMPTY_STUDENT: Student = {
+  image: null, student_uuid: "", student_id: "", last_name: "", first_name: "",
+  middle_name: "", gender_id: null, dob: "", contact_no: "", email: "",
+  provincial_addr: "", city_addr: "", yr_admitted: null, yr_residency: null,
+  yr_graduated: null, is_non_graduate: false, status: "active",
+  created_at: "", updated_at: "",
 };
 
 const STATUS_STYLES: Record<Status, string> = {
@@ -104,36 +107,6 @@ const SECONDARY = "var(--color-secondary)";
 /* Small helpers                                                       */
 /* ------------------------------------------------------------------ */
 
-const formatDateTime = (iso: string) =>
-  new Date(iso).toLocaleString("en-PH", { dateStyle: "medium", timeStyle: "short" });
-
-const formatDate = (d: string) =>
-  d ? new Date(`${d}T00:00:00`).toLocaleDateString("en-PH", { dateStyle: "long" }) : "";
-
-function Field({
-  label,
-  htmlFor,
-  error,
-  className = "",
-  children,
-}: {
-  label: string;
-  htmlFor?: string;
-  error?: string;
-  className?: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className={`space-y-1.5 ${className}`}>
-      <Label htmlFor={htmlFor} className="text-sm font-medium text-neutral-600">
-        {label}
-      </Label>
-      {children}
-      {error && <p className="text-sm text-red-600">{error}</p>}
-    </div>
-  );
-}
-
 function ReadValue({ value, mono = false }: { value?: string | number | null; mono?: boolean }) {
   const empty = value === null || value === undefined || value === "";
   return (
@@ -147,6 +120,39 @@ function ReadValue({ value, mono = false }: { value?: string | number | null; mo
   );
 }
 
+function toStudent(student: ApiStudent): Student {
+  return {
+    image: null,
+    student_uuid: student.studentUuid,
+    student_id: student.studentId ?? "",
+    last_name: student.lastName,
+    first_name: student.firstName,
+    middle_name: student.middleName ?? "",
+    gender_id: student.genderId,
+    dob: student.dob ? student.dob.slice(0, 10) : "",
+    contact_no: student.contactNo ?? "",
+    email: student.email ?? "",
+    provincial_addr: student.provincialAddr ?? "",
+    city_addr: student.cityAddr ?? "",
+    yr_admitted: student.yrAdmitted,
+    yr_residency: student.yrResidency,
+    yr_graduated: student.yrGraduated,
+    is_non_graduate: student.isNonGraduate,
+    status: student.status ? "active" : "disabled",
+    created_at: student.createdAt,
+    updated_at: student.updatedAt,
+  };
+}
+
+function getApiError(body: unknown, fallback: string) {
+  if (typeof body === "object" && body !== null && "message" in body) {
+    const message = (body as { message?: string | string[] }).message;
+    if (Array.isArray(message)) return message.join(", ");
+    if (message) return message;
+  }
+  return fallback;
+}
+
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="space-y-4">
@@ -156,7 +162,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
         </h3>
         <Separator className="flex-1" />
       </div>
-      <div className="grid gap-x-6 gap-y-4 md:grid-cols-6">{children}</div>
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">{children}</div>
     </section>
   );
 }
@@ -166,18 +172,63 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 /* ------------------------------------------------------------------ */
 
 export default function StudentProfilePage() {
-  const [saved, setSaved] = useState<Student>(INITIAL_STUDENT);
-  const [draft, setDraft] = useState<Student>(INITIAL_STUDENT);
+  const { studentUuid } = useParams<{ studentUuid: string }>();
+  const [saved, setSaved] = useState<Student>(EMPTY_STUDENT);
+  const [draft, setDraft] = useState<Student>(EMPTY_STUDENT);
+  const [genders, setGenders] = useState<Gender[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [confirmOpen, setConfirmOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!studentUuid) {
+      setError("Student ID is missing.");
+      setLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    async function loadProfile() {
+      try {
+        const [studentResponse, gendersResponse] = await Promise.all([
+          fetch(`/api/student/${studentUuid}`, { credentials: "include", signal: controller.signal }),
+          fetch("/api/lookups/genders", { credentials: "include", signal: controller.signal }),
+        ]);
+        if (!studentResponse.ok) throw new Error(`Unable to load student profile (${studentResponse.status}).`);
+        if (!gendersResponse.ok) throw new Error(`Unable to load gender options (${gendersResponse.status}).`);
+
+        const apiStudent = await studentResponse.json() as ApiStudent;
+        const nextStudent = toStudent(apiStudent);
+        setSaved(nextStudent);
+        setDraft(nextStudent);
+        setGenders(await gendersResponse.json() as Gender[]);
+      } catch (cause) {
+        if (cause instanceof DOMException && cause.name === "AbortError") return;
+        setError(cause instanceof Error ? cause.message : "Unable to load student profile.");
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    }
+
+    void loadProfile();
+    return () => controller.abort();
+  }, [studentUuid]);
 
   const isDisabled = saved.status === "disabled";
   const s = editing ? draft : saved; // what the form currently shows
 
   const set = <K extends keyof Student>(key: K, value: Student[K]) =>
     setDraft((d) => ({ ...d, [key]: value }));
+
+  const fieldClass = <K extends keyof Student>(key: K) =>
+    editing && draft[key] !== saved[key]
+      ? "bg-amber-50 border-amber-300 focus-visible:ring-amber-300"
+      : "";
 
   const numberChange = (key: "yr_admitted" | "yr_residency" | "yr_graduated") => (
     e: React.ChangeEvent<HTMLInputElement>
@@ -210,20 +261,68 @@ export default function StudentProfilePage() {
 
   const save = async () => {
     if (!validate()) return;
-    // TODO: await fetch(`/api/students/${draft.student_uuid}`, { method: "PATCH", body: ... })
-    const next = { ...draft, updated_at: new Date().toISOString() };
-    setSaved(next);
-    setDraft(next);
-    setEditing(false);
+    setSaving(true);
+    try {
+      const response = await fetch(`/api/student/${draft.student_uuid}`, {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId: draft.student_id || undefined,
+          lastName: draft.last_name.trim(),
+          firstName: draft.first_name.trim(),
+          middleName: draft.middle_name.trim() || undefined,
+          genderId: draft.gender_id ?? undefined,
+          dob: draft.dob || undefined,
+          contactNo: draft.contact_no.trim() || undefined,
+          email: draft.email.trim() || undefined,
+          provincialAddr: draft.provincial_addr.trim() || undefined,
+          cityAddr: draft.city_addr.trim() || undefined,
+          yrAdmitted: draft.yr_admitted,
+          yrResidency: draft.yr_residency,
+          yrGraduated: draft.yr_graduated ?? undefined,
+          isNonGraduate: draft.is_non_graduate,
+        }),
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(getApiError(body, "Unable to save student profile."));
+      }
+      const next = toStudent(await response.json() as ApiStudent);
+      setSaved(next);
+      setDraft(next);
+      setEditing(false);
+      notify.success("Profile saved");
+    } catch (cause) {
+      notify.error("Unable to save profile", {
+        description: cause instanceof Error ? cause.message : "Please try again.",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const setStatus = async (status: Status) => {
-    // TODO: await fetch(`/api/students/${saved.student_uuid}/status`, { method: "PATCH", ... })
-    setSaved((p) => ({ ...p, status, updated_at: new Date().toISOString() }));
-    setConfirmOpen(false);
+    try {
+      const response = await fetch(`/api/student/${saved.student_uuid}`, {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: status !== "disabled" }),
+      });
+      if (!response.ok) throw new Error("Unable to update student status.");
+      const next = toStudent(await response.json() as ApiStudent);
+      setSaved(next);
+      setDraft(next);
+      setConfirmOpen(false);
+    } catch (cause) {
+      notify.error("Unable to update status", {
+        description: cause instanceof Error ? cause.message : "Please try again.",
+      });
+    }
   };
 
-  const pickImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const pickImage = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     // TODO: upload `file` to storage and save the returned URL instead of a local preview.
@@ -235,9 +334,17 @@ export default function StudentProfilePage() {
 
   const fullName = [s.first_name, s.middle_name, s.last_name].filter(Boolean).join(" ");
   const initials = `${saved.first_name[0] ?? ""}${saved.last_name[0] ?? ""}`.toUpperCase();
-  const genderLabel = GENDERS.find((g) => g.id === s.gender_id)?.label;
+  const genderLabel = genders.find((g) => g.genderId === s.gender_id)?.genderName;
 
   /* ----------------------------- render --------------------------- */
+
+  if (loading) {
+    return <p className="p-6 text-neutral-600">Loading student profile...</p>;
+  }
+
+  if (error) {
+    return <p role="alert" className="p-6 text-red-600">{error}</p>;
+  }
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: SECONDARY }}>
@@ -292,7 +399,7 @@ export default function StudentProfilePage() {
                 </Badge>
               )}
             </div>
-            <p className="text-sm opacity-80">Role: {saved.student_id}</p>
+            <p className="text-sm opacity-80">Student ID: {saved.student_id}</p>
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -300,10 +407,11 @@ export default function StudentProfilePage() {
               <>
                 <Button
                   onClick={save}
+                  disabled={saving}
                   className="hover:opacity-90"
                   style={{ backgroundColor: SECONDARY, color: PRIMARY }}
                 >
-                  <Save className="size-4" /> Save changes
+                  <Save className="size-4" /> {saving ? "Saving..." : "Save changes"}
                 </Button>
                 <Button
                   variant="outline"
@@ -324,13 +432,6 @@ export default function StudentProfilePage() {
             ) : (
               <>
                 <Button
-                  variant="outline"
-                  onClick={() => setConfirmOpen(true)}
-                  className="border-white/40 bg-mustard text-black hover:bg-mustard/70 hover:text-white"
-                >
-                  <KeyRound className="size-4" /> Change Password
-                </Button>
-                <Button
                   onClick={startEdit}
                   className="hover:opacity-90"
                   style={{ backgroundColor: SECONDARY, color: PRIMARY }}
@@ -340,9 +441,9 @@ export default function StudentProfilePage() {
                 <Button
                   variant="outline"
                   onClick={() => setConfirmOpen(true)}
-                  className="border-white/40 bg-red-500 text-inherit hover:bg-white/10 hover:text-inherit"
+                  className="border-white/40 bg-red-500 text-inherit hover:bg-red-700 hover:text-inherit"
                 >
-                  <Ban className="size-4" /> Disable
+                  <Trash className="size-4" /> Delete
                 </Button>
               </>
             )}
@@ -369,21 +470,21 @@ export default function StudentProfilePage() {
           <Section title="Personal information">
             <Field label="Last name" htmlFor="last_name" error={errors.last_name} className="md:col-span-2">
               {editing ? (
-                <Input id="last_name" value={s.last_name} onChange={(e) => set("last_name", e.target.value)} />
+                <Input id="last_name" className={fieldClass("last_name")} value={s.last_name} onChange={(e) => set("last_name", e.target.value)} />
               ) : (
                 <ReadValue value={s.last_name} />
               )}
             </Field>
             <Field label="First name" htmlFor="first_name" error={errors.first_name} className="md:col-span-2">
               {editing ? (
-                <Input id="first_name" value={s.first_name} onChange={(e) => set("first_name", e.target.value)} />
+                <Input id="first_name" className={fieldClass("first_name")} value={s.first_name} onChange={(e) => set("first_name", e.target.value)} />
               ) : (
                 <ReadValue value={s.first_name} />
               )}
             </Field>
             <Field label="Middle name" htmlFor="middle_name" className="md:col-span-2">
               {editing ? (
-                <Input id="middle_name" value={s.middle_name} onChange={(e) => set("middle_name", e.target.value)} />
+                <Input id="middle_name" className={fieldClass("middle_name")} value={s.middle_name} onChange={(e) => set("middle_name", e.target.value)} />
               ) : (
                 <ReadValue value={s.middle_name} />
               )}
@@ -395,13 +496,15 @@ export default function StudentProfilePage() {
                   value={s.gender_id ? String(s.gender_id) : ""}
                   onValueChange={(v) => set("gender_id", Number(v))}
                 >
-                  <SelectTrigger id="gender_id" className="w-full">
-                    <SelectValue placeholder="Select gender" />
+                  <SelectTrigger id="gender_id" className={`w-full ${fieldClass("gender_id")}`}>
+                    <SelectValue placeholder="Select gender">
+                      {genderLabel ?? "Select gender"}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    {GENDERS.map((g) => (
-                      <SelectItem key={g.id} value={String(g.id)}>
-                        {g.label}
+                    {genders.map((g) => (
+                      <SelectItem key={g.genderId} value={String(g.genderId)}>
+                        {g.genderName}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -412,7 +515,7 @@ export default function StudentProfilePage() {
             </Field>
             <Field label="Date of birth" htmlFor="dob" error={errors.dob} className="md:col-span-3">
               {editing ? (
-                <Input id="dob" type="date" value={s.dob} onChange={(e) => set("dob", e.target.value)} />
+                <Input id="dob" type="date" className={fieldClass("dob")} value={s.dob} onChange={(e) => set("dob", e.target.value)} />
               ) : (
                 <ReadValue value={formatDate(s.dob)} />
               )}
@@ -425,6 +528,7 @@ export default function StudentProfilePage() {
                 <Input
                   id="contact_no"
                   type="tel"
+                  className={fieldClass("contact_no")}
                   value={s.contact_no}
                   onChange={(e) => set("contact_no", e.target.value)}
                 />
@@ -434,7 +538,7 @@ export default function StudentProfilePage() {
             </Field>
             <Field label="Email" htmlFor="email" error={errors.email} className="md:col-span-3">
               {editing ? (
-                <Input id="email" type="email" value={s.email} onChange={(e) => set("email", e.target.value)} />
+                <Input id="email" type="email" className={fieldClass("email")} value={s.email} onChange={(e) => set("email", e.target.value)} />
               ) : (
                 <ReadValue value={s.email} />
               )}
@@ -444,6 +548,7 @@ export default function StudentProfilePage() {
                 <Textarea
                   id="provincial_addr"
                   rows={3}
+                  className={fieldClass("provincial_addr")}
                   value={s.provincial_addr}
                   onChange={(e) => set("provincial_addr", e.target.value)}
                 />
@@ -456,6 +561,7 @@ export default function StudentProfilePage() {
                 <Textarea
                   id="city_addr"
                   rows={3}
+                  className={fieldClass("city_addr")}
                   value={s.city_addr}
                   onChange={(e) => set("city_addr", e.target.value)}
                 />
@@ -466,29 +572,41 @@ export default function StudentProfilePage() {
           </Section>
 
           <Section title="Academic record">
+            <Field label="Student ID" htmlFor="student_id" className="md:col-span-2">
+              {editing ? (
+                <Input
+                  id="student_id"
+                  className={fieldClass("student_id")}
+                  value={s.student_id}
+                  onChange={(e) => set("student_id", e.target.value)}
+                />
+              ) : (
+                <ReadValue value={s.student_id} />
+              )}
+            </Field>
             <Field label="Year admitted" htmlFor="yr_admitted" className="md:col-span-2">
               {editing ? (
-                <Input id="yr_admitted" type="number" value={s.yr_admitted ?? ""} onChange={numberChange("yr_admitted")} />
+                <Input id="yr_admitted" type="number" className={fieldClass("yr_admitted")} value={s.yr_admitted ?? ""} onChange={numberChange("yr_admitted")} />
               ) : (
                 <ReadValue value={s.yr_admitted} />
               )}
             </Field>
             <Field label="Years in residency" htmlFor="yr_residency" className="md:col-span-2">
               {editing ? (
-                <Input id="yr_residency" type="number" value={s.yr_residency ?? ""} onChange={numberChange("yr_residency")} />
+                <Input id="yr_residency" type="number" className={fieldClass("yr_residency")} value={s.yr_residency ?? ""} onChange={numberChange("yr_residency")} />
               ) : (
                 <ReadValue value={s.yr_residency} />
               )}
             </Field>
             <Field label="Year graduated" htmlFor="yr_graduated" className="md:col-span-2">
               {editing ? (
-                <Input id="yr_graduated" type="number" value={s.yr_graduated ?? ""} onChange={numberChange("yr_graduated")} />
+                <Input id="yr_graduated" type="number" className={fieldClass("yr_graduated")} value={s.yr_graduated ?? ""} onChange={numberChange("yr_graduated")} />
               ) : (
                 <ReadValue value={s.yr_graduated} />
               )}
             </Field>
             <Field label="Non Graduate?" htmlFor="is_non_graduating" className="md:col-span-3">
-              <div className="flex min-h-9 items-center gap-3">
+              <div className={`flex min-h-9 items-center gap-3 rounded-md px-2 ${fieldClass("is_non_graduate")}`}>
                 <Switch
                   id="is_non_graduating"
                   checked={s.is_non_graduate}
@@ -512,9 +630,6 @@ export default function StudentProfilePage() {
             <Field label="Student UUID" className="md:col-span-6">
               <ReadValue value={saved.student_uuid} mono />
             </Field>
-            <Field label="Student ID" className="md:col-span-2">
-              <ReadValue value={saved.student_id} />
-            </Field>
             <Field label="Created" className="md:col-span-2">
               <ReadValue value={formatDateTime(saved.created_at)} />
             </Field>
@@ -529,19 +644,36 @@ export default function StudentProfilePage() {
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Disable this account?</AlertDialogTitle>
+            <AlertDialogTitle>Delete student record?</AlertDialogTitle>
             <AlertDialogDescription>
-              {saved.first_name} {saved.last_name} will be marked as disabled and the profile
-              will be locked from editing. You can enable the account again at any time.
+              This will permanently delete {saved.last_name}, {saved.first_name}'s record 
+              including their documents. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Keep active</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => setStatus("disabled")}
+              onClick={async () => {
+                try {
+                  const response = await fetch(`/api/student/${saved.student_uuid}`, {
+                    method: "DELETE",
+                    credentials: "include",
+                  });
+                  if (!response.ok) {
+                    const body = await response.json().catch(() => null);
+                    throw new Error(getApiError(body, "Unable to delete student profile."));
+                  }
+                  notify.success("Student deleted");
+                  navigate("/students");
+                } catch (cause) {
+                  notify.error("Unable to delete student", {
+                    description: cause instanceof Error ? cause.message : "Please try again.",
+                  });
+                }
+              }}
               className="bg-red-600 text-white hover:bg-red-700"
             >
-              Disable account
+              Delete account
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
