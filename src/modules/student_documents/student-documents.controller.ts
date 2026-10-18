@@ -48,9 +48,10 @@ export class StudentDocumentsController {
     @Param('uuid') uuid: string,
     @UploadedFiles() files: Express.Multer.File[],
     @Query('category') category: string,
+    @Req() req: AuthenticatedRequest,
   ) {
     if (!files?.length) throw new BadRequestException('Select at least one file.');
-    return this.documents.upload(uuid, files, category);
+    return this.documents.upload(uuid, files, category, req.user.sub);
   }
 
   @Delete(':docId')
