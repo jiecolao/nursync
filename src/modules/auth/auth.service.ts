@@ -4,10 +4,11 @@ import { JwtService } from '@nestjs/jwt';
 import { HashService } from './hash.service';
 import * as crypto from 'crypto';
 import nodemailer from 'nodemailer';
+import { AuditLogsService } from '../audit_logs/audit_logs.service';
 
 @Injectable()
 export class AuthService {
-  constructor(private prisma: PrismaService, private jwtService: JwtService, private hashService: HashService) {}
+  constructor(private prisma: PrismaService, private jwtService: JwtService, private hashService: HashService, private auditLogs: AuditLogsService) {}
 
   private hashToken(token: string): string { return crypto.createHash('sha256').update(token).digest('hex'); }
 
@@ -51,7 +52,13 @@ export class AuthService {
     const payload = await this.getClaims(userAccId);
     const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
     const refreshToken = this.jwtService.sign({ sub: userAccId, email: payload.email, purpose: 'refresh' }, { expiresIn: '7d' });
-    await this.prisma.userAccount.update({ where: { userAccId }, data: { hashedRefreshToken: this.hashToken(refreshToken) } });
+    await this.prisma.$transaction(async (tx) => {
+      const actor = await this.auditLogs.resolveActorInTransaction(tx, userAccId);
+      await tx.userAccount.update({ where: { userAccId }, data: { hashedRefreshToken: this.hashToken(refreshToken) } });
+      await this.auditLogs.createActivityLogInTransaction(tx, {
+        userAccId: actor.userAccId, roleId: actor.roleId, action: 'auth.login',
+      }, actor.adminName, JSON.stringify({ result: 'success' }));
+    });
     return { accessToken, refreshToken, user: { id: userAccId, email: payload.email, role: payload.role, roles: payload.roles, permissions: payload.permissions } };
   }
 
