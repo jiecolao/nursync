@@ -5,7 +5,7 @@ export async function seedDocumentStatus(prisma: PrismaClient) {
     data: [
       { docuStatusId: 1, docuStatusName: "Pending" },
       { docuStatusId: 2, docuStatusName: "Approved" },
-      { docuStatusId: 3, docuStatusName: "Rejected" },
+      { docuStatusId: 3, docuStatusName: "Trashed" },
     ],
     skipDuplicates: true,
   });
