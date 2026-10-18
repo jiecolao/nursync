@@ -41,7 +41,9 @@ import { useState, useEffect } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { DialogBox } from "./DialogBox"
 import { notify } from "./Toasty"
-import { pageTitles } from "@/pages/MainLayout" 
+import { pageTitles } from "@/pages/MainLayout"
+import { useAuth } from "@/components/auth/ProtectedRoute"
+import { authRequest } from "@/lib/auth" 
 
 /* -------------------------------------------------------------------------- */
 /*  Data                                                                       */
@@ -84,8 +86,6 @@ const items3: NavItem[] = [
   { title: "Help", url: "/help", icon: LifeBuoy },
 ]
 
-// Replace with the signed-in user from your auth state.
-const user = { name: "Maria Santos", role: "Registrar" }
 
 const initials = (name: string) =>
   name
@@ -287,19 +287,13 @@ export default function AppSidebar() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { pathname } = useLocation();
   const navigate = useNavigate();
+  const { user, refresh } = useAuth();
 
   const handleLogout = async () => {
     try {
-      const response = await fetch("/api/auth/logout", {
-        method: "POST",
-        credentials: "include",
-      })
-
-      if (!response.ok) {
-        throw new Error(`Logout failed (${response.status})`)
-      }
-
-      navigate("/login")
+      await authRequest("/auth/logout", { method: "POST" })
+      await refresh()
+      navigate("/login", { replace: true })
     } catch (error) {
       notify.error("Unable to log out", {
         description:
@@ -334,20 +328,20 @@ export default function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        <NavGroup items={items1} />
-        <NavGroup label="Administration" items={items2} />
+        <NavGroup items={items1.filter(item => item.url !== "/students" || user?.permissions.students_read).filter(item => item.url !== "/directory" || user?.permissions.students_read)} />
+        <NavGroup label="Administration" items={items2.filter(item => item.url === "/system-users" ? user?.permissions.user_read : user?.permissions.logs_read)} />
         <NavGroup label="Support & Settings" items={items3} />
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border p-2">
         <div className="flex items-center gap-2 pb-1">
           <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-sidebar-accent text-xs font-medium">
-            {initials(user.name)}
+            {initials(user?.email ?? "User")}
           </div>
           <div className="min-w-0 leading-tight group-data-[collapsible=icon]:hidden">
-            <p className="truncate text-sm">{user.name}</p>
+            <p className="truncate text-sm">{user?.email ?? "User"}</p>
             <p className="truncate text-xs text-sidebar-foreground/60">
-              {user.role}
+              {user?.role ?? "No role"}
             </p>
           </div>
         </div>
