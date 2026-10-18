@@ -84,7 +84,9 @@ export class AdminService {
       throw new BadRequestException('Password is required when creating an account');
     const hashedPass = await this.hashService.hash(body.password);
     const permissions = normalizePermissions(body.permissions);
-    return this.prisma.user.create({
+    return this.prisma.$transaction(async (tx) => {
+      const actor = await this.LogsService.resolveActorInTransaction(tx, actorUserId);
+      const created = await tx.user.create({
       data: {
         ...(body.userId ? { userId: body.userId } : {}),
         facultyId: body.facultyId,
@@ -114,6 +116,9 @@ export class AdminService {
         },
       },
       select: adminSelect,
+    });
+      await this.LogsService.createActivityLogInTransaction(tx, { userAccId: actor.userAccId, roleId: actor.roleId, action: 'admin.create' }, actor.adminName, JSON.stringify({ userId: created.userId, username: body.username }));
+      return created;
     });
   }
 
