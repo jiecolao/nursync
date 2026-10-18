@@ -77,15 +77,21 @@ export default function StudentDocumentsPanel({
   );
 
   const remove = async (doc: DocumentRecord) => {
-    const response = await fetch(
-      `/api/students/${encodeURIComponent(studentUuid)}/documents/${encodeURIComponent(doc.studentDocId)}`,
-      { method: 'DELETE', credentials: 'include' },
-    );
-    if (!response.ok) {
+    try {
+      const response = await fetch(
+        `/api/students/${encodeURIComponent(studentUuid)}/documents/${encodeURIComponent(doc.studentDocId)}`,
+        { method: 'DELETE', credentials: 'include' },
+      );
+
+      if (!response.ok) {
+        setError('Unable to delete document.');
+        return;
+      }
+
+      await refresh();
+    } catch (err) {
       setError('Unable to delete document.');
-      return;
     }
-    await refresh();
   };
 
   return (
