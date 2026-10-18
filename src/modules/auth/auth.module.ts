@@ -10,12 +10,12 @@ import { HashService } from './hash.service';
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'your-fallback-secret-key',
+      secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: '15m' },
     }),
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, HashService],
-  exports: [AuthService],
+  exports: [AuthService, JwtModule, PassportModule],
 })
 export class AuthModule {}
