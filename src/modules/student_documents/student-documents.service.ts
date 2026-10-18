@@ -147,10 +147,86 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  async listTrash() {
+    const trashedStatus = await this.prisma.documentStatus.findFirst({ where: { docuStatusName: 'Trashed' } });
+    if (!trashedStatus) throw new BadRequestException('The "Trashed" document status is not configured.');
+    return this.prisma.studentDocument.findMany({
+      where: { docuStatusId: trashedStatus.docuStatusId },
+      include: { student: true, documentCategories: true, documentStatus: true },
+      orderBy: { updatedAt: 'desc' },
+    });
+  }
+
+  async restoreFromTrash(studentDocId: string) {
+    const record = await this.prisma.studentDocument.findUnique({
+      where: { studentDocId },
+      include: { student: true, documentCategories: true, documentStatus: true },
+    });
+    if (!record || record.documentStatus.docuStatusName !== 'Trashed') throw new NotFoundException('Trashed document not found.');
+    if (!record.filename) throw new BadRequestException('Cannot restore a document without a filename.');
+    const source = path.resolve(process.cwd(), record.filepath || '');
+    const trashRoot = path.resolve(process.cwd(), 'Database/Trash');
+    if (!record.filepath || !source.startsWith(trashRoot + path.sep)) throw new BadRequestException('Document path is outside the trash directory.');
+    const studentFolder = `${record.student.lastName}, ${record.student.firstName}`;
+    const destination = path.resolve(this.root, studentFolder, record.documentCategories.docuName, record.filename);
+    const safeStudentRoot = path.resolve(this.root);
+    if (!destination.startsWith(safeStudentRoot + path.sep)) throw new BadRequestException('Invalid restore destination.');
+    await fs.mkdir(path.dirname(destination), { recursive: true });
+    try { await fs.access(destination); throw new BadRequestException('A file with this name already exists in the original folder. Rename or move that file before restoring.'); }
+    catch (error) { if (error instanceof BadRequestException) throw error; if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
+    await fs.rename(source, destination);
+    try {
+      const updated = await this.prisma.studentDocument.update({
+        where: { studentDocId },
+        data: {
+          filepath: path.relative(process.cwd(), destination).split(path.sep).join('/'),
+          docuStatusId: (await this.prisma.documentStatus.findFirst({ where: { docuStatusName: { not: 'Trashed' } }, orderBy: { docuStatusId: 'asc' } }))?.docuStatusId ?? DEFAULT_STATUS_ID,
+        },
+      });
+      return { restored: true, document: updated };
+    } catch (error) {
+      try { await fs.rename(destination, source); } catch (rollbackError) { this.logger.error(`Failed to move restored file back to trash: ${String(rollbackError)}`); }
+      throw error;
+    }
+  }
+
+  async permanentlyDelete(studentDocId: string) {
+    const record = await this.prisma.studentDocument.findUnique({
+      where: { studentDocId }, include: { documentStatus: true },
+    });
+    if (!record || record.documentStatus.docuStatusName !== 'Trashed') throw new NotFoundException('Trashed document not found.');
+    if (record.filepath) {
+      const absolute = path.resolve(process.cwd(), record.filepath);
+      const trashRoot = path.resolve(process.cwd(), 'Database/Trash');
+      if (!absolute.startsWith(trashRoot + path.sep)) throw new BadRequestException('Document path is outside the trash directory.');
+      await fs.rm(absolute, { force: true });
+    }
+    await this.prisma.studentDocument.delete({ where: { studentDocId } });
+    return { deleted: true };
+  }
+
+  async emptyTrash() {
+    const trashedStatus = await this.prisma.documentStatus.findFirst({ where: { docuStatusName: 'Trashed' } });
+    if (!trashedStatus) throw new BadRequestException('The "Trashed" document status is not configured.');
+    const records = await this.prisma.studentDocument.findMany({ where: { docuStatusId: trashedStatus.docuStatusId } });
+    const trashRoot = path.resolve(process.cwd(), 'Database/Trash');
+    for (const record of records) {
+      if (!record.filepath) continue;
+      const absolute = path.resolve(process.cwd(), record.filepath);
+      if (!absolute.startsWith(trashRoot + path.sep)) throw new BadRequestException(`Unsafe trash path for document ${record.studentDocId}.`);
+      await fs.rm(absolute, { force: true });
+    }
+    await this.prisma.studentDocument.deleteMany({ where: { docuStatusId: trashedStatus.docuStatusId } });
+    return { deletedCount: records.length };
+  }
+
   async resolveFile(filepath: string) {
     const absolute = path.resolve(process.cwd(), filepath);
     const safeRoot = path.resolve(this.root);
-    if (absolute !== safeRoot && !absolute.startsWith(safeRoot + path.sep)) throw new BadRequestException('Invalid document path.');
+    const trashRoot = path.resolve(process.cwd(), 'Database/Trash');
+    const insideStudentRoot = absolute.startsWith(safeRoot + path.sep);
+    const insideTrashRoot = absolute.startsWith(trashRoot + path.sep);
+    if (!insideStudentRoot && !insideTrashRoot) throw new BadRequestException('Invalid document path.');
     try { await fs.access(absolute); } catch { throw new NotFoundException('File not found.'); }
     return absolute;
   }
