@@ -21,7 +21,7 @@ export class AuditLogsService {
   /** Resolve the actor from the verified JWT subject using the transaction client. */
   async resolveActorInTransaction(tx: TransactionClient, userId: string) {
     const account = await tx.userAccount.findUnique({
-      where: { userId },
+      where: { userAccId: userId },
       include: { user: true, role: { include: { role: true } } },
     });
     if (!account || !account.role) {
