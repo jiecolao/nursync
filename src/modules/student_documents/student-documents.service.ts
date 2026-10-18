@@ -41,14 +41,11 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
     return { studentUuid: uuid, categories, total: documents.length };
   }
 
-  async upload(uuid: string, files: Express.Multer.File[]) {
+  async upload(uuid: string, files: Express.Multer.File[], requestedCategory: string) {
     const student = await this.prisma.student.findUnique({ where: { studentUuid: uuid } });
     if (!student) throw new NotFoundException('Student not found.');
-    const categoryName = String((files[0] as Express.Multer.File & { category?: string }).category || '');
-    // Multer fields are not reliably available on the file object; category is sent via query.
-    const category = CATEGORIES.includes(categoryName as typeof CATEGORIES[number])
-      ? categoryName
-      : 'Others';
+    const category = CATEGORIES.includes(requestedCategory as typeof CATEGORIES[number]) ? requestedCategory : '';
+    if (!category) throw new BadRequestException('A valid document category is required.');
     const categoryRecord = await this.prisma.documentCategories.findFirst({ where: { docuName: category } });
     if (!categoryRecord) throw new BadRequestException(`Document category "${category}" is not configured in the database.`);
     const status = await this.prisma.documentStatus.findFirst({ where: { docuStatusId: DEFAULT_STATUS_ID } })
@@ -77,9 +74,9 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
     return { count: saved.length, documents: saved };
   }
 
-  async remove(uuid: string, docId: number) {
+  async remove(uuid: string, studentDocId: string) {
     const record = await this.prisma.studentDocument.findFirst({
-      where: { studentUuid: uuid, docuId: docId },
+      where: { studentUuid: uuid, studentDocId },
     });
     if (!record) throw new NotFoundException('Document not found.');
     if (record.filepath) {
@@ -92,6 +89,14 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
     }
     await this.prisma.studentDocument.delete({ where: { studentDocId: record.studentDocId } });
     return { deleted: true };
+  }
+
+  async resolveFile(filepath: string) {
+    const absolute = path.resolve(process.cwd(), filepath);
+    const safeRoot = path.resolve(this.root);
+    if (absolute !== safeRoot && !absolute.startsWith(safeRoot + path.sep)) throw new BadRequestException('Invalid document path.');
+    try { await fs.access(absolute); } catch { throw new NotFoundException('File not found.'); }
+    return absolute;
   }
 
   private async startWatcher() {
