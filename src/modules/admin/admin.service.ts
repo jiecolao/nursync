@@ -123,55 +123,34 @@ export class AdminService {
   }
 
   async updateAdmin(userId: string, body: UpdateAdminDto, actorUserId: string) {
-    await this.getAdmin(userId);
-    const hashedPass = body.password
-      ? await this.hashService.hash(body.password)
-      : undefined;
-
-    // A role's Permission can be shared by many accounts. Create a private role
-    // instead of mutating the current role and unintentionally changing access
-    // for every other user assigned to it.
-    const roleId = body.permissions
-      ? await this.prisma.$transaction(async (tx) => {
-          const permission = await tx.permission.create({
-            data: normalizePermissions(body.permissions),
-          });
-          const role = await tx.role.create({
-            data: {
-              roleName: `Custom-${randomUUID()}`,
-              permissionId: permission.permissionId,
-            },
-          });
-          return role.roleId;
-        })
-      : undefined;
-
-    return this.prisma.user.update({
-      where: { userId },
-      data: {
-        facultyId: body.facultyId,
-        lastName: body.lastName,
-        fastName: body.fastName,
-        middleName: body.middleName,
-        suffix: body.suffix,
-        genderId: body.genderId,
-        account: {
-          update: {
-            username: body.username,
-            email: body.email,
-            status: body.status,
-            hashedPass,
-            hashedRefreshToken: body.hashedRefreshToken,
-            role:
-              roleId !== undefined
-                ? { update: { roleId } }
-                : body.roleId === undefined
-                  ? undefined
-                  : { update: { roleId: body.roleId } },
-          },
+    const hashedPass = body.password ? await this.hashService.hash(body.password) : undefined;
+    return this.prisma.$transaction(async (tx) => {
+      const actor = await this.LogsService.resolveActorInTransaction(tx, actorUserId);
+      const oldState = await tx.user.findFirst({ where: { userId, account: { isNot: null } }, select: adminSelect });
+      if (!oldState) throw new NotFoundException('User account not found');
+      let roleId: number | undefined;
+      if (body.permissions) {
+        const permission = await tx.permission.create({ data: normalizePermissions(body.permissions) });
+        const role = await tx.role.create({ data: { roleName: `Custom-${randomUUID()}`, permissionId: permission.permissionId } });
+        roleId = role.roleId;
+      }
+      const updated = await tx.user.update({
+        where: { userId },
+        data: {
+          facultyId: body.facultyId, lastName: body.lastName, fastName: body.fastName,
+          middleName: body.middleName, suffix: body.suffix, genderId: body.genderId,
+          account: { update: {
+            username: body.username, email: body.email, status: body.status, hashedPass,
+            hashedRefreshToken: undefined,
+            role: roleId !== undefined ? { update: { roleId } } : body.roleId === undefined ? undefined : { update: { roleId: body.roleId } },
+          } },
         },
-      },
-      select: adminSelect,
+        select: adminSelect,
+      });
+      await this.LogsService.createActivityLogInTransaction(tx, {
+        userAccId: actor.userAccId, roleId: actor.roleId, action: 'admin.update',
+      }, actor.adminName, JSON.stringify({ userId, oldState, newState: updated }));
+      return updated;
     });
   }
 
