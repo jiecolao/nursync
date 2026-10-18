@@ -66,10 +66,9 @@ export class StudentService {
       const actor = await this.auditLogs.resolveActorInTransaction(tx, actorUserId);
       const oldState = await tx.student.findUnique({ where: { studentUuid } });
       if (!oldState) throw new NotFoundException('Student not found');
-      await tx.studentDocument.deleteMany({ where: { studentUuid } });
-      const deleted = await tx.student.delete({ where: { studentUuid } });
+      const deleted = await tx.student.update({ where: { studentUuid }, data: { status: false } });
       await this.auditLogs.createActivityLogInTransaction(tx, {
-        userAccId: actor.userAccId, roleId: actor.roleId, action: 'student.delete',
+        userAccId: actor.userAccId, roleId: actor.roleId, action: 'student.deactivate',
       }, actor.adminName, JSON.stringify({ studentUuid, oldState }));
       return deleted;
     });
@@ -79,10 +78,9 @@ export class StudentService {
     return this.prisma.$transaction(async (tx) => {
       const actor = await this.auditLogs.resolveActorInTransaction(tx, actorUserId);
       const oldState = await tx.student.findMany({ where: { studentUuid: { in: studentUuids } } });
-      await tx.studentDocument.deleteMany({ where: { studentUuid: { in: studentUuids } } });
-      const deleted = await tx.student.deleteMany({ where: { studentUuid: { in: studentUuids } } });
+      const deleted = await tx.student.updateMany({ where: { studentUuid: { in: studentUuids } }, data: { status: false } });
       await this.auditLogs.createActivityLogInTransaction(tx, {
-        userAccId: actor.userAccId, roleId: actor.roleId, action: 'student.bulk_delete',
+        userAccId: actor.userAccId, roleId: actor.roleId, action: 'student.bulk_deactivate',
       }, actor.adminName, JSON.stringify({ studentUuids, deletedCount: deleted.count, oldState }));
       return deleted;
     });
