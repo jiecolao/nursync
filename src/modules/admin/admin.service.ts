@@ -100,7 +100,7 @@ export class AdminService {
             username: body.username,
             email: body.email,
             hashedPass,
-            hashedRefreshToken: body.hashedRefreshToken,
+            hashedRefreshToken: undefined,
             status: body.status ?? true,
             role: {
               create: {
