@@ -18,6 +18,22 @@ type TransactionClient = Prisma.TransactionClient;
 export class AuditLogsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /** Resolve the actor from the verified JWT subject using the transaction client. */
+  async resolveActorInTransaction(tx: TransactionClient, userId: string) {
+    const account = await tx.userAccount.findUnique({
+      where: { userId },
+      include: { user: true, role: { include: { role: true } } },
+    });
+    if (!account || !account.role) {
+      throw new NotFoundException('Authenticated account or active role not found');
+    }
+    return {
+      userAccId: account.userAccId,
+      roleId: account.role.roleId,
+      adminName: [account.user.lastName, account.user.fastName].filter(Boolean).join(', '),
+    };
+  }
+
   getActivityLogs() {
     return this.prisma.activityLog.findMany({
       include: activityLogInclude,
