@@ -54,7 +54,7 @@ interface Student {
   yr_admitted: number | null;
   yr_residency: number | null;
   yr_graduated: number | null;
-  is_hd: boolean;
+  is_non_graduate: boolean;
   status: Status;
   created_at: string; // ISO
   updated_at: string; // ISO
@@ -84,7 +84,7 @@ const INITIAL_STUDENT: Student = {
   yr_admitted: 2023,
   yr_residency: 2,
   yr_graduated: null,
-  is_hd: false,
+  is_non_graduate: false,
   status: "active",
   created_at: "2023-06-01T08:30:00.000Z",
   updated_at: "2026-09-12T14:05:00.000Z",
@@ -286,7 +286,7 @@ export default function StudentProfilePage() {
               <Badge variant="outline" className={`capitalize ${STATUS_STYLES[saved.status]}`}>
                 {saved.status}
               </Badge>
-              {s.is_hd && (
+              {s.is_non_graduate && (
                 <Badge variant="outline" className="border-white/40 text-inherit">
                   HD
                 </Badge>
@@ -487,16 +487,16 @@ export default function StudentProfilePage() {
                 <ReadValue value={s.yr_graduated} />
               )}
             </Field>
-            <Field label="HD" htmlFor="is_hd" className="md:col-span-3">
+            <Field label="Non Graduate?" htmlFor="is_non_graduating" className="md:col-span-3">
               <div className="flex min-h-9 items-center gap-3">
                 <Switch
-                  id="is_hd"
-                  checked={s.is_hd}
+                  id="is_non_graduating"
+                  checked={s.is_non_graduate}
                   disabled={!editing}
-                  onCheckedChange={(v) => set("is_hd", v)}
+                  onCheckedChange={(v) => set("is_non_graduate", v)}
                   className="data-[state=checked]:bg-[var(--color-primary)]"
                 />
-                <span className="text-[15px] text-neutral-900">{s.is_hd ? "Yes" : "No"}</span>
+                <span className="text-[15px] text-neutral-900">{s.is_non_graduate ? "Yes" : "No"}</span>
               </div>
             </Field>
             <Field label="Status" className="md:col-span-3">

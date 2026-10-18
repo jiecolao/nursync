@@ -13,7 +13,7 @@ export type StudentTableType = {
   yr_admitted: number;
   yr_residency: number;
   yr_graduated: number;
-  is_HD: boolean;
+  is_non_graduate: string;
   status: boolean;
   created_at: Date | string;
   date_modified: Date | string;
@@ -34,7 +34,7 @@ export type StudentApiRecord = {
   yrAdmitted: number;
   yrResidency: number;
   yrGraduated: number | null;
-  isHd: boolean;
+  isNonGraduate: boolean;
   status: boolean;
   createdAt: string;
   updatedAt: string;

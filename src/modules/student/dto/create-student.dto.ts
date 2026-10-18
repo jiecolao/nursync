@@ -68,7 +68,7 @@ export class CreateStudentDto {
 
   @IsOptional()
   @IsBoolean()
-  isHd?: boolean;
+  isNonGraduate?: boolean;
 
   @IsOptional()
   @IsBoolean()

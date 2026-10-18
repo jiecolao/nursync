@@ -159,8 +159,8 @@ model Student {
   yrResidency Int  @map("yr_residency")
   yrGraduated Int? @map("yr_graduated")
 
-  isHd   Boolean @default(false) @map("is_HD")
-  status Boolean @default(true)
+  isNonGraduate Boolean @default(false) @map("is_non_graduate")
+  status        Boolean @default(true)
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

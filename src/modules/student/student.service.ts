@@ -46,7 +46,7 @@ export class StudentService {
                     yrAdmitted: body.yrAdmitted,
                     yrResidency: body.yrResidency,
                     yrGraduated: body.yrGraduated,
-                    isHd: body.isHd,
+                    isNonGraduate: body.isNonGraduate,
                     status: body.status,
                 }
             })
@@ -80,7 +80,7 @@ export class StudentService {
             yrAdmitted: body.yrAdmitted,
             yrResidency: body.yrResidency,
             yrGraduated: body.yrGraduated,
-            isHd: body.isHd,
+            isNonGraduate: body.isNonGraduate,
             status: body.status,
         };
 

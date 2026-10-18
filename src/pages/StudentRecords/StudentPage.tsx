@@ -53,7 +53,7 @@ function toStudentTableRecord(student: StudentApiRecord): StudentTableType {
     yr_admitted: student.yrAdmitted,
     yr_residency: student.yrResidency,
     yr_graduated: student.yrGraduated ?? 0,
-    is_HD: student.isHd,
+    is_non_graduate: student.isNonGraduate ? "Yes" : "No",
     status: student.status,
     created_at: student.createdAt,
     date_modified: student.updatedAt,
@@ -69,6 +69,7 @@ function createColumns(navigate: NavigateFunction): ColumnDef<StudentTableType>[
     accessorFn: (row) => `${row.last_name.toUpperCase()}, ${row.first_name} ${row.middle_name}`,
   },
   { accessorKey: "dob", header: "Date of Birth" },
+  { accessorKey: "is_non_graduate", header: "Non-Graduate" },
   { 
     id: "actions", 
     enableHiding: false, 
