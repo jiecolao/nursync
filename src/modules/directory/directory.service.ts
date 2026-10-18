@@ -14,7 +14,7 @@ import { DirectoryEntry, DirectoryEvent, DirectorySnapshot } from './directory.t
 export class DirectoryService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(DirectoryService.name);
   private watcher?: FSWatcher;
-  private readonly root = path.resolve(process.env.DIRECTORY_WATCH_PATH || './storage');
+  private readonly root = path.resolve(process.env.DIRECTORY_WATCH_PATH || './Database/Students');
 
   onModuleInit() {
     void this.startWatcher();
