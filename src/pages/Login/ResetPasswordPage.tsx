@@ -48,7 +48,7 @@ export default function ResetPasswordPage() {
     setSubmitting(true)
 
     try {
-      await authRequest("/auth/reset-password", { method: "POST", body: JSON.stringify({ password }) })
+      await authRequest("/api/auth/reset-password", { method: "POST", body: JSON.stringify({ password }) })
 
       // Let the login page confirm the change.
       navigate("/login", { state: { passwordReset: true }, replace: true })

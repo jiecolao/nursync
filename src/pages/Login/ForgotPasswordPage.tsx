@@ -25,7 +25,7 @@ export default function ForgotPasswordPage() {
     setSubmitting(true)
 
     try {
-      await authRequest("/auth/forgot-password", { method: "POST", body: JSON.stringify({ email }) })
+      await authRequest("/api/auth/forgot-password", { method: "POST", body: JSON.stringify({ email }) })
 
       // Pass the email along so the OTP page can show where the code was sent.
       navigate("/otp", { state: { email } })

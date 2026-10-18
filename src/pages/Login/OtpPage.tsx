@@ -98,7 +98,7 @@ export default function OtpPage() {
     setSubmitting(true)
 
     try {
-      await authRequest("/auth/verify-otp", { method: "POST", body: JSON.stringify({ code }) })
+      await authRequest("/api/auth/verify-otp", { method: "POST", body: JSON.stringify({ code }) })
       navigate("/reset-password", { state: { email, code } })
     } catch {
       setError("That code isn't right or has expired. Check it and try again.")
@@ -116,7 +116,7 @@ export default function OtpPage() {
     setSecondsLeft(RESEND_SECONDS)
     focusAt(0)
 
-    try { await authRequest("/auth/forgot-password", { method: "POST", body: JSON.stringify({ email }) }) } catch { setError("Unable to resend the code. Please try again.") }
+    try { await authRequest("/api/auth/forgot-password", { method: "POST", body: JSON.stringify({ email }) }) } catch { setError("Unable to resend the code. Please try again.") }
   }
 
   return (

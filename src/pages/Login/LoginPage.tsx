@@ -30,7 +30,7 @@ export default function LoginPage() {
     setSubmitting(true)
 
     try {
-      await authRequest("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) })
+      await authRequest("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password }) })
       await refresh()
       notify.success("Login Successful")
       navigate("/dashboard", { replace: true })

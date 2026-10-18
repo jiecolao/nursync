@@ -10,7 +10,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const refresh = async () => {
-    try { const result = await authRequest<{ user: AuthUser }>('/auth/session'); setUser(result.user); }
+    try { const result = await authRequest<{ user: AuthUser }>('/api/auth/session'); setUser(result.user); }
     catch { setUser(null); }
     finally { setLoading(false); }
   };
