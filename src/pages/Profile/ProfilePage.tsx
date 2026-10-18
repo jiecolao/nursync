@@ -160,7 +160,7 @@ function ChangePasswordDialog({
 }) {
   const empty = { current: "", next: "", confirm: "" };
   const [values, setValues] = useState(empty);
-  const [errors, setErrors] = useState<Partial<typeof empty>>({});
+  const [errors, setErrors] = useState<Partial<typeof empty> & { form?: string }>({});
   const [show, setShow] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -186,12 +186,21 @@ function ChangePasswordDialog({
     if (Object.keys(err).length) return;
 
     setSubmitting(true);
-    // TODO: await fetch("/api/account/password", { method: "POST", body: JSON.stringify({ current, next }) })
-    // Show the server's "current password is incorrect" error under the current field.
-    await new Promise((r) => setTimeout(r, 400));
-    setSubmitting(false);
-    handleOpenChange(false);
-    onChanged();
+    try {
+      await authRequest("/api/admin/me/password", {
+        method: "PUT",
+        body: JSON.stringify({
+          currentPassword: values.current,
+          newPassword: values.next,
+        }),
+      });
+      handleOpenChange(false);
+      onChanged();
+    } catch (cause) {
+      setErrors({ form: cause instanceof Error ? cause.message : "Unable to update password." });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const type = show ? "text" : "password";
@@ -245,6 +254,7 @@ function ChangePasswordDialog({
               />
             </Field>
             {toggle}
+            {errors.form && <p className="text-sm text-red-600">{errors.form}</p>}
           </div>
 
           <DialogFooter>
@@ -279,6 +289,7 @@ export default function ProfilePage() {
   const [passwordOpen, setPasswordOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -340,7 +351,7 @@ export default function ProfilePage() {
     setEditing(false);
   };
 
-  const save = () => {
+  const save = async () => {
     const e: Record<string, string> = {};
     if (!draft.last_name.trim()) e.last_name = "Enter a last name.";
     if (!draft.first_name.trim()) e.first_name = "Enter a first name.";
@@ -349,23 +360,67 @@ export default function ProfilePage() {
     setErrors(e);
     if (Object.keys(e).length) return;
 
-    // TODO: await fetch(`/api/faculty/${draft.faculty_id}`, { method: "PATCH", body: ... })
-    setSaved(draft);
-    setEditing(false);
-    setNotice("Profile saved.");
+    setSaving(true);
+    try {
+      await authRequest("/api/admin/me/profile", {
+        method: "PUT",
+        body: JSON.stringify({
+          facultyId: draft.faculty_id || undefined,
+          lastName: draft.last_name.trim(),
+          fastName: draft.first_name.trim(),
+          middleName: draft.middle_name.trim() || undefined,
+          suffix: draft.suffix.trim() || undefined,
+          genderId: draft.genderId,
+          email: draft.email.trim(),
+        }),
+      });
+      const updated = await authRequest<{ user: AuthUser }>("/api/auth/session");
+      const profile = updated.user.profile;
+      if (!profile) throw new Error("Updated profile details are unavailable.");
+      const faculty: Faculty = {
+        image: draft.image,
+        faculty_id: profile.facultyId ?? "",
+        username: profile.username,
+        last_name: profile.lastName,
+        first_name: profile.firstName,
+        middle_name: profile.middleName ?? "",
+        suffix: profile.suffix ?? "",
+        genderId: profile.genderId,
+        email: updated.user.email,
+        status: profile.status ? "active" : "disabled",
+        created_at: profile.createdAt,
+      };
+      setSaved(faculty);
+      setDraft(faculty);
+      setEditing(false);
+      setNotice("Profile saved.");
+    } catch (cause) {
+      setNotice(cause instanceof Error ? cause.message : "Unable to save profile.");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const setStatus = (status: Status) => {
-    // TODO: await fetch(`/api/faculty/${saved.faculty_id}/status`, { method: "PATCH", ... })
-    setSaved((p) => ({ ...p, status }));
-    setConfirmDisable(false);
-    setNotice(status === "disabled" ? "Account disabled." : "Account enabled.");
+  const setStatus = async (status: Status) => {
+    setSaving(true);
+    try {
+      await authRequest("/api/admin/me/status", {
+        method: "PUT",
+        body: JSON.stringify({ status: status !== "disabled" }),
+      });
+      setSaved((p) => ({ ...p, status }));
+      setConfirmDisable(false);
+      setNotice(status === "disabled" ? "Account disabled." : "Account enabled.");
+    } catch (cause) {
+      setNotice(cause instanceof Error ? cause.message : "Unable to update account status.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const pickImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    // TODO: upload `file` to storage and save the returned URL instead of a local preview.
     const reader = new FileReader();
     reader.onload = () => set("image", reader.result as string);
     reader.readAsDataURL(file);
@@ -463,7 +518,8 @@ export default function ProfilePage() {
               {editing ? (
                 <>
                   <Button
-                    onClick={save}
+                    onClick={() => void save()}
+                    disabled={saving}
                     className="hover:opacity-90"
                     style={{ backgroundColor: SECONDARY, color: PRIMARY }}
                   >
@@ -475,7 +531,8 @@ export default function ProfilePage() {
                 </>
               ) : isDisabled ? (
                 <Button
-                  onClick={() => setStatus("active")}
+                  onClick={() => void setStatus("active")}
+                  disabled={saving}
                   className="hover:opacity-90"
                   style={{ backgroundColor: SECONDARY, color: PRIMARY }}
                 >
@@ -485,6 +542,7 @@ export default function ProfilePage() {
                 <>
                   <Button
                     onClick={startEdit}
+                    disabled={saving}
                     className="hover:opacity-90"
                     style={{ backgroundColor: SECONDARY, color: PRIMARY }}
                   >
@@ -505,7 +563,7 @@ export default function ProfilePage() {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              if (editing) save();
+              if (editing) void save();
             }}
             className="space-y-8 rounded-2xl border bg-white p-6 md:p-8"
           >

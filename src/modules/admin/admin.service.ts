@@ -154,6 +154,36 @@ export class AdminService {
     });
   }
 
+  async updateOwnProfile(userAccId: string, body: UpdateAdminDto) {
+    const account = await this.prisma.userAccount.findUnique({
+      where: { userAccId },
+      select: { userId: true },
+    });
+    if (!account) throw new NotFoundException('User account not found');
+    return this.updateAdmin(account.userId, body, userAccId);
+  }
+
+  async updateOwnPassword(userAccId: string, currentPassword: string, newPassword: string) {
+    const account = await this.prisma.userAccount.findUnique({
+      where: { userAccId },
+      select: { userId: true, hashedPass: true },
+    });
+    if (!account) throw new NotFoundException('User account not found');
+    if (!(await this.hashService.verify(account.hashedPass, currentPassword))) {
+      throw new BadRequestException('Current password is incorrect');
+    }
+    return this.updatePass(account.userId, newPassword, userAccId);
+  }
+
+  async updateOwnStatus(userAccId: string, status: boolean) {
+    const account = await this.prisma.userAccount.findUnique({
+      where: { userAccId },
+      select: { userId: true },
+    });
+    if (!account) throw new NotFoundException('User account not found');
+    return this.updateStatus(account.userId, status, userAccId);
+  }
+
   async updatePass(userId: string, pass: string, actorUserId: string) {
     const hashedPass = await this.hashService.hash(pass);
     return this.prisma.$transaction(async (tx) => {

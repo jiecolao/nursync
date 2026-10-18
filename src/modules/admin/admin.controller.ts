@@ -6,6 +6,8 @@ type AuthenticatedRequest = Request & { user: { sub: string } };
 import { AdminService } from './admin.service';
 import { CreateAdminDto } from './dto/create-admin.dto';
 import { UpdateAdminDto } from './dto/update-admin.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { UpdateStatusDto } from './dto/update-status.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt.guard';
 import { RbacGuard } from '../auth/guards/rbac.guard';
 import { RequirePermissions, RequireRoles } from '../auth/decorators/permissions.decorator';
@@ -14,6 +16,21 @@ import { RequirePermissions, RequireRoles } from '../auth/decorators/permissions
 @UseGuards(JwtAuthGuard, RbacGuard)
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
+
+  @Put('me/profile')
+  updateOwnProfile(@Body() admin: UpdateAdminDto, @Req() req: AuthenticatedRequest) {
+    return this.adminService.updateOwnProfile(req.user.sub, admin);
+  }
+
+  @Put('me/password')
+  updateOwnPassword(@Body() body: ChangePasswordDto, @Req() req: AuthenticatedRequest) {
+    return this.adminService.updateOwnPassword(req.user.sub, body.currentPassword, body.newPassword);
+  }
+
+  @Put('me/status')
+  updateOwnStatus(@Body() body: UpdateStatusDto, @Req() req: AuthenticatedRequest) {
+    return this.adminService.updateOwnStatus(req.user.sub, body.status);
+  }
 
   @Get()
   @RequirePermissions('user_read')
