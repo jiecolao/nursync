@@ -31,6 +31,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { StudentDocumentsPanel } from "./StudentDocumentsPanel";
 
 /* ------------------------------------------------------------------ */
 /* Types (mirrors the ERD)                                             */
@@ -524,6 +525,8 @@ export default function StudentProfilePage() {
           </Section>
         </form>
       </div>
+
+      <StudentDocumentsPanel studentUuid={saved.student_uuid} />
 
       {/* Disable confirmation */}
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
