@@ -1,4 +1,4 @@
-export const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:5151/api';
+export const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:5151';
 
 export type AuthUser = {
   id: string;
@@ -6,6 +6,18 @@ export type AuthUser = {
   role: string;
   roles: string[];
   permissions: Record<string, boolean>;
+  profile?: {
+    facultyId: string | null;
+    username: string;
+    lastName: string;
+    firstName: string;
+    middleName: string | null;
+    suffix: string | null;
+    genderId: number | null;
+    genderName: string | null;
+    createdAt: string;
+    status: boolean;
+  };
 };
 
 export async function authRequest<T>(path: string, init: RequestInit = {}): Promise<T> {

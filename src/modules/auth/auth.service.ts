@@ -14,7 +14,10 @@ export class AuthService {
   private async getClaims(userAccId: string) {
     const account = await this.prisma.userAccount.findUnique({
       where: { userAccId },
-      include: { role: { include: { role: { include: { permission: true } } } } },
+      include: {
+        user: { include: { gender: true } },
+        role: { include: { role: { include: { permission: true } } } },
+      },
     });
     if (!account || !account.status) throw new UnauthorizedException('Account is disabled or unavailable');
     const role = account.role?.role;
@@ -24,6 +27,18 @@ export class AuthService {
       email: account.email,
       role: role?.roleName ?? 'Viewer',
       roles: role ? [role.roleName] : [],
+      profile: {
+        facultyId: account.user.facultyId,
+        username: account.username,
+        lastName: account.user.lastName,
+        firstName: account.user.fastName,
+        middleName: account.user.middleName,
+        suffix: account.user.suffix,
+        genderId: account.user.genderId,
+        genderName: account.user.gender?.genderName ?? null,
+        createdAt: account.user.createdAt.toISOString(),
+        status: account.status,
+      },
       permissions: permission ? {
         students_read: permission.students_read, students_write: permission.students_write,
         user_read: permission.user_read, user_write: permission.user_write,
@@ -50,7 +65,16 @@ export class AuthService {
 
   async getSession(userAccId: string) {
     const claims = await this.getClaims(userAccId);
-    return { user: { id: claims.sub, email: claims.email, role: claims.role, roles: claims.roles, permissions: claims.permissions } };
+    return {
+      user: {
+        id: claims.sub,
+        email: claims.email,
+        role: claims.role,
+        roles: claims.roles,
+        permissions: claims.permissions,
+        profile: claims.profile,
+      },
+    };
   }
 
   async refreshTokens(userAccId: string, incomingRefreshToken: string) {

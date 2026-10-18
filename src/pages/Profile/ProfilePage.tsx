@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Ban, Camera, Eye, EyeOff, KeyRound, Pencil, RotateCcw, Save, X } from "lucide-react";
 
 import {
@@ -34,6 +34,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { authRequest, type AuthUser } from "@/lib/auth";
 
 /* ------------------------------------------------------------------ */
 /* Types (mirrors the ERD)                                             */
@@ -55,14 +56,12 @@ interface Faculty {
   created_at: string; // ISO
 }
 
-// TODO: replace with your gender lookup table (fetched from the API).
 const GENDERS = [
   { id: 1, label: "Male" },
   { id: 2, label: "Female" },
   { id: 3, label: "Other" },
 ];
 
-// TODO: replace with data from your API.
 const INITIAL_FACULTY: Faculty = {
   image: null,
   faculty_id: "FAC-2019-0042",
@@ -279,7 +278,48 @@ export default function ProfilePage() {
   const [confirmDisable, setConfirmDisable] = useState(false);
   const [passwordOpen, setPasswordOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const loadProfile = async () => {
+      try {
+        const result = await authRequest<{ user: AuthUser }>("/api/auth/session", {
+          signal: controller.signal,
+        });
+        const profile = result.user.profile;
+        if (!profile) throw new Error("Your profile details are unavailable.");
+
+        const faculty: Faculty = {
+          image: null,
+          faculty_id: profile.facultyId ?? "",
+          username: profile.username,
+          last_name: profile.lastName,
+          first_name: profile.firstName,
+          middle_name: profile.middleName ?? "",
+          suffix: profile.suffix ?? "",
+          genderId: profile.genderId,
+          email: result.user.email,
+          status: profile.status ? "active" : "disabled",
+          created_at: profile.createdAt,
+        };
+        setSaved(faculty);
+        setDraft(faculty);
+        setLoadError(null);
+      } catch (cause) {
+        if (cause instanceof DOMException && cause.name === "AbortError") return;
+        setLoadError(cause instanceof Error ? cause.message : "Unable to load your profile.");
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    };
+
+    void loadProfile();
+    return () => controller.abort();
+  }, []);
 
   const isDisabled = saved.status === "disabled";
   const f = editing ? draft : saved;
@@ -344,6 +384,13 @@ export default function ProfilePage() {
         <h2 className="text-2xl font-semibold tracking-tight" style={{ color: PRIMARY }}>
           Profile Overview
         </h2>
+
+        {loading && <p role="status" className="text-sm text-neutral-500">Loading your profile…</p>}
+        {loadError && (
+          <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
+            {loadError}
+          </p>
+        )}
 
         {notice && (
           <p
@@ -474,7 +521,7 @@ export default function ProfilePage() {
             <Section title="Name">
               <Field label="Last name" htmlFor="last_name" error={errors.last_name} className="sm:col-span-3">
                 {editing ? (
-                  <Input id="last_name" disabled value={f.last_name} onChange={(e) => set("last_name", e.target.value)} />
+                  <Input id="last_name" value={f.last_name} onChange={(e) => set("last_name", e.target.value)} />
                 ) : (
                   <ReadValue value={f.last_name} />
                 )}
