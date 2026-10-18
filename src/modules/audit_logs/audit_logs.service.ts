@@ -4,18 +4,18 @@ import { CreateActivityLogDto } from './dto/create-activity-log.dto';
 import { CreateFileModificationLogDto } from './dto/create-file-modification-log.dto';
 
 const activityLogInclude = {
-  role: true,
   user: {
     include: {
+      role: true,
       userAccount: true,
     },
   },
 } as const;
 
 const fileModificationLogInclude = {
-  role: true,
   user: {
     include: {
+      role: true,
       userAccount: true,
     },
   },
