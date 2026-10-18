@@ -1,34 +1,25 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { Request } from 'express';
+import type { Request } from 'express';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor() {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) throw new Error('JWT_SECRET must be configured');
     super({
-      // Extract JWT from the 'access_token' HTTP-only cookie
       jwtFromRequest: ExtractJwt.fromExtractors([
-        (req: Request) => {
-          let token = null;
-          if (req && req.cookies) {
-            token = req.cookies['access_token'];
-          }
-          return token;
-        },
-        // Fallback: Also support standard Bearer header if ever needed
+        (req: Request) => req?.cookies?.access_token ?? null,
         ExtractJwt.fromAuthHeaderAsBearerToken(),
       ]),
       ignoreExpiration: false,
-      secretOrKey: process.env.JWT_SECRET || 'your-fallback-secret-key',
+      secretOrKey: secret,
     });
   }
 
-  // Whatever is returned here is automatically attached to `req.user`
-  async validate(payload: { sub: string; email: string }) {
-    if (!payload || !payload.sub) {
-      throw new UnauthorizedException();
-    }
-    return { sub: payload.sub, email: payload.email };
+  async validate(payload: { sub: string; email: string; role?: string; roles?: string[]; permissions?: Record<string, boolean> }) {
+    if (!payload?.sub) throw new UnauthorizedException();
+    return { sub: payload.sub, email: payload.email, role: payload.role ?? 'Viewer', roles: payload.roles ?? [], permissions: payload.permissions ?? {} };
   }
 }
