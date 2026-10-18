@@ -8,6 +8,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import sanitize from 'sanitize-filename';
+import { AuditLogsService } from '../audit_logs/audit_logs.service';
 
 const CATEGORIES = [
   'Personal Records',
@@ -25,7 +26,7 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
   private readonly root = path.resolve(process.env.STUDENT_DOCUMENTS_ROOT || './Database/Students');
   private readonly debounce = new Map<string, ReturnType<typeof setTimeout>>();
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, private readonly auditLogs: AuditLogsService) {}
 
   onModuleInit() { void this.startWatcher(); }
   async onModuleDestroy() {
@@ -86,7 +87,7 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
     return { count: saved.length, documents: saved };
   }
 
-  async remove(uuid: string, studentDocId: string) {
+  async remove(uuid: string, studentDocId: string, actorUserId: string) {
     const record = await this.prisma.studentDocument.findFirst({
       where: { studentUuid: uuid, studentDocId },
     });
@@ -132,9 +133,20 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
     }
 
     try {
-      const updated = await this.prisma.studentDocument.update({
-        where: { studentDocId: record.studentDocId },
-        data: { docuStatusId: trashedStatus.docuStatusId, filepath: trashedPath },
+      const updated = await this.prisma.$transaction(async (tx) => {
+        const actor = await this.auditLogs.resolveActorInTransaction(tx, actorUserId);
+        const result = await tx.studentDocument.update({
+          where: { studentDocId: record.studentDocId },
+          data: { docuStatusId: trashedStatus.docuStatusId, filepath: trashedPath },
+        });
+        await this.auditLogs.createFileModificationLogInTransaction(tx, {
+          userAccId: actor.userAccId, roleId: actor.roleId, studentName: record.studentUuid,
+          fileAction: 'trash', fileModified: '', fileLoc: trashedPath || record.filepath || '',
+        }, actor.adminName, record, result);
+        await this.auditLogs.createActivityLogInTransaction(tx, {
+          userAccId: actor.userAccId, roleId: actor.roleId, action: 'document.trash',
+        }, actor.adminName, JSON.stringify({ studentDocId }));
+        return result;
       });
       return { trashed: true, document: updated };
     } catch (error) {
