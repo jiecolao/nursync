@@ -1,4 +1,4 @@
-import { IsBoolean, IsEmail, IsInt, IsNotEmpty, IsOptional, IsString, Matches, MinLength, MaxLength } from 'class-validator';
+import { IsBoolean, IsEmail, IsInt, IsNotEmpty, IsObject, IsOptional, IsString, Matches, MinLength, MaxLength } from 'class-validator';
 export class CreateAdminDto {
   @IsOptional() @IsString() @MaxLength(64) userId?: string;
   @IsOptional() @IsString() @MaxLength(20) facultyId?: string;
@@ -15,4 +15,5 @@ export class CreateAdminDto {
   @IsOptional() @IsString() @MaxLength(255) hashedRefreshToken?: string;
   @IsInt() roleId: number;
   @IsOptional() @IsBoolean() status?: boolean;
+  @IsOptional() @IsObject() permissions?: Record<string, boolean>;
 }
