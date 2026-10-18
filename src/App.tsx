@@ -53,12 +53,12 @@ export default function App() {
             }
           >
             <Route path="dashboard" element={<DashboardPage />} />
-            <Route path="directory" element={<DirectoryPage />} />
+            <Route path="directory" element={<CanAccess permissions={["students_read"]} fallback={<p className="p-8">You do not have permission to view the directory.</p>}><DirectoryPage /></CanAccess>} />
             <Route path="students">
               <Route index element={<CanAccess permissions={["students_read"]} fallback={<p className="p-8">You do not have permission to view student records.</p>}><StudentRecordsPage /></CanAccess>} />
               <Route path="profile/:studentUuid" element={<CanAccess permissions={["students_read"]} fallback={<p className="p-8">You do not have permission to view student records.</p>}><StudentProfilePage /></CanAccess>} />
             </Route>
-            <Route path="trash" element={<TrashPage />} />
+            <Route path="trash" element={<CanAccess permissions={["students_read"]} fallback={<p className="p-8">You do not have permission to view deleted records.</p>}><TrashPage /></CanAccess>} />
 
 
             {/* Administration */}
