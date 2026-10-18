@@ -165,7 +165,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 /* Page                                                                */
 /* ------------------------------------------------------------------ */
 
-export default function ProfilePage() {
+export default function StudentProfilePage() {
   const [saved, setSaved] = useState<Student>(INITIAL_STUDENT);
   const [draft, setDraft] = useState<Student>(INITIAL_STUDENT);
   const [editing, setEditing] = useState(false);
