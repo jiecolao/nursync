@@ -56,7 +56,7 @@ export class StudentService {
       const updated = await tx.student.update({ where: { studentUuid: studUuid }, data: updateData });
       await this.auditLogs.createActivityLogInTransaction(tx, {
         userAccId: actor.userAccId, roleId: actor.roleId, action: 'student.update',
-      }, actor.adminName, JSON.stringify({ studentUuid: studUuid, oldState, newState: updated }));
+      }, actor.adminName, JSON.stringify({ studentUuid: studUuid, changedFields: Object.keys(body).filter((key) => key !== 'password') }));
       return updated;
     });
   }
@@ -69,7 +69,7 @@ export class StudentService {
       const deleted = await tx.student.update({ where: { studentUuid }, data: { status: false } });
       await this.auditLogs.createActivityLogInTransaction(tx, {
         userAccId: actor.userAccId, roleId: actor.roleId, action: 'student.deactivate',
-      }, actor.adminName, JSON.stringify({ studentUuid, oldState }));
+      }, actor.adminName, JSON.stringify({ studentUuid, previousStatus: oldState.status, newStatus: false }));
       return deleted;
     });
   }
@@ -81,7 +81,7 @@ export class StudentService {
       const deleted = await tx.student.updateMany({ where: { studentUuid: { in: studentUuids } }, data: { status: false } });
       await this.auditLogs.createActivityLogInTransaction(tx, {
         userAccId: actor.userAccId, roleId: actor.roleId, action: 'student.bulk_deactivate',
-      }, actor.adminName, JSON.stringify({ studentUuids, deletedCount: deleted.count, oldState }));
+      }, actor.adminName, JSON.stringify({ studentUuids, deactivatedCount: deleted.count }));
       return deleted;
     });
   }
