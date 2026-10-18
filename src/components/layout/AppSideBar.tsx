@@ -371,8 +371,6 @@ export default function AppSidebar() {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
-
-      w
     </Sidebar>
   )
 }
