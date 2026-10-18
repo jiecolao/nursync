@@ -169,7 +169,7 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
     });
   }
 
-  async restoreFromTrash(studentDocId: string) {
+  async restoreFromTrash(studentDocId: string, actorUserId: string) {
     const record = await this.prisma.studentDocument.findUnique({
       where: { studentDocId },
       include: { student: true, documentCategories: true, documentStatus: true },
@@ -188,12 +188,24 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
     catch (error) { if (error instanceof BadRequestException) throw error; if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
     await fs.rename(source, destination);
     try {
-      const updated = await this.prisma.studentDocument.update({
-        where: { studentDocId },
-        data: {
-          filepath: path.relative(process.cwd(), destination).split(path.sep).join('/'),
-          docuStatusId: (await this.prisma.documentStatus.findFirst({ where: { docuStatusName: { not: 'Trashed' } }, orderBy: { docuStatusId: 'asc' } }))?.docuStatusId ?? DEFAULT_STATUS_ID,
-        },
+      const updated = await this.prisma.$transaction(async (tx) => {
+        const actor = await this.auditLogs.resolveActorInTransaction(tx, actorUserId);
+        const result = await tx.studentDocument.update({
+          where: { studentDocId },
+          data: {
+            filepath: path.relative(process.cwd(), destination).split(path.sep).join('/'),
+            docuStatusId: (await tx.documentStatus.findFirst({ where: { docuStatusName: { not: 'Trashed' } }, orderBy: { docuStatusId: 'asc' } }))?.docuStatusId ?? DEFAULT_STATUS_ID,
+          },
+        });
+        await this.auditLogs.createFileModificationLogInTransaction(tx, {
+          userAccId: actor.userAccId, roleId: actor.roleId,
+          studentName: record.student.lastName + ', ' + record.student.firstName,
+          fileAction: 'restore', fileModified: '', fileLoc: result.filepath || '',
+        }, actor.adminName, record, result);
+        await this.auditLogs.createActivityLogInTransaction(tx, {
+          userAccId: actor.userAccId, roleId: actor.roleId, action: 'document.restore',
+        }, actor.adminName, JSON.stringify({ studentDocId }));
+        return result;
       });
       return { restored: true, document: updated };
     } catch (error) {
