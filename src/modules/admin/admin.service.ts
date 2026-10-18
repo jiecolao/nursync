@@ -159,10 +159,10 @@ export class AdminService {
             hashedRefreshToken: body.hashedRefreshToken,
             role:
               roleId !== undefined
-                ? { connect: { roleId } }
+                ? { update: { roleId } }
                 : body.roleId === undefined
                   ? undefined
-                  : { connect: { roleId: body.roleId } },
+                  : { update: { roleId: body.roleId } },
           },
         },
       },
