@@ -10,6 +10,7 @@ import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import LogoFull from "@/assets/icons/logo-full.png"
+import { authRequest } from "@/lib/auth"
 
 const CODE_LENGTH = 6
 const RESEND_SECONDS = 30
@@ -97,15 +98,7 @@ export default function OtpPage() {
     setSubmitting(true)
 
     try {
-      // Replace with your NestJS call:
-      // const res = await fetch("/api/auth/verify-otp", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify({ email, code }),
-      // })
-      // if (!res.ok) throw new Error("Invalid code")
-      // const { resetToken } = await res.json()
-
+      await authRequest("/auth/verify-otp", { method: "POST", body: JSON.stringify({ code }) })
       navigate("/reset-password", { state: { email, code } })
     } catch {
       setError("That code isn't right or has expired. Check it and try again.")
@@ -123,12 +116,7 @@ export default function OtpPage() {
     setSecondsLeft(RESEND_SECONDS)
     focusAt(0)
 
-    // Replace with your NestJS call:
-    // await fetch("/api/auth/forgot-password", {
-    //   method: "POST",
-    //   headers: { "Content-Type": "application/json" },
-    //   body: JSON.stringify({ email }),
-    // })
+    try { await authRequest("/auth/forgot-password", { method: "POST", body: JSON.stringify({ email }) }) } catch { setError("Unable to resend the code. Please try again.") }
   }
 
   return (
