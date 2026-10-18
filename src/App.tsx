@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 // Layouts & Guards
 import { RootLayout } from "./RootLayout"
 import { AuthProvider, ProtectedRoute } from "./components/auth/ProtectedRoute"
+import { CanAccess } from "./components/auth/CanAccess"
 import AuthLayout from "./pages/AuthLayout"
 import MainLayout from "./pages/MainLayout"
 // import ProtectedRoute from "./components/ProtectedRoute" // Auth guard wrapper
@@ -54,16 +55,16 @@ export default function App() {
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="directory" element={<DirectoryPage />} />
             <Route path="students">
-              <Route index element={<StudentRecordsPage />} />
-              <Route path="profile/:studentUuid" element={<StudentProfilePage />} />
+              <Route index element={<CanAccess permissions={["students_read"]} fallback={<p className="p-8">You do not have permission to view student records.</p>}><StudentRecordsPage /></CanAccess>} />
+              <Route path="profile/:studentUuid" element={<CanAccess permissions={["students_read"]} fallback={<p className="p-8">You do not have permission to view student records.</p>}><StudentProfilePage /></CanAccess>} />
             </Route>
             <Route path="trash" element={<TrashPage />} />
 
 
             {/* Administration */}
-            <Route path="system-users" element={<UsersPage />} />
-            <Route path="file-logs" element={<FileLogsPage />} />
-            <Route path="activity-logs" element={<ActivityLogsPage/>} />
+            <Route path="system-users" element={<CanAccess permissions={["user_read"]} fallback={<p className="p-8">You do not have permission to manage users.</p>}><UsersPage /></CanAccess>} />
+            <Route path="file-logs" element={<CanAccess permissions={["logs_read"]} fallback={<p className="p-8">You do not have permission to view logs.</p>}><FileLogsPage /></CanAccess>} />
+            <Route path="activity-logs" element={<CanAccess permissions={["logs_read"]} fallback={<p className="p-8">You do not have permission to view logs.</p>}><ActivityLogsPage /></CanAccess>} />
 
             {/* Support & Settings*/}            
             <Route path="my-account" element={<ProfilePage/>} />
