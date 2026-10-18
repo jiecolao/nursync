@@ -1,8 +1,7 @@
-import { 
-    Controller, Get, Param, 
-    Post, Patch, HttpCode, 
-    HttpStatus, Body, Put, Delete, UseGuards
+import {
+  Controller, Get, Param, Post, HttpCode, HttpStatus, Body, Put, Delete, UseGuards, Req,
 } from "@nestjs/common";
+import type { Request } from 'express';
 import { StudentService } from "./student.service";
 import { CreateStudentDto } from "./dto/create-student.dto";
 import { UpdateStudentDto } from "./dto/update-student.dto";
@@ -11,51 +10,44 @@ import { JwtAuthGuard } from "../auth/guards/jwt.guard";
 import { RbacGuard } from "../auth/guards/rbac.guard";
 import { RequirePermissions } from "../auth/decorators/permissions.decorator";
 
+type AuthenticatedRequest = Request & { user: { sub: string } };
+
 @Controller('student')
 @UseGuards(JwtAuthGuard, RbacGuard)
 export class StudentController {
-    constructor(private readonly studentService: StudentService) {}
+  constructor(private readonly studentService: StudentService) {}
 
-    @Get()
-    @RequirePermissions("students_read")
-    async getAllProfiles(){
-        return this.studentService.getAllProfiles();
-    }
+  @Get()
+  @RequirePermissions("students_read")
+  getAllProfiles() { return this.studentService.getAllProfiles(); }
 
-    @Get(':id')
-    @RequirePermissions("students_read")
-    async getProfile(@Param('id') id: string){
-        return this.studentService.getProfile(id);
-    }
+  @Get(':id')
+  @RequirePermissions("students_read")
+  getProfile(@Param('id') id: string) { return this.studentService.getProfile(id); }
 
-    @Put(':id')
-    @RequirePermissions("students_write")
-    async updateProfile(@Param('id') id: string, @Body() student: UpdateStudentDto){
-        return this.studentService.updateProfile(id, student);
-    }
+  @Put(':id')
+  @RequirePermissions("students_write")
+  updateProfile(@Param('id') id: string, @Body() student: UpdateStudentDto, @Req() req: AuthenticatedRequest) {
+    return this.studentService.updateProfile(id, student, req.user.sub);
+  }
 
-    @Post()
-    @RequirePermissions("students_write")
-    @HttpCode(HttpStatus.CREATED)
-    async createProfile(@Body() student: CreateStudentDto){
-        return this.studentService.createProfile(student)
-    }
+  @Post()
+  @RequirePermissions("students_write")
+  @HttpCode(HttpStatus.CREATED)
+  createProfile(@Body() student: CreateStudentDto, @Req() req: AuthenticatedRequest) {
+    return this.studentService.createProfile(student, req.user.sub);
+  }
 
-    // @Patch(':id')
-    // async updateProfileStatus(@Param('id') id: string, @Body() student: updateStudentStatusDto){
-    //     return this.studentService.updateProfileStatus(id, student)
-    // }
+  @Delete(':id')
+  @RequirePermissions("students_write")
+  @HttpCode(HttpStatus.NO_CONTENT)
+  removeProfile(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+    return this.studentService.deleteProfile(id, req.user.sub);
+  }
 
-    @Delete(':id')
-    @RequirePermissions("students_write")
-    @HttpCode(HttpStatus.NO_CONTENT)
-    async removeProfile(@Param('id') id: string) {
-        return this.studentService.deleteProfile(id)
-    }
-
-    @Delete()
-    @RequirePermissions("students_write")
-    async removeMultipleProfiles(@Body() body: DeleteStudentsDto) {
-        return this.studentService.deleteMultipleProfile(body.studentUuids);
-    }
+  @Delete()
+  @RequirePermissions("students_write")
+  removeMultipleProfiles(@Body() body: DeleteStudentsDto, @Req() req: AuthenticatedRequest) {
+    return this.studentService.deleteMultipleProfile(body.studentUuids, req.user.sub);
+  }
 }
