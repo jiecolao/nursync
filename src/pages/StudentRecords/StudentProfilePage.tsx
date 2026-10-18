@@ -703,6 +703,20 @@ export default function StudentProfilePage() {
       </div>
 
       <StudentDocumentsPanel studentUuid={saved.student_uuid} />
+      </main>
+      <aside className="hidden xl:block">
+        <nav aria-label="Student profile sections" className="sticky top-6 space-y-1 rounded-xl border bg-white p-3 shadow-sm">
+          <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-slate-500">On this page</p>
+          {[
+            ["Profile overview", "profile-overview"], ["Personal details", "profile-personal-details"],
+            ["Contact details", "profile-contact-details"], ["Academic record", "profile-academic-record"],
+            ["System record", "profile-system-record"], ["Student documents", "student-documents"],
+            ["Academic", "documents-academic"], ["Completion & Certificate", "documents-completion-certificate"],
+            ["Others", "documents-others"], ["Personal", "documents-personal"], ["RLE", "documents-rle"],
+          ].map(([label, id]) => <a key={id} href={`#${id}`} onClick={(event) => { event.preventDefault(); document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" }); }} className="block rounded-md px-2 py-2 text-sm text-slate-600 transition-colors hover:bg-primary/10 hover:text-primary">{label}</a>)}
+        </nav>
+      </aside>
+      </div>
       {/* Disable confirmation */}
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
