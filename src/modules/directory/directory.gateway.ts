@@ -26,13 +26,25 @@ export class DirectoryGateway
 
   afterInit() {
     this.directoryService.setEventHandler((event: DirectoryEvent) => {
-      this.server.emit('directory:event', event);
+      for (const client of this.server.sockets.sockets.values()) {
+        const scope = this.directoryService.resolveScope(
+          typeof client.handshake.query.directoryScope === 'string'
+            ? client.handshake.query.directoryScope
+            : undefined,
+        );
+        if (scope === event.scope) client.emit('directory:event', event);
+      }
     });
   }
 
   async handleConnection(client: Socket) {
     try {
-      client.emit('directory:snapshot', await this.directoryService.getSnapshot());
+      const scope = this.directoryService.resolveScope(
+        typeof client.handshake.query.directoryScope === 'string'
+          ? client.handshake.query.directoryScope
+          : undefined,
+      );
+      client.emit('directory:snapshot', await this.directoryService.getSnapshot(scope));
     } catch (error) {
       client.emit('directory:error', {
         message: error instanceof Error ? error.message : 'Unable to read directory',

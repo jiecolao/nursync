@@ -4,7 +4,9 @@ import { useDirectoryStore, type DirectoryEvent } from '@/stores/directory-store
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5151';
 
-export function useDirectoryLive() {
+export type DirectoryScope = 'students' | 'trash';
+
+export function useDirectoryLive(scope: DirectoryScope = 'students') {
   const setConnected = useDirectoryStore((state) => state.setConnected);
   const setSnapshot = useDirectoryStore((state) => state.setSnapshot);
   const applyEvent = useDirectoryStore((state) => state.applyEvent);
@@ -17,6 +19,7 @@ export function useDirectoryLive() {
       if (disposed) return;
       socket = io(API_URL, {
         transports: ['websocket', 'polling'],
+        query: { directoryScope: scope },
         reconnection: true,
         reconnectionAttempts: Infinity,
         reconnectionDelay: 1000,
@@ -28,7 +31,9 @@ export function useDirectoryLive() {
       socket.on('disconnect', () => setConnected(false));
       socket.on('connect_error', () => setConnected(false));
       socket.on('directory:snapshot', (snapshot) => setSnapshot(snapshot));
-      socket.on('directory:event', (event: DirectoryEvent) => applyEvent(event));
+      socket.on('directory:event', (event: DirectoryEvent) => {
+        if (event.scope === scope) applyEvent(event);
+      });
     };
 
     connect();
@@ -38,5 +43,5 @@ export function useDirectoryLive() {
       socket?.disconnect();
       setConnected(false);
     };
-  }, [applyEvent, setConnected, setSnapshot]);
+  }, [applyEvent, scope, setConnected, setSnapshot]);
 }

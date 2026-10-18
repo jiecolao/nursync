@@ -11,8 +11,10 @@ export interface DirectoryEntry {
 }
 
 export type DirectoryEventType = 'add' | 'change' | 'unlink' | 'addDir' | 'unlinkDir';
+export type DirectoryScope = 'students' | 'trash';
 
 export interface DirectoryEvent {
+  scope: DirectoryScope;
   type: DirectoryEventType;
   path: string;
   entry?: DirectoryEntry;

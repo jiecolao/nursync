@@ -10,7 +10,10 @@ export type DirectoryEntry = {
   children?: DirectoryEntry[];
 };
 
+export type DirectoryScope = 'students' | 'trash';
+
 export type DirectoryEvent = {
+  scope: DirectoryScope;
   type: 'add' | 'change' | 'unlink' | 'addDir' | 'unlinkDir';
   path: string;
   entry?: DirectoryEntry;
