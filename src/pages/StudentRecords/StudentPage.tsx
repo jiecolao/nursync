@@ -1,55 +1,41 @@
-import { DataTable } from "@/components/layout/DataTable";
-import { StudentTableType } from "./student.type";
+import { DataTable, type DataTableAction } from "@/components/layout/DataTable"
+import { StudentTableType, StudentApiRecord } from "./student.type";
 import { ColumnDef } from "@tanstack/react-table";
 import { useEffect, useState } from "react";
+import { ChevronRight, Plus, Trash2 } from "lucide-react"
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { MoreHorizontal } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { DialogBox } from "@/components/layout/DialogBox";
+import { useNavigate, type NavigateFunction } from "react-router-dom";
 
-export const columns: ColumnDef<StudentTableType>[] = [
-  // { accessorKey: "student_uuid", header: "Student UUID" },
-  { accessorKey: "student_id", header: "Student ID" },
-  // { accessorKey: "last_name", header: "Last Name" },
-  // { accessorKey: "first_name", header: "First Name" },
-  // { accessorKey: "middle_name", header: "Middle Name" },
+
+const actions: DataTableAction<StudentTableType>[] = [
   {
-    id: "full_name",
-    header: "Full Name",
-    accessorFn: (row) => `${row.last_name.toUpperCase()}, ${row.first_name} ${row.middle_name}`,
+    id: "add-student",
+    label: "Add Student",
+    icon: Plus,
+    variant: "default",
+    visible: ({ selectedRows }) => selectedRows.length <= 0,
+    onClick: () => {
+      // Open your create-student dialog
+    },
   },
-  // { accessorKey: "gender_id", header: "Gender ID" },
-  { accessorKey: "dob", header: "Date of Birth" },
-  { accessorKey: "contact_no", header: "Contact No." },
-  { accessorKey: "email", header: "Email" },
-  // { accessorKey: "provincial_addr", header: "Provincial Address" },
-  // { accessorKey: "city_addr", header: "City Address" },
-  { accessorKey: "yr_admitted", header: "Year Admitted" },
-  { accessorKey: "yr_residency", header: "Year Residency" },
-  { accessorKey: "yr_graduated", header: "Year Graduated" },
-  // { accessorKey: "is_HD", header: "Is HD" },
-  // { accessorKey: "status", header: "Status" },
-  // { accessorKey: "created_at", header: "Created At" },
-  // { accessorKey: "updated_at", header: "Updated At" },
-];
-
-type StudentApiRecord = {
-  studentUuid: string;
-  studentId: string | null;
-  lastName: string;
-  firstName: string;
-  middleName: string | null;
-  genderId: number | null;
-  dob: string | null;
-  contactNo: string | null;
-  email: string | null;
-  provincialAddr: string | null;
-  cityAddr: string | null;
-  yrAdmitted: number;
-  yrResidency: number;
-  yrGraduated: number | null;
-  isHd: boolean;
-  status: boolean;
-  createdAt: string;
-  updatedAt: string;
-};
+  {
+    id: "delete",
+    label: "Delete",
+    icon: Trash2,
+    variant: "destructive",
+    visible: ({ selectedRows }) => selectedRows.length > 0,
+    onClick: ({ selectedRows }) => {
+      // Open a confirmation dialog before deleting
+      console.log(selectedRows)
+    },
+  },
+]
 
 function toStudentTableRecord(student: StudentApiRecord): StudentTableType {
   return {
@@ -74,10 +60,42 @@ function toStudentTableRecord(student: StudentApiRecord): StudentTableType {
   };
 }
 
+function createColumns(navigate: NavigateFunction): ColumnDef<StudentTableType>[] {
+  return [
+  { accessorKey: "student_id", header: "Student ID" },
+  {
+    id: "full_name",
+    header: "Full Name",
+    accessorFn: (row) => `${row.last_name.toUpperCase()}, ${row.first_name} ${row.middle_name}`,
+  },
+  { accessorKey: "dob", header: "Date of Birth" },
+  { 
+    id: "actions", 
+    enableHiding: false, 
+    enableSorting: false, 
+    cell: ({ row }) => {
+      return (
+        <div className="size-8">
+          <Button variant="ghost" size="icon" className="size-8" 
+            onClick={() => {
+              navigate("/students/profile/1")
+            }}>
+            <ChevronRight/>
+          </Button>
+        </div>
+      )
+    },
+  },
+  ];
+}
+
 export default function StudentsPage(){
+  const [isOpen, setIsOpen] = useState(false);
   const [students, setStudents] = useState<StudentTableType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const columns = createColumns(navigate);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -121,12 +139,28 @@ export default function StudentsPage(){
               {error && <p className="text-red-600">{error}</p>}
               {/* <Button>Export</Button> */}
               <DataTable
-                  columns={columns}
-                  data={students}
-                  dateKey="date_modified"
-                  searchPlaceholder="Search student"
-                  exportFileName="Student Records"
-                  />
+                columns={columns}
+                data={students}
+                dateKey="date_modified"
+                searchPlaceholder="Search student"
+                exportFileName="Student Records"
+                actions={actions}
+                enableRowSelection={true}
+                pageSizeOptions={[10]}
+              />
+              
+              {isOpen && (
+                <DialogBox
+                  title="Discard input?"
+                  open={isOpen}
+                  onOpenChange={setIsOpen}
+                  onClick={() => navigate("/students")}
+                  yesBtnName="Discard"
+                  yesBtnStyle="bg-red-700 hover:bg-red-600"
+                >
+                  <p>If you leave this page, the information you entered won't be saved.</p>
+                </DialogBox>
+              )}
           </div>
       </>
   );
