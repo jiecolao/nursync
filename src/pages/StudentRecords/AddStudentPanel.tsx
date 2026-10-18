@@ -40,7 +40,7 @@ export function AddStudentPanel({ open, onOpenChange, onCreated }: Props) {
   useEffect(() => {
     if (!open) return;
     const controller = new AbortController();
-    fetch("/api/gender", { credentials: "include", signal: controller.signal })
+    fetch("/api/lookups/genders", { credentials: "include", signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error("Unable to load gender options.");
         const data = await response.json();

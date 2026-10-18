@@ -31,7 +31,7 @@ export class StudentService {
 
     async createProfile(body: CreateStudentDto){
         return this.prisma.$transaction(async (tx) => {
-            await tx.student.create({
+            const newStudent = await tx.student.create({
                 data: {
                     studentId: body.studentId,
                     firstName: body.firstName,
@@ -51,6 +51,7 @@ export class StudentService {
                 }
             })
 
+            return newStudent
             // TODO: Augit logs
             // return tsx.audit_logs.create({
             //   data: {
