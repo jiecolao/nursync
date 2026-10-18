@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 
 // Layouts & Guards
 import { RootLayout } from "./RootLayout"
+import { AuthProvider, ProtectedRoute } from "./components/auth/ProtectedRoute"
 import AuthLayout from "./pages/AuthLayout"
 import MainLayout from "./pages/MainLayout"
 // import ProtectedRoute from "./components/ProtectedRoute" // Auth guard wrapper
@@ -30,6 +31,7 @@ import StudentProfilePage from "./pages/StudentRecords/StudentProfilePage"
 export default function App() {
   return (
     <BrowserRouter>
+      <AuthProvider>
       <Routes>
         <Route element={<RootLayout />}>
           {/* Default entry point */}
@@ -46,9 +48,7 @@ export default function App() {
           {/* Protected Application Routes */}
           <Route
             element={
-              // <ProtectedRoute>
-              <MainLayout />
-              // </ProtectedRoute>
+              <ProtectedRoute><MainLayout /></ProtectedRoute>
             }
           >
             <Route path="dashboard" element={<DashboardPage />} />
@@ -75,6 +75,7 @@ export default function App() {
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
+      </AuthProvider>
     </BrowserRouter>
   )
 }
