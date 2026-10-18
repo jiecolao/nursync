@@ -208,11 +208,9 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async removeByPath(file: string) {
-    try {
-      const filepath = path.relative(process.cwd(), file).split(path.sep).join('/');
-      await this.prisma.studentDocument.deleteMany({ where: { filepath } });
-    } catch (error) {
-      this.logger.error(`Could not remove document row for ${file}: ${String(error)}`);
-    }
+    // Do not delete metadata on unlink events: the soft-delete flow moves the
+    // file out of the watched tree before updating its row to the Trashed status.
+    // Deleting here would race with that update and destroy the retained record.
+    this.logger.debug(`File removed from watched directory: ${file}; metadata is retained for soft deletion.`);
   }
 }
