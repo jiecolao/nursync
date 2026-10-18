@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { DialogBox } from "@/components/layout/DialogBox";
 import { AddStudentPanel } from "./AddStudentPanel";
 import { useNavigate, type NavigateFunction } from "react-router-dom";
+import { notify } from "@/components/layout/Toasty";
 
 
 function toStudentTableRecord(student: StudentApiRecord): StudentTableType {
@@ -56,7 +57,7 @@ function createColumns(navigate: NavigateFunction): ColumnDef<StudentTableType>[
         <div className="size-8">
           <Button variant="ghost" size="icon" className="size-8" 
             onClick={() => {
-              navigate("/students/profile/1")
+            navigate(`/students/profile/${row.original.student_uuid}`)
             }}>
             <ChevronRight/>
           </Button>
@@ -70,6 +71,8 @@ function createColumns(navigate: NavigateFunction): ColumnDef<StudentTableType>[
 export default function StudentsPage(){
   const [isOpen, setIsOpen] = useState(false);
   const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
+  const [studentsToDelete, setStudentsToDelete] = useState<StudentTableType[]>([]);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [students, setStudents] = useState<StudentTableType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -94,11 +97,55 @@ export default function StudentsPage(){
       variant: "destructive",
       visible: ({ selectedRows }) => selectedRows.length > 0,
       onClick: ({ selectedRows }) => {
-        // Open a confirmation dialog before deleting
-        console.log(selectedRows)
+        setStudentsToDelete(selectedRows);
+        setIsOpen(true);
       },
+      disabled: isDeleting,
     },
   ]
+
+  const deleteStudents = async () => {
+    if (!studentsToDelete.length) return;
+
+    setIsDeleting(true);
+    try {
+      const uuids = studentsToDelete.map((student) => student.student_uuid);
+      const response = await fetch(
+        uuids.length === 1 ? `/api/student/${uuids[0]}` : "/api/student",
+        {
+          method: "DELETE",
+          credentials: "include",
+          headers: uuids.length > 1 ? { "Content-Type": "application/json" } : undefined,
+          body: uuids.length > 1 ? JSON.stringify({ studentUuids: uuids }) : undefined,
+        },
+      );
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        const message = Array.isArray(body?.message)
+          ? body.message.join(", ")
+          : body?.message;
+        throw new Error(message || "Unable to delete the selected student records.");
+      }
+
+      setStudents((current) =>
+        current.filter((student) => !uuids.includes(student.student_uuid)),
+      );
+      setStudentsToDelete([]);
+      notify.success(
+        uuids.length === 1 ? "Student deleted" : "Students deleted",
+        { description: `${uuids.length} student record${uuids.length === 1 ? "" : "s"} deleted.` },
+      );
+    } catch (requestError) {
+      notify.error("Unable to delete students", {
+        description: requestError instanceof Error
+          ? requestError.message
+          : "Please try again.",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   useEffect(() => {
     const controller = new AbortController();
@@ -162,14 +209,20 @@ export default function StudentsPage(){
               
               {isOpen && (
                 <DialogBox
-                  title="Discard input?"
+                  title={`Delete ${studentsToDelete.length === 1 ? "student" : "students"}?`}
                   open={isOpen}
-                  onOpenChange={setIsOpen}
-                  onClick={() => navigate("/students")}
-                  yesBtnName="Discard"
+                  onOpenChange={(open) => {
+                    setIsOpen(open);
+                    if (!open && !isDeleting) setStudentsToDelete([]);
+                  }}
+                  onClick={() => { void deleteStudents(); }}
+                  yesBtnName={isDeleting ? "Deleting..." : "Delete"}
                   yesBtnStyle="bg-red-700 hover:bg-red-600"
                 >
-                  <p>If you leave this page, the information you entered won't be saved.</p>
+                  <p>
+                    This will permanently delete {studentsToDelete.length} selected student
+                    record including their documents{studentsToDelete.length === 1 ? "" : "s"}. This action cannot be undone.
+                  </p>
                 </DialogBox>
               )}
           </div>

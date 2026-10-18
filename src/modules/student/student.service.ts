@@ -92,18 +92,34 @@ export class StudentService {
     }
 
     async deleteProfile(studentUuid: string) {
-        return await this.prisma.student.delete({
-            where: { studentUuid: studentUuid }
-        })
+        return this.prisma.$transaction(async (tx) => {
+            await tx.studentDocument.deleteMany({
+                where: { studentUuid },
+            });
+
+            return tx.student.delete({
+                where: { studentUuid },
+            });
+        });
     }
 
     async deleteMultipleProfile(studentUuids: string[]) {
-        return await this.prisma.student.deleteMany({
-            where: {
-                studentUuid: {
-                    in: studentUuids,
+        return this.prisma.$transaction(async (tx) => {
+            await tx.studentDocument.deleteMany({
+                where: {
+                    studentUuid: {
+                        in: studentUuids,
+                    },
                 },
-            },
+            });
+
+            return tx.student.deleteMany({
+                where: {
+                    studentUuid: {
+                        in: studentUuids,
+                    },
+                },
+            });
         });
     }
 }

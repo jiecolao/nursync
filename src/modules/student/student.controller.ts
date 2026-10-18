@@ -6,6 +6,7 @@ import {
 import { StudentService } from "./student.service";
 import { CreateStudentDto } from "./dto/create-student.dto";
 import { UpdateStudentDto } from "./dto/update-student.dto";
+import { DeleteStudentsDto } from "./dto/delete-students.dto";
 
 @Controller('student')
 export class StudentController {
@@ -41,5 +42,10 @@ export class StudentController {
     @HttpCode(HttpStatus.NO_CONTENT)
     async removeProfile(@Param('id') id: string) {
         return this.studentService.deleteProfile(id)
+    }
+
+    @Delete()
+    async removeMultipleProfiles(@Body() body: DeleteStudentsDto) {
+        return this.studentService.deleteMultipleProfile(body.studentUuids);
     }
 }
