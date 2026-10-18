@@ -12,6 +12,26 @@ import { StudentDocumentsService } from './student-documents.service';
 export class StudentDocumentsController {
   constructor(private readonly documents: StudentDocumentsService) {}
 
+  @Get('trash')
+  listTrash() {
+    return this.documents.listTrash();
+  }
+
+  @Post('trash/:docId/restore')
+  restore(@Param('docId') docId: string) {
+    return this.documents.restoreFromTrash(docId);
+  }
+
+  @Delete('trash/:docId/permanent')
+  permanentlyDelete(@Param('docId') docId: string) {
+    return this.documents.permanentlyDelete(docId);
+  }
+
+  @Delete('trash')
+  emptyTrash() {
+    return this.documents.emptyTrash();
+  }
+
   @Get()
   list(@Param('uuid') uuid: string) {
     return this.documents.list(uuid);
