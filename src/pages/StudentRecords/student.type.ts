@@ -39,3 +39,11 @@ export type StudentApiRecord = {
   createdAt: string;
   updatedAt: string;
 };
+
+export type DocumentsTableType = {
+  fileName: string;
+  filePath: string;
+  docuStatus: string;
+  createdAt: string;
+  updatedAt: string;
+}

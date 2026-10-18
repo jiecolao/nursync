@@ -2,9 +2,8 @@
 
 import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from "react";
 import { 
-  Camera, Pencil, RotateCcw, Save, X, Trash
+  Camera, Pencil, RotateCcw, Save, X, Trash, Upload
  } from "lucide-react";
-
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,6 +14,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { MoreHorizontal } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -33,6 +37,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { useNavigate, useParams } from "react-router-dom";
 import { formatDateTime, formatDate } from "@/lib/utils";
 import { notify } from "@/components/layout/Toasty";
+import { DataTable, type DataTableAction } from "@/components/layout/DataTable";
+import { DocumentsTableType } from "./student.type";
+import { ColumnDef } from "@tanstack/react-table";
 
 /* ------------------------------------------------------------------ */
 /* Types (mirrors the ERD)                                             */
@@ -184,6 +191,58 @@ export default function StudentProfilePage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+
+  const actions: DataTableAction<DocumentsTableType>[] = [
+    {
+      id: "upload",
+      label: "Upload",
+      icon: Upload,
+      variant: "default",
+      onClick: () => {
+        console.log("Hello")
+      },
+    },
+  ]
+  
+  const columns: ColumnDef<DocumentsTableType>[] = [
+    { accessorKey: "fileName", header: "Filename" },
+    { accessorKey: "filePath", header: "File Path" },
+    { accessorKey: "docuStatus", header: "Document Status" },
+    { accessorKey: "createdAt", header: "Created" },
+    { accessorKey: "updatedAt", header: "Updated" },
+    { 
+    id: "actions", 
+    enableHiding: false, 
+    enableSorting: false, 
+    cell: ({ row }) => {
+      const order = row.original // the full data object for this row
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger >
+            <Button variant="ghost" size="icon" className="size-8">
+              <MoreHorizontal className="size-4" />
+              <span className="sr-only">Open menu</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {/* <DropdownMenuItem onClick={() => navigator.clipboard.writeText(order.uuid)}>
+              Copy UUID
+            </DropdownMenuItem> */}
+            <DropdownMenuItem onClick={() => console.log("view", order)}>
+              Edit File
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => console.log("view", order)}>
+              File Location...
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="text-destructive" onClick={() => console.log("delete", order)}>
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )
+    }},
+  ]
 
   useEffect(() => {
     if (!studentUuid) {
@@ -638,6 +697,107 @@ export default function StudentProfilePage() {
             </Field>
           </Section>
         </form>
+      </div>
+
+      {/* Personal Records */}
+      <div className="flex flex-col my-2">
+        <h2 className="text-2xl font-semibold tracking-tight" style={{ color: PRIMARY }}>
+          Personal Records
+        </h2>
+        <DataTable
+          columns={columns}
+          data={[
+            {
+              fileName: "a",
+              filePath: "a",
+              docuStatus: "1",
+              createdAt: "a",
+              updatedAt: "a"
+            }
+          ]} // fetch records 
+          dateKey="updatedAt"
+          searchPlaceholder="Search personal records"
+          exportFileName="Personal Records"
+          actions={actions}
+          enableRowSelection={true}
+          pageSizeOptions={[10]}
+        />
+      </div>
+
+      {/* Academic Records */}
+      <div className="flex flex-col my-2">
+        <h2 className="text-2xl font-semibold tracking-tight" style={{ color: PRIMARY }}>
+          Academic Records
+        </h2>
+        <DataTable
+          columns={columns}
+          data={[
+            {
+              fileName: "a",
+              filePath: "a",
+              docuStatus: "1",
+              createdAt: "a",
+              updatedAt: "a"
+            }
+          ]} // fetch records 
+          dateKey="updatedAt"
+          searchPlaceholder="Search academic records"
+          exportFileName="Academic Records"
+          actions={actions}
+          enableRowSelection={true}
+          pageSizeOptions={[10]}
+        />
+      </div>        
+
+      {/* RLE / Clinical Records */}
+      <div className="flex flex-col my-2">
+        <h2 className="text-2xl font-semibold tracking-tight" style={{ color: PRIMARY }}>
+          RLE / Clinical Records
+        </h2>
+        <DataTable
+          columns={columns}
+          data={[]} // fetch records 
+          dateKey="updatedAt"
+          searchPlaceholder="Search RLE / Clinical records"
+          exportFileName="Clinical Records"
+          actions={actions}
+          enableRowSelection={true}
+          pageSizeOptions={[10]}
+        />
+      </div>
+
+      {/* Completion and Certificate Records */}
+      <div className="flex flex-col my-2">
+        <h2 className="text-2xl font-semibold tracking-tight" style={{ color: PRIMARY }}>
+          Completion and Certificate Records
+        </h2>
+        <DataTable
+          columns={columns}
+          data={[]} // fetch records 
+          dateKey="updatedAt"
+          searchPlaceholder="Search personal records"
+          exportFileName="Personal Records"
+          actions={actions}
+          enableRowSelection={true}
+          pageSizeOptions={[10]}
+        />
+      </div>
+      
+      {/* Others */}
+      <div className="flex flex-col my-2">
+        <h2 className="text-2xl font-semibold tracking-tight" style={{ color: PRIMARY }}>
+          Others
+        </h2>
+        <DataTable
+          columns={columns}
+          data={[]} // fetch records 
+          dateKey="updatedAt"
+          searchPlaceholder="Search personal records"
+          exportFileName="Personal Records"
+          actions={actions}
+          enableRowSelection={true}
+          pageSizeOptions={[10]}
+        />
       </div>
 
       {/* Disable confirmation */}
