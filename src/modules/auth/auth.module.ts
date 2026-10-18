@@ -5,6 +5,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { HashService } from './hash.service';
+import { AuditLogsService } from '../audit_logs/audit_logs.service';
 
 @Module({
   imports: [
@@ -15,7 +16,7 @@ import { HashService } from './hash.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, HashService],
+  providers: [AuthService, JwtStrategy, HashService, AuditLogsService],
   exports: [AuthService, JwtModule, PassportModule],
 })
 export class AuthModule {}
