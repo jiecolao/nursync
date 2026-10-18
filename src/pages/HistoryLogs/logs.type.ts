@@ -13,4 +13,21 @@ export type ActivityLogsType = {
     user: string; 
     action: string;
     date_modified: string;
-} 
+}
+
+export type ActivityLogResponse = {
+    activityUuid: string;
+    adminName: string;
+    action: string;
+    createdAt: string;
+}
+
+export type FileLogResponse = {
+    fileModUuid: string;
+    adminName: string;
+    studentName: string;
+    fileAction: string;
+    fileModified: string;
+    fileLoc: string;
+    createdAt: string;
+}
