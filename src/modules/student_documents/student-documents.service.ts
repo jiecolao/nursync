@@ -87,16 +87,60 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
       where: { studentUuid: uuid, studentDocId },
     });
     if (!record) throw new NotFoundException('Document not found.');
+
+    const trashedStatus = await this.prisma.documentStatus.findFirst({
+      where: { docuStatusName: 'Trashed' },
+    });
+    if (!trashedStatus) {
+      throw new BadRequestException('The "Trashed" document status is not configured.');
+    }
+
+    const trashRoot = path.resolve(process.cwd(), 'Database/Trash');
+    let trashedPath = record.filepath;
+    let movedFile: { source: string; destination: string } | undefined;
+
     if (record.filepath) {
-      const absolute = path.resolve(process.cwd(), record.filepath);
+      const source = path.resolve(process.cwd(), record.filepath);
       const safeRoot = path.resolve(this.root);
-      if (absolute !== safeRoot && !absolute.startsWith(safeRoot + path.sep)) {
+      if (source !== safeRoot && !source.startsWith(safeRoot + path.sep)) {
         throw new BadRequestException('Document path is outside the student documents directory.');
       }
-      await fs.rm(absolute, { force: true });
+      try {
+        await fs.access(source);
+        await fs.mkdir(trashRoot, { recursive: true });
+        const filename = path.basename(source);
+        let destination = path.join(trashRoot, filename);
+        // Avoid overwriting a different file that was previously trashed.
+        try {
+          await fs.access(destination);
+          destination = path.join(trashRoot, `${path.parse(filename).name}-${record.studentDocId}${path.parse(filename).ext}`);
+        } catch {
+          // Destination is available.
+        }
+        await fs.rename(source, destination);
+        movedFile = { source, destination };
+        trashedPath = path.relative(process.cwd(), destination).split(path.sep).join('/');
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+        // Preserve metadata even if the source file has already gone missing.
+        trashedPath = record.filepath;
+      }
     }
-    await this.prisma.studentDocument.delete({ where: { studentDocId: record.studentDocId } });
-    return { deleted: true };
+
+    try {
+      const updated = await this.prisma.studentDocument.update({
+        where: { studentDocId: record.studentDocId },
+        data: { docuStatusId: trashedStatus.docuStatusId, filepath: trashedPath },
+      });
+      return { trashed: true, document: updated };
+    } catch (error) {
+      // Keep filesystem and database consistent if the metadata update fails.
+      if (movedFile) {
+        try { await fs.rename(movedFile.destination, movedFile.source); }
+        catch (rollbackError) { this.logger.error(`Failed to restore trashed file ${movedFile.destination}: ${String(rollbackError)}`); }
+      }
+      throw error;
+    }
   }
 
   async resolveFile(filepath: string) {
