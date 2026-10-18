@@ -155,28 +155,36 @@ export class AdminService {
   }
 
   async updatePass(userId: string, pass: string, actorUserId: string) {
-    await this.getAdmin(userId);
     const hashedPass = await this.hashService.hash(pass);
-    return this.prisma.user.update({
-      where: { userId },
-      data: { account: { update: { hashedPass } } },
+    return this.prisma.$transaction(async (tx) => {
+      const actor = await this.LogsService.resolveActorInTransaction(tx, actorUserId);
+      const target = await tx.user.findFirst({ where: { userId, account: { isNot: null } } });
+      if (!target) throw new NotFoundException('User account not found');
+      await tx.user.update({ where: { userId }, data: { account: { update: { hashedPass } } } });
+      await this.LogsService.createActivityLogInTransaction(tx, { userAccId: actor.userAccId, roleId: actor.roleId, action: 'admin.password_update' }, actor.adminName, JSON.stringify({ userId }));
+      return { updated: true };
     });
   }
 
   async updateStatus(userId: string, status: boolean, actorUserId: string) {
-    await this.getAdmin(userId);
-    return this.prisma.user.update({
-      where: { userId },
-      data: { account: { update: { status } } },
+    return this.prisma.$transaction(async (tx) => {
+      const actor = await this.LogsService.resolveActorInTransaction(tx, actorUserId);
+      const oldState = await tx.user.findFirst({ where: { userId, account: { isNot: null } }, select: adminSelect });
+      if (!oldState) throw new NotFoundException('User account not found');
+      const updated = await tx.user.update({ where: { userId }, data: { account: { update: { status } } }, select: adminSelect });
+      await this.LogsService.createActivityLogInTransaction(tx, { userAccId: actor.userAccId, roleId: actor.roleId, action: 'admin.status_update' }, actor.adminName, JSON.stringify({ userId, oldStatus: oldState.account?.status, newStatus: status }));
+      return updated;
     });
   }
 
   async deleteAdmin(userId: string, actorUserId: string) {
-    await this.getAdmin(userId);
-    return this.prisma.user.update({
-      where: { userId },
-      data: { account: { update: { status: false } } },
-      select: adminSelect,
+    return this.prisma.$transaction(async (tx) => {
+      const actor = await this.LogsService.resolveActorInTransaction(tx, actorUserId);
+      const oldState = await tx.user.findFirst({ where: { userId, account: { isNot: null } }, select: adminSelect });
+      if (!oldState) throw new NotFoundException('User account not found');
+      const updated = await tx.user.update({ where: { userId }, data: { account: { update: { status: false } } }, select: adminSelect });
+      await this.LogsService.createActivityLogInTransaction(tx, { userAccId: actor.userAccId, roleId: actor.roleId, action: 'admin.deactivate' }, actor.adminName, JSON.stringify({ userId, oldState, newState: updated }));
+      return updated;
     });
   }
 }
