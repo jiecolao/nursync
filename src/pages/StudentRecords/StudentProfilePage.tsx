@@ -40,6 +40,7 @@ import { notify } from "@/components/layout/Toasty";
 import { DataTable, type DataTableAction } from "@/components/layout/DataTable";
 import { DocumentsTableType } from "./student.type";
 import { ColumnDef } from "@tanstack/react-table";
+import StudentDocumentsPanel from "@/components/student-documents/StudentDocumentsPanel";
 
 /* ------------------------------------------------------------------ */
 /* Types (mirrors the ERD)                                             */
@@ -162,7 +163,7 @@ function getApiError(body: unknown, fallback: string) {
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="space-y-4">
+    <section id={`profile-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`} className="space-y-4 scroll-mt-6">
       <div className="flex items-center gap-4">
         <h3 className="text-base font-semibold" style={{ color: PRIMARY }}>
           {title}
@@ -407,8 +408,10 @@ export default function StudentProfilePage() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: SECONDARY }}>
-      <div className="mx-auto  space-y-6">
-        <h2 className="text-2xl font-semibold tracking-tight" style={{ color: PRIMARY }}>
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_210px]">
+      <main className="min-w-0 space-y-6">
+      <div className="mx-auto space-y-6">
+        <h2 id="profile-overview" className="scroll-mt-6 text-2xl font-semibold tracking-tight" style={{ color: PRIMARY }}>
           Profile Overview
         </h2>
 
@@ -699,107 +702,7 @@ export default function StudentProfilePage() {
         </form>
       </div>
 
-      {/* Personal Records */}
-      <div className="flex flex-col my-2">
-        <h2 className="text-2xl font-semibold tracking-tight" style={{ color: PRIMARY }}>
-          Personal Records
-        </h2>
-        <DataTable
-          columns={columns}
-          data={[
-            {
-              fileName: "a",
-              filePath: "a",
-              docuStatus: "1",
-              createdAt: "a",
-              updatedAt: "a"
-            }
-          ]} // fetch records 
-          dateKey="updatedAt"
-          searchPlaceholder="Search personal records"
-          exportFileName="Personal Records"
-          actions={actions}
-          enableRowSelection={true}
-          pageSizeOptions={[10]}
-        />
-      </div>
-
-      {/* Academic Records */}
-      <div className="flex flex-col my-2">
-        <h2 className="text-2xl font-semibold tracking-tight" style={{ color: PRIMARY }}>
-          Academic Records
-        </h2>
-        <DataTable
-          columns={columns}
-          data={[
-            {
-              fileName: "a",
-              filePath: "a",
-              docuStatus: "1",
-              createdAt: "a",
-              updatedAt: "a"
-            }
-          ]} // fetch records 
-          dateKey="updatedAt"
-          searchPlaceholder="Search academic records"
-          exportFileName="Academic Records"
-          actions={actions}
-          enableRowSelection={true}
-          pageSizeOptions={[10]}
-        />
-      </div>        
-
-      {/* RLE / Clinical Records */}
-      <div className="flex flex-col my-2">
-        <h2 className="text-2xl font-semibold tracking-tight" style={{ color: PRIMARY }}>
-          RLE / Clinical Records
-        </h2>
-        <DataTable
-          columns={columns}
-          data={[]} // fetch records 
-          dateKey="updatedAt"
-          searchPlaceholder="Search RLE / Clinical records"
-          exportFileName="Clinical Records"
-          actions={actions}
-          enableRowSelection={true}
-          pageSizeOptions={[10]}
-        />
-      </div>
-
-      {/* Completion and Certificate Records */}
-      <div className="flex flex-col my-2">
-        <h2 className="text-2xl font-semibold tracking-tight" style={{ color: PRIMARY }}>
-          Completion and Certificate Records
-        </h2>
-        <DataTable
-          columns={columns}
-          data={[]} // fetch records 
-          dateKey="updatedAt"
-          searchPlaceholder="Search personal records"
-          exportFileName="Personal Records"
-          actions={actions}
-          enableRowSelection={true}
-          pageSizeOptions={[10]}
-        />
-      </div>
-      
-      {/* Others */}
-      <div className="flex flex-col my-2">
-        <h2 className="text-2xl font-semibold tracking-tight" style={{ color: PRIMARY }}>
-          Others
-        </h2>
-        <DataTable
-          columns={columns}
-          data={[]} // fetch records 
-          dateKey="updatedAt"
-          searchPlaceholder="Search personal records"
-          exportFileName="Personal Records"
-          actions={actions}
-          enableRowSelection={true}
-          pageSizeOptions={[10]}
-        />
-      </div>
-
+      <StudentDocumentsPanel studentUuid={saved.student_uuid} />
       {/* Disable confirmation */}
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
