@@ -291,7 +291,7 @@ export default function AppSidebar() {
 
   const handleLogout = async () => {
     try {
-      await authRequest("/auth/logout", { method: "POST" })
+      await authRequest("/api/auth/logout", { method: "POST" })
       await refresh()
       navigate("/login", { replace: true })
     } catch (error) {
@@ -364,6 +364,18 @@ export default function AppSidebar() {
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
+
+        <DialogBox
+          open={isLoggingOut}
+          onOpenChange={setIsLoggingOut}
+          title={"Are you sure you want to log out?"}
+          noBtnName="Cancel"
+          yesBtnName={"Log Out"}
+          yesBtnStyle="bg-red-700 hover:bg-red-600"
+          onClick={() => { handleLogout() }}
+        >
+          <p>You will need to sign back in to access your account.</p>
+        </DialogBox>
       </SidebarFooter>
     </Sidebar>
   )
