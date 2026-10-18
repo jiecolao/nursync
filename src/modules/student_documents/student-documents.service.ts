@@ -7,8 +7,15 @@ import chokidar, { FSWatcher } from 'chokidar';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
+import sanitize from 'sanitize-filename';
 
-const CATEGORIES = ['Academic', 'Completion & Certificate', 'Others', 'Personal', 'RLE'] as const;
+const CATEGORIES = [
+  'Personal Records',
+  'Academic Records',
+  'Clinical Records', 
+  'Completion and Certification Records', 
+  'Others', 
+] as const;
 const DEFAULT_STATUS_ID = 1;
 
 @Injectable()
@@ -45,6 +52,7 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
     const student = await this.prisma.student.findUnique({ where: { studentUuid: uuid } });
     if (!student) throw new NotFoundException('Student not found.');
     const category = CATEGORIES.includes(requestedCategory as typeof CATEGORIES[number]) ? requestedCategory : '';
+    this.logger.log(`Received requestedCategory: "${requestedCategory}"`);
     if (!category) throw new BadRequestException('A valid document category is required.');
     const categoryRecord = await this.prisma.documentCategories.findFirst({ where: { docuName: category } });
     if (!categoryRecord) throw new BadRequestException(`Document category "${category}" is not configured in the database.`);
@@ -56,7 +64,7 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
     await fs.mkdir(directory, { recursive: true });
     const saved = [];
     for (const file of files) {
-      const safeName = path.basename(file.originalname).replace(/[\\/\\0]/g, '_');
+      const safeName = sanitize(path.basename(file.originalname));
       const destination = path.join(directory, safeName);
       await fs.writeFile(destination, file.buffer, { flag: 'w' });
       const relativePath = path.relative(process.cwd(), destination).split(path.sep).join('/');

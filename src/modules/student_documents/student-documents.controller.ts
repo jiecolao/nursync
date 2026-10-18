@@ -3,7 +3,7 @@ import {
   Post, UploadedFiles, UseInterceptors,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { Response } from 'express';
+import type { Response } from 'express';
 import { createReadStream } from 'node:fs';
 import path from 'node:path';
 import { StudentDocumentsService } from './student-documents.service';
