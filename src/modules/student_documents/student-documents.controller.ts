@@ -1,15 +1,17 @@
 import {
   BadRequestException, Controller, Delete, Get, Param, Query, Res, Req,
-  Post, UploadedFiles, UseInterceptors,
+  Post, UploadedFiles, UseInterceptors, UseGuards,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import type { Response, Request } from 'express';
 type AuthenticatedRequest = Request & { user: { sub: string } };
+import { JwtAuthGuard } from '../auth/guards/jwt.guard';
 import { createReadStream } from 'node:fs';
 import path from 'node:path';
 import { StudentDocumentsService } from './student-documents.service';
 
 @Controller('students/:uuid/documents')
+@UseGuards(JwtAuthGuard)
 export class StudentDocumentsController {
   constructor(private readonly documents: StudentDocumentsService) {}
 
