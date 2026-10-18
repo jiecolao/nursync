@@ -53,38 +53,69 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
     return { studentUuid: uuid, categories, total: documents.length };
   }
 
-  async upload(uuid: string, files: Express.Multer.File[], requestedCategory: string) {
+  async upload(uuid: string, files: Express.Multer.File[], requestedCategory: string, actorUserId: string) {
     const student = await this.prisma.student.findUnique({ where: { studentUuid: uuid } });
     if (!student) throw new NotFoundException('Student not found.');
     const category = CATEGORIES.includes(requestedCategory as typeof CATEGORIES[number]) ? requestedCategory : '';
-    this.logger.log(`Received requestedCategory: "${requestedCategory}"`);
     if (!category) throw new BadRequestException('A valid document category is required.');
     const categoryRecord = await this.prisma.documentCategories.findFirst({ where: { docuName: category } });
     if (!categoryRecord) throw new BadRequestException(`Document category "${category}" is not configured in the database.`);
-    const status = await this.prisma.documentStatus.findFirst({ where: { docuStatusId: DEFAULT_STATUS_ID } })
-      ?? await this.prisma.documentStatus.findFirst();
+    const status = await this.prisma.documentStatus.findFirst({ where: { docuStatusId: DEFAULT_STATUS_ID } }) ?? await this.prisma.documentStatus.findFirst();
     if (!status) throw new BadRequestException('No document statuses are configured.');
-    const folderName = `${student.lastName}, ${student.firstName}`;
-    const directory = path.resolve(this.root, folderName, category);
+    const directory = path.resolve(this.root, `${student.lastName}, ${student.firstName}`, category);
     await fs.mkdir(directory, { recursive: true });
-    const saved = [];
-    for (const file of files) {
-      const safeName = sanitize(path.basename(file.originalname));
-      const destination = path.join(directory, safeName);
-      await fs.writeFile(destination, file.buffer, { flag: 'w' });
-      const relativePath = path.relative(process.cwd(), destination).split(path.sep).join('/');
-      const existing = await this.prisma.studentDocument.findFirst({ where: { studentUuid: uuid, filepath: relativePath } });
-      const record = existing
-        ? await this.prisma.studentDocument.update({
-            where: { studentDocId: existing.studentDocId },
-            data: { filename: safeName, filepath: relativePath, submittedAt: new Date(), docuId: categoryRecord.docuId, docuStatusId: status.docuStatusId },
-          })
-        : await this.prisma.studentDocument.create({
-            data: { studentDocId: randomUUID(), studentUuid: uuid, docuId: categoryRecord.docuId, filename: safeName, filepath: relativePath, submittedAt: new Date(), docuStatusId: status.docuStatusId },
-          });
-      saved.push(record);
+    const stageDir = path.join(directory, `.upload-${randomUUID()}`);
+    await fs.mkdir(stageDir, { recursive: false });
+    const staged: Array<{ stage: string; destination: string; backup?: string; relativePath: string; name: string }> = [];
+    try {
+      for (const file of files) {
+        const name = sanitize(path.basename(file.originalname));
+        if (!name) throw new BadRequestException('Invalid filename.');
+        const destination = path.join(directory, name);
+        const stage = path.join(stageDir, name);
+        await fs.writeFile(stage, file.buffer, { flag: 'wx' });
+        staged.push({ stage, destination, relativePath: path.relative(process.cwd(), destination).split(path.sep).join('/'), name });
+      }
+      const saved = await this.prisma.$transaction(async (tx) => {
+        const actor = await this.auditLogs.resolveActorInTransaction(tx, actorUserId);
+        const results = [];
+        for (const item of staged) {
+          try {
+            await fs.access(item.destination);
+            item.backup = path.join(stageDir, `backup-${staged.indexOf(item)}`);
+            await fs.rename(item.destination, item.backup);
+          } catch (error) {
+            if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+          }
+          await fs.rename(item.stage, item.destination);
+          const existing = await tx.studentDocument.findFirst({ where: { studentUuid: uuid, filepath: item.relativePath } });
+          const record = existing
+            ? await tx.studentDocument.update({ where: { studentDocId: existing.studentDocId }, data: { filename: item.name, filepath: item.relativePath, submittedAt: new Date(), docuId: categoryRecord.docuId, docuStatusId: status.docuStatusId } })
+            : await tx.studentDocument.create({ data: { studentDocId: randomUUID(), studentUuid: uuid, docuId: categoryRecord.docuId, filename: item.name, filepath: item.relativePath, submittedAt: new Date(), docuStatusId: status.docuStatusId } });
+          await this.auditLogs.createFileModificationLogInTransaction(tx, {
+            userAccId: actor.userAccId, roleId: actor.roleId, studentName: student.lastName + ', ' + student.firstName,
+            fileAction: existing ? 'upload_overwrite' : 'upload', fileModified: '', fileLoc: item.relativePath,
+          }, actor.adminName, existing ?? null, record);
+          results.push(record);
+        }
+        await this.auditLogs.createActivityLogInTransaction(tx, { userAccId: actor.userAccId, roleId: actor.roleId, action: 'document.upload' }, actor.adminName, JSON.stringify({ studentUuid: uuid, count: results.length, files: staged.map((item) => item.name) }));
+        return results;
+      });
+      await fs.rm(stageDir, { recursive: true, force: true });
+      return { count: saved.length, documents: saved };
+    } catch (error) {
+      for (const item of [...staged].reverse()) {
+        try {
+          await fs.rm(item.destination, { force: true });
+          if (item.backup) await fs.rename(item.backup, item.destination);
+        } catch (cleanupError) {
+          this.logger.error(`Upload compensation failed for ${item.destination}: ${String(cleanupError)}`);
+        }
+      }
+      try { await fs.rm(stageDir, { recursive: true, force: true }); }
+      catch (cleanupError) { this.logger.error(`Could not clean upload staging directory: ${String(cleanupError)}`); }
+      throw error;
     }
-    return { count: saved.length, documents: saved };
   }
 
   async remove(uuid: string, studentDocId: string, actorUserId: string) {
