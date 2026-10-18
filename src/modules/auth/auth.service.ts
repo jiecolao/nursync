@@ -97,7 +97,7 @@ export class AuthService {
   async logout(userId: string) {
     // Invalidate the session in MySQL
     await this.prisma.userAccount.updateMany({
-      where: { id: userId, hashedRefreshToken: { not: null } },
+      where: { userAccId: userId, hashedRefreshToken: { not: null } },
       data: { hashedRefreshToken: null },
     });
   }
