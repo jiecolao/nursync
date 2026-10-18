@@ -37,7 +37,11 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
     const student = await this.prisma.student.findUnique({ where: { studentUuid: uuid } });
     if (!student) throw new NotFoundException('Student not found.');
     const documents = await this.prisma.studentDocument.findMany({
-      where: { studentUuid: uuid },
+      where: { studentUuid: uuid, documentStatus: { 
+        docuStatusName: {
+          not: 'Trashed',
+        }
+      }},
       include: { documentCategories: true, documentStatus: true },
       orderBy: [{ docuId: 'asc' }, { filename: 'asc' }],
     });
