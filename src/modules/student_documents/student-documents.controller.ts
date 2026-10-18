@@ -26,13 +26,13 @@ export class StudentDocumentsController {
   }
 
   @Delete('trash/:docId/permanent')
-  permanentlyDelete(@Param('docId') docId: string) {
-    return this.documents.permanentlyDelete(docId);
+  permanentlyDelete(@Param('docId') docId: string, @Req() req: AuthenticatedRequest) {
+    return this.documents.permanentlyDelete(docId, req.user.sub);
   }
 
   @Delete('trash')
-  emptyTrash() {
-    return this.documents.emptyTrash();
+  emptyTrash(@Req() req: AuthenticatedRequest) {
+    return this.documents.emptyTrash(req.user.sub);
   }
 
   @Get()
