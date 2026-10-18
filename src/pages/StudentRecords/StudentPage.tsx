@@ -10,32 +10,9 @@ import {
 import { MoreHorizontal } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DialogBox } from "@/components/layout/DialogBox";
+import { AddStudentPanel } from "./AddStudentPanel";
 import { useNavigate, type NavigateFunction } from "react-router-dom";
 
-
-const actions: DataTableAction<StudentTableType>[] = [
-  {
-    id: "add-student",
-    label: "Add Student",
-    icon: Plus,
-    variant: "default",
-    visible: ({ selectedRows }) => selectedRows.length <= 0,
-    onClick: () => {
-      // Open your create-student dialog
-    },
-  },
-  {
-    id: "delete",
-    label: "Delete",
-    icon: Trash2,
-    variant: "destructive",
-    visible: ({ selectedRows }) => selectedRows.length > 0,
-    onClick: ({ selectedRows }) => {
-      // Open a confirmation dialog before deleting
-      console.log(selectedRows)
-    },
-  },
-]
 
 function toStudentTableRecord(student: StudentApiRecord): StudentTableType {
   return {
@@ -92,11 +69,36 @@ function createColumns(navigate: NavigateFunction): ColumnDef<StudentTableType>[
 
 export default function StudentsPage(){
   const [isOpen, setIsOpen] = useState(false);
+  const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
   const [students, setStudents] = useState<StudentTableType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const columns = createColumns(navigate);
+
+  const actions: DataTableAction<StudentTableType>[] = [
+    {
+      id: "add-student",
+      label: "Add Student",
+      icon: Plus,
+      variant: "default",
+      visible: ({ selectedRows }) => selectedRows.length <= 0,
+      onClick: () => {
+        setIsAddStudentOpen(true);
+      },
+    },
+    {
+      id: "delete",
+      label: "Delete",
+      icon: Trash2,
+      variant: "destructive",
+      visible: ({ selectedRows }) => selectedRows.length > 0,
+      onClick: ({ selectedRows }) => {
+        // Open a confirmation dialog before deleting
+        console.log(selectedRows)
+      },
+    },
+  ]
 
   useEffect(() => {
     const controller = new AbortController();
@@ -148,6 +150,14 @@ export default function StudentsPage(){
                 actions={actions}
                 enableRowSelection={true}
                 pageSizeOptions={[10]}
+              />
+              <AddStudentPanel
+                open={isAddStudentOpen}
+                onOpenChange={setIsAddStudentOpen}
+                onCreated={(created) => {
+                  const student = created as unknown as StudentApiRecord;
+                  setStudents((current) => [toStudentTableRecord(student), ...current]);
+                }}
               />
               
               {isOpen && (
