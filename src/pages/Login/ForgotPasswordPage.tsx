@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import LogoFull from "@/assets/icons/logo-full.png"
+import { authRequest } from "@/lib/auth"
 
 // White fields sit on the cream page; the border and focus ring use the brand green.
 const fieldClass =
@@ -24,13 +25,7 @@ export default function ForgotPasswordPage() {
     setSubmitting(true)
 
     try {
-      // Replace with your NestJS call:
-      // const res = await fetch("/api/auth/forgot-password", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify({ email }),
-      // })
-      // if (!res.ok) throw new Error("Request failed")
+      await authRequest("/auth/forgot-password", { method: "POST", body: JSON.stringify({ email }) })
 
       // Pass the email along so the OTP page can show where the code was sent.
       navigate("/otp", { state: { email } })
