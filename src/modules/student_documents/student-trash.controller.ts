@@ -1,10 +1,13 @@
-import { BadRequestException, Controller, Delete, Get, Param, Post, Query, Res } from '@nestjs/common';
-import type { Response } from 'express';
+import { BadRequestException, Controller, Delete, Get, Param, Post, Query, Res, Req, UseGuards } from '@nestjs/common';
+import type { Response, Request } from 'express';
+type AuthenticatedRequest = Request & { user: { sub: string } };
+import { JwtAuthGuard } from '../auth/guards/jwt.guard';
 import { createReadStream } from 'node:fs';
 import path from 'node:path';
 import { StudentDocumentsService } from './student-documents.service';
 
 @Controller('student-documents/trash')
+@UseGuards(JwtAuthGuard)
 export class StudentTrashController {
   constructor(private readonly documents: StudentDocumentsService) {}
 
@@ -24,17 +27,17 @@ export class StudentTrashController {
   }
 
   @Post(':docId/restore')
-  restore(@Param('docId') docId: string) {
-    return this.documents.restoreFromTrash(docId);
+  restore(@Param('docId') docId: string, @Req() req: AuthenticatedRequest) {
+    return this.documents.restoreFromTrash(docId, req.user.sub);
   }
 
   @Delete(':docId')
-  permanentlyDelete(@Param('docId') docId: string) {
-    return this.documents.permanentlyDelete(docId);
+  permanentlyDelete(@Param('docId') docId: string, @Req() req: AuthenticatedRequest) {
+    return this.documents.permanentlyDelete(docId, req.user.sub);
   }
 
   @Delete()
-  empty() {
-    return this.documents.emptyTrash();
+  empty(@Req() req: AuthenticatedRequest) {
+    return this.documents.emptyTrash(req.user.sub);
   }
 }
