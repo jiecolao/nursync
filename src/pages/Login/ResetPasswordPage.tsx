@@ -37,7 +37,6 @@ export default function ResetPasswordPage() {
     return <Navigate to="/forgot-password" replace />
   }
 
-  const { email, code } = state
   const allRulesMet = rules.every((r) => r.test(password))
   const mismatch = confirm.length > 0 && password !== confirm
   const canSubmit = allRulesMet && password === confirm && !submitting
