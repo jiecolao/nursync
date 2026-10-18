@@ -1,85 +1,21 @@
-import { DataTable } from "@/components/layout/DataTable"
-import { ColumnDef } from "@tanstack/react-table"
-import { FileLogsType } from "../HistoryLogs/logs.type" 
+import { DataTable, type DataTableAction } from "@/components/layout/DataTable";
+import type { ColumnDef } from "@tanstack/react-table";
+import { useEffect, useState } from "react";
+import { Plus, Pencil } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { AddUserPanel } from "./AddUserPanel";
 
-import { MoreHorizontal } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
-  DropdownMenuSeparator, DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-
-const columns: ColumnDef<FileLogsType>[] = [
-  { accessorKey: "uuid", header: "UUID" },
-  { accessorKey: "user", header: "User" },
-  { accessorKey: "student_name", header: "Student" },
-  { accessorKey: "file_action", header: "Action" },
-  { accessorKey: "file_modified", header: "File Modified" },
-  { accessorKey: "file_loc", header: "File Path" },
-  { accessorKey: "date_modified", header: "Date Modified" },
-
-  { 
-    id: "actions", 
-    enableHiding: false, 
-    enableSorting: false, 
-    cell: ({ row }) => {
-      const order = row.original // the full data object for this row
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger >
-            <Button variant="ghost" size="icon" className="size-8">
-              <MoreHorizontal className="size-4" />
-              <span className="sr-only">Open menu</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {/* <DropdownMenuItem onClick={() => navigator.clipboard.writeText(order.uuid)}>
-              Copy UUID
-            </DropdownMenuItem> */}
-            <DropdownMenuItem onClick={() => console.log("view", order)}>
-              See User
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => console.log("view", order)}>
-              See Student
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => console.log("view", order)}>
-              Go to File
-            </DropdownMenuItem>
-            {/* <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive" onClick={() => console.log("delete", order)}>
-              Delete
-            </DropdownMenuItem> */}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )
-    }},
-]
-
-const orders = [
-    {
-        uuid: "string",
-        user: "string",
-        student_name: "a",
-        file_action: "strings",
-        file_modified: "strings",
-        file_loc: "strings",
-        date_modified: "string",    
-    }
-]
-
-export default function UsersPage(){
-    return (
-        <>              
-          <h2 className="text-3xl font-bold text-primary mb-2">System Users</h2>
-          <p className="mt-1 mb-8 text-[.95rem] text-stone-600">A detailed record of file interactions made by users.</p>
-
-            <DataTable
-                columns={columns}
-                data={orders}
-                dateKey="date_modified"
-                searchPlaceholder="Search orders…"
-                exportFileName="orders"
-            />
-        </>
-    )
+type UserRecord = { userId: string; facultyId?: string | null; lastName: string; fastName: string; middleName?: string | null; suffix?: string | null; status?: boolean; createdAt: string; updatedAt: string; account?: { userAccId: string; username: string; email: string; status: boolean; role?: { roleId: number; role?: { roleId: number; roleName: string; permission?: Record<string, boolean> } } | null } | null };
+type UserRow = { user_id: string; name: string; username: string; email: string; role: string; status: string; date_modified: string; raw: UserRecord };
+const columns: ColumnDef<UserRow>[] = [
+{ accessorKey: "user_id", header: "User ID" }, { accessorKey: "name", header: "Name" }, { accessorKey: "username", header: "Username" }, { accessorKey: "email", header: "Email" }, { accessorKey: "role", header: "Role" }, { accessorKey: "status", header: "Status" },
+{ id: "actions", header: "Actions", enableSorting: false, cell: ({ row }) => <Button variant="outline" size="sm" onClick={() => window.dispatchEvent(new CustomEvent("nursync:edit-user", { detail: row.original.raw }))}><Pencil className="mr-2 size-4" />Edit</Button> }
+];
+function toRow(user: UserRecord): UserRow { const role = user.account?.role?.role; return { user_id: user.userId, name: [user.lastName, user.fastName, user.middleName, user.suffix].filter(Boolean).join(", "), username: user.account?.username ?? "—", email: user.account?.email ?? "—", role: role?.roleName ?? "Unassigned", status: user.account?.status ? "Enabled" : "Disabled", date_modified: user.updatedAt, raw: user }; }
+export default function UsersPage() {
+const [users, setUsers] = useState<UserRow[]>([]); const [loading, setLoading] = useState(true); const [error, setError] = useState<string | null>(null); const [panelOpen, setPanelOpen] = useState(false); const [editing, setEditing] = useState<UserRecord | null>(null);
+async function loadUsers(signal?: AbortSignal) { try { const response = await fetch("/api/admin", { credentials: "include", signal }); if (!response.ok) throw new Error("Unable to fetch system user accounts."); const records: UserRecord[] = await response.json(); setUsers(records.map(toRow)); setError(null); } catch (cause) { if (cause instanceof DOMException && cause.name === "AbortError") return; setError(cause instanceof Error ? cause.message : "Unable to fetch system user accounts."); } finally { if (!signal?.aborted) setLoading(false); } }
+useEffect(() => { const controller = new AbortController(); void loadUsers(controller.signal); const edit = (event: Event) => { setEditing((event as CustomEvent<UserRecord>).detail); setPanelOpen(true); }; window.addEventListener("nursync:edit-user", edit); return () => { controller.abort(); window.removeEventListener("nursync:edit-user", edit); }; }, []);
+const actions: DataTableAction<UserRow>[] = [{ id: "add-user", label: "Add User", icon: Plus, variant: "default", visible: ({ selectedRows }) => selectedRows.length === 0, onClick: () => { setEditing(null); setPanelOpen(true); } }];
+return <div className="flex flex-col"><h2 className="mb-2 text-3xl font-bold text-primary">System Users</h2><p className="mt-1 mb-8 text-[.95rem] text-stone-600">Manage system accounts, roles, and access status.</p>{loading && <p className="mb-3 text-sm text-muted-foreground">Loading system users…</p>}{error && <p role="alert" className="mb-3 text-sm text-destructive">{error}</p>}<DataTable columns={columns} data={users} dateKey="date_modified" searchPlaceholder="Search users…" exportFileName="system-users" actions={actions} pageSizeOptions={[10]} /><AddUserPanel open={panelOpen} onOpenChange={setPanelOpen} user={editing} onSaved={() => { setLoading(true); void loadUsers(); }} /></div>;
 }
