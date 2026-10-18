@@ -256,7 +256,7 @@ export default function StudentDocumentsPanel({
       )}
       {isOpen && (
         <DialogBox
-          title="Delete document?"
+          title="Move document to Trash?"
           open={isOpen}
           onOpenChange={(open) => {
             setIsOpen(open);
@@ -269,8 +269,7 @@ export default function StudentDocumentsPanel({
           yesBtnStyle="bg-red-700 hover:bg-red-600"
         >
           <p>
-            Delete {documentToRemove?.filename || 'this file'}? This cannot be
-            undone.
+            Move {documentToRemove?.filename || 'this file'} to Database/Trash? Its record will be retained with status Trashed.
           </p>
         </DialogBox>
       )}
