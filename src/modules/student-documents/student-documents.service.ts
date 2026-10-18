@@ -1,7 +1,7 @@
-import { BadRequestException, Injectable, NotFoundException, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, OnModuleDestroy, OnModuleInit, StreamableFile } from '@nestjs/common';
 import { PrismaService } from '../../integrations/prisma/prisma.service';
 import { randomUUID } from 'node:crypto';
-import { promises as fs } from 'node:fs';
+import { createReadStream, promises as fs } from 'node:fs';
 import * as path from 'node:path';
 import chokidar, { FSWatcher } from 'chokidar';
 
@@ -30,8 +30,7 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
     if (!CATEGORIES.includes(category as Category)) throw new BadRequestException('Unknown document category');
     const student = await this.prisma.student.findUnique({ where: { studentUuid: uuid } });
     if (!student) throw new NotFoundException('Student not found');
-    const studentDir = `${student.lastName}, ${student.firstName}`;
-    return { student, dir: path.join(this.root, studentDir, category), category };
+    return { student, dir: path.join(this.root, `${student.lastName}, ${student.firstName}`, category) };
   }
 
   private async categoryId(category: string) {
@@ -69,13 +68,25 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
         const ext = path.extname(safeName); filename = `${path.basename(safeName, ext)}-${randomUUID().slice(0, 8)}${ext}`; target = path.join(dir, filename);
       }
       await fs.writeFile(target, file.buffer, { flag: 'wx' });
-      const record = await this.prisma.studentDocument.create({ data: {
-        studentDocId: randomUUID(), studentUuid: student.studentUuid, docuId, filename,
-        filepath: path.relative(process.cwd(), target), submittedAt: new Date(), docuStatusId: defaultStatus.docuStatusId,
-      }, include: { documentCategories: true, documentStatus: true } });
+      const filepath = path.relative(process.cwd(), target);
+      // The watcher may have already indexed the new file; reuse that row instead of duplicating it.
+      const existing = await this.prisma.studentDocument.findFirst({ where: { filepath } });
+      const data = { studentUuid: student.studentUuid, docuId, filename, filepath, submittedAt: new Date(), docuStatusId: defaultStatus.docuStatusId };
+      const record = existing
+        ? await this.prisma.studentDocument.update({ where: { studentDocId: existing.studentDocId }, data, include: { documentCategories: true, documentStatus: true } })
+        : await this.prisma.studentDocument.create({ data: { studentDocId: randomUUID(), ...data }, include: { documentCategories: true, documentStatus: true } });
       results.push(record);
     }
     return { uploaded: results.length, documents: results };
+  }
+
+  async download(uuid: string, filepath: string) {
+    const doc = await this.prisma.studentDocument.findFirst({ where: { studentUuid: uuid, filepath } });
+    if (!doc?.filepath) throw new NotFoundException('Document not found');
+    const target = path.resolve(process.cwd(), doc.filepath);
+    if (!target.startsWith(this.root + path.sep)) throw new BadRequestException('Document path is outside the managed directory');
+    await fs.access(target);
+    return new StreamableFile(createReadStream(target), { disposition: `inline; filename="${path.basename(doc.filename ?? target).replace(/["\\\r\n]/g, '_')}"` });
   }
 
   async delete(uuid: string, docId: string) {
@@ -101,11 +112,15 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
       const status = await this.prisma.documentStatus.findFirst({ orderBy: { docuStatusId: 'asc' } });
       if (!student || !categoryRecord || !status) return;
       const filepath = path.relative(process.cwd(), file);
-      await this.prisma.studentDocument.upsert({
-        where: { studentDocId: `fs-${Buffer.from(filepath).toString('hex').slice(0, 58)}` },
-        create: { studentDocId: `fs-${Buffer.from(filepath).toString('hex').slice(0, 58)}`, studentUuid: student.studentUuid, docuId: categoryRecord.docuId, filename, filepath, submittedAt: new Date(), docuStatusId: status.docuStatusId },
-        update: { filename, filepath, docuId: categoryRecord.docuId, studentUuid: student.studentUuid },
-      });
+      const existing = await this.prisma.studentDocument.findFirst({ where: { filepath } });
+      if (existing) {
+        await this.prisma.studentDocument.update({ where: { studentDocId: existing.studentDocId }, data: { filename, filepath, docuId: categoryRecord.docuId, studentUuid: student.studentUuid } });
+        return;
+      }
+      await this.prisma.studentDocument.create({ data: {
+        studentDocId: randomUUID(), studentUuid: student.studentUuid, docuId: categoryRecord.docuId,
+        filename, filepath, submittedAt: new Date(), docuStatusId: status.docuStatusId,
+      } });
     } catch (error) { console.error('[student-documents] sync failed', file, error); }
   }
 
