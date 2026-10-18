@@ -39,6 +39,10 @@ import {
 import Logo from "@/assets/icons/logo-transp-w.png"
 import { useState, useEffect } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { DialogBox } from "./DialogBox"
+import { notify } from "./Toasty"
+import { pageTitles } from "@/pages/MainLayout" 
+
 /* -------------------------------------------------------------------------- */
 /*  Data                                                                       */
 /* -------------------------------------------------------------------------- */
@@ -96,10 +100,7 @@ const initials = (name: string) =>
 // const getPathname = () =>
 //   typeof window === "undefined" ? "" : window.location.pathname
 
-const handleLogout = async () => {
-  // await fetch("/api/auth/logout", { method: "POST", credentials: "include" })
-  window.location.href = "/login"
-}
+
 
 /* -------------------------------------------------------------------------- */
 /*  The cream tab                                                              */
@@ -283,9 +284,33 @@ function NavGroup({ label, items }: { label?: string; items: NavItem[] }) {
 /* -------------------------------------------------------------------------- */
 
 export default function AppSidebar() {
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      })
+
+      if (!response.ok) {
+        throw new Error(`Logout failed (${response.status})`)
+      }
+
+      navigate("/login")
+    } catch (error) {
+      notify.error("Unable to log out", {
+        description:
+          error instanceof Error
+            ? error.message
+            : "Please try again.",
+      })
+    }
+  }
+
   return (
-    // border-r-0 removes shadcn's 1px right border, which would otherwise cut
-    // a line between the tab and the page.
     <Sidebar
       collapsible="icon"
       className="group-data-[side=left]:border-r-0"
@@ -335,7 +360,10 @@ export default function AppSidebar() {
                 navButton,
                 "text-red-300 hover:bg-red-400/15 hover:text-red-200 cursor-pointer"
               )}
-              onClick={handleLogout}
+              onClick={() => {
+                  setIsLoggingOut(true)
+                }
+              }
             >
               <LogOut />
               <span className="group-data-[collapsible=icon]:hidden">Log out</span>
@@ -343,6 +371,8 @@ export default function AppSidebar() {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
+
+      w
     </Sidebar>
   )
 }
