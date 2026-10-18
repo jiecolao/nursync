@@ -48,7 +48,7 @@ export class AuthService {
     };
   }
 
-  private async issueTokens(userAccId: string) {
+  private async issueTokens(userAccId: string, auditAction = 'auth.login') {
     const payload = await this.getClaims(userAccId);
     const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
     const refreshToken = this.jwtService.sign({ sub: userAccId, email: payload.email, purpose: 'refresh' }, { expiresIn: '7d' });
@@ -56,7 +56,7 @@ export class AuthService {
       const actor = await this.auditLogs.resolveActorInTransaction(tx, userAccId);
       await tx.userAccount.update({ where: { userAccId }, data: { hashedRefreshToken: this.hashToken(refreshToken) } });
       await this.auditLogs.createActivityLogInTransaction(tx, {
-        userAccId: actor.userAccId, roleId: actor.roleId, action: 'auth.login',
+        userAccId: actor.userAccId, roleId: actor.roleId, action: auditAction,
       }, actor.adminName, JSON.stringify({ result: 'success' }));
     });
     return { accessToken, refreshToken, user: { id: userAccId, email: payload.email, role: payload.role, roles: payload.roles, permissions: payload.permissions } };
@@ -94,11 +94,15 @@ export class AuthService {
     const incomingHash = this.hashToken(incomingRefreshToken);
     const storedHash = user.hashedRefreshToken;
     if (!/^[a-f0-9]{64}$/.test(storedHash) || !crypto.timingSafeEqual(Buffer.from(incomingHash, 'hex'), Buffer.from(storedHash, 'hex'))) throw new UnauthorizedException('Invalid refresh token');
-    return this.issueTokens(userAccId);
+    return this.issueTokens(userAccId, 'auth.refresh');
   }
 
   async logout(userId: string) {
-    await this.prisma.userAccount.updateMany({ where: { userAccId: userId }, data: { hashedRefreshToken: null } });
+    await this.prisma.$transaction(async (tx) => {
+      const actor = await this.auditLogs.resolveActorInTransaction(tx, userId);
+      await tx.userAccount.updateMany({ where: { userAccId: userId }, data: { hashedRefreshToken: null } });
+      await this.auditLogs.createActivityLogInTransaction(tx, { userAccId: actor.userAccId, roleId: actor.roleId, action: 'auth.logout' }, actor.adminName, JSON.stringify({ result: 'success' }));
+    });
   }
 
   async requestPasswordReset(email: string) {
@@ -129,6 +133,10 @@ export class AuthService {
     try { payload = this.jwtService.verify(resetToken); } catch { throw new UnauthorizedException('Reset session expired'); }
     if (payload.purpose !== 'password-reset' || password.length < 12 || password.length > 128 || !/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9\W]/.test(password)) throw new BadRequestException('Invalid reset request or password does not meet requirements');
     const hashedPass = await this.hashService.hash(password);
-    await this.prisma.userAccount.update({ where: { userAccId: payload.sub }, data: { hashedPass, hashedRefreshToken: null } });
+    await this.prisma.$transaction(async (tx) => {
+      const actor = await this.auditLogs.resolveActorInTransaction(tx, payload.sub);
+      await tx.userAccount.update({ where: { userAccId: payload.sub }, data: { hashedPass, hashedRefreshToken: null } });
+      await this.auditLogs.createActivityLogInTransaction(tx, { userAccId: actor.userAccId, roleId: actor.roleId, action: 'auth.password_reset' }, actor.adminName, JSON.stringify({ result: 'success' }));
+    });
   }
 }
