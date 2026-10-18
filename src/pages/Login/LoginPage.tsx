@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import LogoFull from "@/assets/icons/logo-full.png"
 import { notify } from "@/components/layout/Toasty"
+import { authRequest } from "@/lib/auth"
+import { useAuth } from "@/components/auth/ProtectedRoute"
 
 // White fields sit on the cream page; the border and focus ring use the brand green.
 const fieldClass =
@@ -15,6 +17,7 @@ const fieldClass =
 
 export default function LoginPage() {
   const navigate = useNavigate()
+  const { refresh } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
@@ -27,17 +30,10 @@ export default function LoginPage() {
     setSubmitting(true)
 
     try {
-      // Replace with your NestJS login call:
-      // const res = await fetch("/api/auth/login", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   credentials: "include",
-      //   body: JSON.stringify({ email, password }),
-      // })
-      // if (!res.ok) throw new Error("Invalid credentials")
-      
-      // navigate("/dashboard")
-      notify.success("Login Successful");
+      await authRequest("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) })
+      await refresh()
+      notify.success("Login Successful")
+      navigate("/dashboard", { replace: true })
     } catch {
       setError("Your email or password is incorrect. Try again.")
     } finally {
