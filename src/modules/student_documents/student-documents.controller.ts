@@ -1,9 +1,10 @@
 import {
-  BadRequestException, Controller, Delete, Get, Param, Query, Res,
+  BadRequestException, Controller, Delete, Get, Param, Query, Res, Req,
   Post, UploadedFiles, UseInterceptors,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import type { Response } from 'express';
+import type { Response, Request } from 'express';
+type AuthenticatedRequest = Request & { user: { sub: string } };
 import { createReadStream } from 'node:fs';
 import path from 'node:path';
 import { StudentDocumentsService } from './student-documents.service';
@@ -18,8 +19,8 @@ export class StudentDocumentsController {
   }
 
   @Post('trash/:docId/restore')
-  restore(@Param('docId') docId: string) {
-    return this.documents.restoreFromTrash(docId);
+  restore(@Param('docId') docId: string, @Req() req: AuthenticatedRequest) {
+    return this.documents.restoreFromTrash(docId, req.user.sub);
   }
 
   @Delete('trash/:docId/permanent')
@@ -54,8 +55,9 @@ export class StudentDocumentsController {
   remove(
     @Param('uuid') uuid: string,
     @Param('docId') docId: string,
+    @Req() req: AuthenticatedRequest,
   ) {
-    return this.documents.remove(uuid, docId);
+    return this.documents.remove(uuid, docId, req.user.sub);
   }
 
   @Get('file')
