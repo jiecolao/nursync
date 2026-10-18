@@ -245,33 +245,85 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  async permanentlyDelete(studentDocId: string) {
-    const record = await this.prisma.studentDocument.findUnique({
-      where: { studentDocId }, include: { documentStatus: true },
-    });
+  async permanentlyDelete(studentDocId: string, actorUserId: string) {
+    const record = await this.prisma.studentDocument.findUnique({ where: { studentDocId }, include: { documentStatus: true, student: true } });
     if (!record || record.documentStatus.docuStatusName !== 'Trashed') throw new NotFoundException('Trashed document not found.');
+    const trashRoot = path.resolve(process.cwd(), 'Database/Trash');
+    let stagedPath: string | undefined;
+    let absolute: string | undefined;
     if (record.filepath) {
-      const absolute = path.resolve(process.cwd(), record.filepath);
-      const trashRoot = path.resolve(process.cwd(), 'Database/Trash');
+      absolute = path.resolve(process.cwd(), record.filepath);
       if (!absolute.startsWith(trashRoot + path.sep)) throw new BadRequestException('Document path is outside the trash directory.');
-      await fs.rm(absolute, { force: true });
+      try {
+        await fs.access(absolute);
+        stagedPath = path.join(path.dirname(absolute), `.deleting-${randomUUID()}`);
+        await fs.rename(absolute, stagedPath);
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+      }
     }
-    await this.prisma.studentDocument.delete({ where: { studentDocId } });
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        const actor = await this.auditLogs.resolveActorInTransaction(tx, actorUserId);
+        await tx.studentDocument.delete({ where: { studentDocId } });
+        await this.auditLogs.createFileModificationLogInTransaction(tx, {
+          userAccId: actor.userAccId, roleId: actor.roleId,
+          studentName: record.student.lastName + ', ' + record.student.firstName,
+          fileAction: 'permanent_delete', fileModified: '', fileLoc: record.filepath || '',
+        }, actor.adminName, record, null);
+        await this.auditLogs.createActivityLogInTransaction(tx, { userAccId: actor.userAccId, roleId: actor.roleId, action: 'document.permanent_delete' }, actor.adminName, JSON.stringify({ studentDocId }));
+      });
+    } catch (error) {
+      if (stagedPath && absolute) {
+        try { await fs.rename(stagedPath, absolute); }
+        catch (rollbackError) { this.logger.error(`Could not restore deleted file ${absolute}: ${String(rollbackError)}`); }
+      }
+      throw error;
+    }
+    if (stagedPath) await fs.rm(stagedPath, { force: true });
     return { deleted: true };
   }
 
-  async emptyTrash() {
+  async emptyTrash(actorUserId: string) {
     const trashedStatus = await this.prisma.documentStatus.findFirst({ where: { docuStatusName: 'Trashed' } });
     if (!trashedStatus) throw new BadRequestException('The "Trashed" document status is not configured.');
-    const records = await this.prisma.studentDocument.findMany({ where: { docuStatusId: trashedStatus.docuStatusId } });
+    const records = await this.prisma.studentDocument.findMany({ where: { docuStatusId: trashedStatus.docuStatusId }, include: { student: true } });
     const trashRoot = path.resolve(process.cwd(), 'Database/Trash');
-    for (const record of records) {
-      if (!record.filepath) continue;
-      const absolute = path.resolve(process.cwd(), record.filepath);
-      if (!absolute.startsWith(trashRoot + path.sep)) throw new BadRequestException(`Unsafe trash path for document ${record.studentDocId}.`);
-      await fs.rm(absolute, { force: true });
+    const staged: Array<{ original: string; temporary: string; record: typeof records[number] }> = [];
+    try {
+      for (const record of records) {
+        if (!record.filepath) continue;
+        const original = path.resolve(process.cwd(), record.filepath);
+        if (!original.startsWith(trashRoot + path.sep)) throw new BadRequestException(`Unsafe trash path for document ${record.studentDocId}.`);
+        try {
+          await fs.access(original);
+          const temporary = path.join(path.dirname(original), `.deleting-${randomUUID()}`);
+          await fs.rename(original, temporary);
+          staged.push({ original, temporary, record });
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+        }
+      }
+      await this.prisma.$transaction(async (tx) => {
+        const actor = await this.auditLogs.resolveActorInTransaction(tx, actorUserId);
+        await tx.studentDocument.deleteMany({ where: { docuStatusId: trashedStatus.docuStatusId } });
+        for (const record of records) {
+          await this.auditLogs.createFileModificationLogInTransaction(tx, {
+            userAccId: actor.userAccId, roleId: actor.roleId,
+            studentName: record.student.lastName + ', ' + record.student.firstName,
+            fileAction: 'empty_trash_delete', fileModified: '', fileLoc: record.filepath || '',
+          }, actor.adminName, record, null);
+        }
+        await this.auditLogs.createActivityLogInTransaction(tx, { userAccId: actor.userAccId, roleId: actor.roleId, action: 'document.empty_trash' }, actor.adminName, JSON.stringify({ deletedCount: records.length }));
+      });
+    } catch (error) {
+      for (const item of staged.reverse()) {
+        try { await fs.rename(item.temporary, item.original); }
+        catch (rollbackError) { this.logger.error(`Could not restore trashed file ${item.original}: ${String(rollbackError)}`); }
+      }
+      throw error;
     }
-    await this.prisma.studentDocument.deleteMany({ where: { docuStatusId: trashedStatus.docuStatusId } });
+    for (const item of staged) await fs.rm(item.temporary, { force: true });
     return { deletedCount: records.length };
   }
 
