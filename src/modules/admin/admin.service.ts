@@ -149,7 +149,7 @@ export class AdminService {
       });
       await this.LogsService.createActivityLogInTransaction(tx, {
         userAccId: actor.userAccId, roleId: actor.roleId, action: 'admin.update',
-      }, actor.adminName, JSON.stringify({ userId, oldState, newState: updated }));
+      }, actor.adminName, JSON.stringify({ userId, changedFields: Object.keys(body).filter((key) => key !== 'password' && key !== 'hashedRefreshToken') }));
       return updated;
     });
   }
@@ -183,7 +183,7 @@ export class AdminService {
       const oldState = await tx.user.findFirst({ where: { userId, account: { isNot: null } }, select: adminSelect });
       if (!oldState) throw new NotFoundException('User account not found');
       const updated = await tx.user.update({ where: { userId }, data: { account: { update: { status: false } } }, select: adminSelect });
-      await this.LogsService.createActivityLogInTransaction(tx, { userAccId: actor.userAccId, roleId: actor.roleId, action: 'admin.deactivate' }, actor.adminName, JSON.stringify({ userId, oldState, newState: updated }));
+      await this.LogsService.createActivityLogInTransaction(tx, { userAccId: actor.userAccId, roleId: actor.roleId, action: 'admin.deactivate' }, actor.adminName, JSON.stringify({ userId, previousStatus: oldState.account?.status, newStatus: false }));
       return updated;
     });
   }
