@@ -16,42 +16,6 @@ const columns: ColumnDef<FileLogsType>[] = [
   { accessorKey: "file_modified", header: "File Modified" },
   { accessorKey: "file_loc", header: "File Path" },
   { accessorKey: "date_modified", header: "Date Modified" },
-
-  { 
-    id: "actions", 
-    enableHiding: false, 
-    enableSorting: false, 
-    cell: ({ row }) => {
-      const order = row.original // the full data object for this row
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger >
-            <Button variant="ghost" size="icon" className="size-8">
-              <MoreHorizontal className="size-4" />
-              <span className="sr-only">Open menu</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {/* <DropdownMenuItem onClick={() => navigator.clipboard.writeText(order.uuid)}>
-              Copy UUID
-            </DropdownMenuItem> */}
-            <DropdownMenuItem onClick={() => console.log("view", order)}>
-              See User
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => console.log("view", order)}>
-              See Student
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => console.log("view", order)}>
-              Go to File
-            </DropdownMenuItem>
-            {/* <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive" onClick={() => console.log("delete", order)}>
-              Delete
-            </DropdownMenuItem> */}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )
-    }},
 ]
 
 const orders = [
@@ -76,8 +40,8 @@ export default function FileLogsPage(){
                 columns={columns}
                 data={orders}
                 dateKey="date_modified"
-                searchPlaceholder="Search orders…"
-                exportFileName="orders"
+                searchPlaceholder="Search file logs…"
+                exportFileName="file_logs"
             />
         </>
     )

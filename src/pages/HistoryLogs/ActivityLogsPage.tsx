@@ -16,38 +16,6 @@ const columns: ColumnDef<ActivityLogsType>[] = [
   { accessorKey: "user", header: "User" },
   { accessorKey: "action", header: "Action" },
   { accessorKey: "date_modified", header: "Date Modified" },
-  
-  // Left out of exports:
-  { 
-    id: "actions", 
-    enableHiding: false, 
-    enableSorting: false, 
-    cell: ({ row }) => {
-      const order = row.original // the full data object for this row
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger >
-            <Button variant="ghost" size="icon" className="size-8">
-              <MoreHorizontal className="size-4" />
-              <span className="sr-only">Open menu</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => navigator.clipboard.writeText(order.uuid)}>
-              Copy UUID
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => console.log("view", order)}>
-              See Profile
-            </DropdownMenuItem>
-            {/* <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive" onClick={() => console.log("delete", order)}>
-              Delete
-            </DropdownMenuItem> */}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )
-    },
-  },
 ]
 
 const orders = [
@@ -74,8 +42,8 @@ export default function ActivityLogsPage(){
                 columns={columns}
                 data={orders}
                 dateKey="date_modified"
-                searchPlaceholder="Search uuid, user, or action"
-                exportFileName="orders"
+                searchPlaceholder="Search activity logs"
+                exportFileName="activity_logs"
             />
         </>
     )
