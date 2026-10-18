@@ -17,6 +17,10 @@ type DashboardSummary = {
     total: number;
     active: number;
     inactive: number;
+    byYearAdmitted: Array<{
+      year: number;
+      count: number;
+    }>;
   };
   documents: {
     total: number;
@@ -150,16 +154,24 @@ export default function DashboardPage() {
             data={summary?.students.total ?? 0}
             legend="Total Students"
           />
-          <DashboardCard
+          {/* <DashboardCard
             bg_color="bg-white"
             data={summary?.students.active ?? 0}
             legend="Active Students"
-          />
+          /> */}
           <DashboardCard
             bg_color="bg-white"
             data={summary?.students.inactive ?? 0}
             legend="Inactive Students"
           />
+          {summary?.students.byYearAdmitted.map((item) => (
+            <DashboardCard
+              key={`batch-${item.year}`}
+              bg_color="bg-white"
+              data={item.count}
+              legend={`Batch ${item.year}`}
+            />
+          ))}
         </div>
       </div>
 
@@ -173,14 +185,6 @@ export default function DashboardPage() {
             data={summary?.documents.total ?? 0}
             legend="Total Documents"
           />
-          {summary?.documents.byStatus.map((item) => (
-            <DashboardCard
-              key={`status-${item.statusId}`}
-              bg_color="bg-white"
-              data={item.count}
-              legend={item.status}
-            />
-          ))}
           {summary?.documents.byCategory.map((item) => (
             <DashboardCard
               key={`category-${item.categoryId}`}

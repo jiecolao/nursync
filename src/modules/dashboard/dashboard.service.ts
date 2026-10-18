@@ -9,12 +9,18 @@ export class DashboardService {
     const [
       totalStudents,
       activeStudents,
+      studentsByYearAdmitted,
       totalDocuments,
       documentsByStatus,
       documentsByCategory,
     ] = await this.prisma.$transaction([
       this.prisma.student.count(),
       this.prisma.student.count({ where: { status: true } }),
+      this.prisma.student.groupBy({
+        by: ['yrAdmitted'],
+        _count: { _all: true },
+        orderBy: { yrAdmitted: 'asc' },
+      }),
       this.prisma.studentDocument.count(),
       this.prisma.studentDocument.groupBy({
         by: ['docuStatusId'],
@@ -43,6 +49,10 @@ export class DashboardService {
         total: totalStudents,
         active: activeStudents,
         inactive: totalStudents - activeStudents,
+        byYearAdmitted: studentsByYearAdmitted.map((item) => ({
+          year: item.yrAdmitted,
+          count: item._count._all,
+        })),
       },
       documents: {
         total: totalDocuments,
