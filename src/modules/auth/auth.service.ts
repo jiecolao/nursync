@@ -5,8 +5,6 @@ import { HashService } from './hash.service';
 import * as crypto from 'crypto';
 import nodemailer from 'nodemailer';
 
-const permissionSelect = { students_read: true, students_write: true, user_read: true, user_write: true, logs_read: true, logs_write: true } as const;
-
 @Injectable()
 export class AuthService {
   constructor(private prisma: PrismaService, private jwtService: JwtService, private hashService: HashService) {}
