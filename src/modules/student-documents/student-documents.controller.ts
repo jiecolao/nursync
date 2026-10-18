@@ -9,6 +9,12 @@ export class StudentDocumentsController {
   @Get()
   list(@Param('uuid') uuid: string) { return this.documents.list(uuid); }
 
+  @Get('file')
+  file(@Param('uuid') uuid: string, @Query('path') filepath: string) {
+    if (!filepath) throw new BadRequestException('File path is required');
+    return this.documents.download(uuid, filepath);
+  }
+
   @Post('upload')
   @UseInterceptors(FilesInterceptor('files', 20, {
     limits: { fileSize: 25 * 1024 * 1024 },
