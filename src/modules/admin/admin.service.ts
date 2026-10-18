@@ -79,7 +79,7 @@ export class AdminService {
     return admin;
   }
 
-  async createAdmin(body: CreateAdminDto) {
+  async createAdmin(body: CreateAdminDto, actorUserId: string) {
     if (!body.password)
       throw new BadRequestException('Password is required when creating an account');
     const hashedPass = await this.hashService.hash(body.password);
@@ -117,7 +117,7 @@ export class AdminService {
     });
   }
 
-  async updateAdmin(userId: string, body: UpdateAdminDto) {
+  async updateAdmin(userId: string, body: UpdateAdminDto, actorUserId: string) {
     await this.getAdmin(userId);
     const hashedPass = body.password
       ? await this.hashService.hash(body.password)
@@ -170,7 +170,7 @@ export class AdminService {
     });
   }
 
-  async updatePass(userId: string, pass: string) {
+  async updatePass(userId: string, pass: string, actorUserId: string) {
     await this.getAdmin(userId);
     const hashedPass = await this.hashService.hash(pass);
     return this.prisma.user.update({
@@ -179,7 +179,7 @@ export class AdminService {
     });
   }
 
-  async updateStatus(userId: string, status: boolean) {
+  async updateStatus(userId: string, status: boolean, actorUserId: string) {
     await this.getAdmin(userId);
     return this.prisma.user.update({
       where: { userId },
@@ -187,7 +187,7 @@ export class AdminService {
     });
   }
 
-  async deleteAdmin(userId: string) {
+  async deleteAdmin(userId: string, actorUserId: string) {
     await this.getAdmin(userId);
     return this.prisma.user.update({
       where: { userId },
