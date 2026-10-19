@@ -3,7 +3,10 @@ import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/s
 import AppSidebar from "../components/layout/AppSideBar";
 import { Undo2 } from "lucide-react";
 import { DialogBox } from "@/components/layout/DialogBox";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Shepherd from "shepherd.js";
+import "shepherd.js/dist/css/shepherd.css";
+import { useAuth } from "@/components/auth/ProtectedRoute";
 
 export const pageTitles: Record<string, string> = {
   "/dashboard": "Dashboard",
@@ -36,8 +39,55 @@ function getPageTitle(pathname: string): string {
 
 export default function MainLayout() {
   const [isOpen, setIsOpen] = useState(false);
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const params = new URLSearchParams(search);
+    if (params.get("tour") !== "1" || pathname === "/help") return;
+    const requiredPermission: Record<string, string> = {
+      "/directory": "students_read", "/students": "students_read", "/trash": "students_read",
+      "/system-users": "user_read", "/file-logs": "logs_read", "/activity-logs": "logs_read",
+    };
+    const permission = requiredPermission[pathname];
+    if (permission && !user?.permissions?.[permission]) {
+      navigate(pathname, { replace: true });
+      return;
+    }
+    const pageName = pageTitles[pathname] ?? "Nursync";
+    const tour = new Shepherd.Tour({
+      useModalOverlay: true,
+      defaultStepOptions: {
+        cancelIcon: { enabled: true },
+        scrollTo: { behavior: "smooth", block: "center" },
+        classes: "nursync-tour",
+      },
+    });
+    const steps = [
+      { title: `Welcome to ${pageName}`, text: `This is the ${pageName} module. This guided tour introduces the main areas and actions available on this page.`, selector: '[data-sidebar="sidebar"]' },
+      { title: "Explore the page", text: "Review the page content and use the available search, filters, and actions to complete your task." },
+      { title: "You're ready to go", text: "You can revisit this tour any time from the Help Center." },
+    ];
+    steps.forEach((step, index) => tour.addStep({
+      title: step.title,
+      text: step.text,
+      ...(step.selector && document.querySelector(step.selector) ? { attachTo: { element: step.selector, on: "right" as const } } : {}),
+      buttons: [
+        { text: "Skip tour", action: () => tour.cancel() },
+        ...(index > 0 ? [{ text: "Previous", action: () => tour.back(), secondary: true }] : []),
+        { text: index === steps.length - 1 ? "Finish" : "Next", action: () => tour.next() },
+      ],
+    }));
+    const storageKey = `nursync-tour-completed:${pathname}`;
+    tour.on("complete", () => {
+      try { window.localStorage.setItem(storageKey, "true"); } catch { /* storage may be unavailable */ }
+      navigate(pathname, { replace: true });
+    });
+    tour.on("cancel", () => navigate(pathname, { replace: true }));
+    tour.start();
+    return () => { tour.cancel(); };
+  }, [pathname, search, navigate, user?.permissions]);
 
   // Resolve page title dynamically
   const pageTitle = getPageTitle(pathname);
