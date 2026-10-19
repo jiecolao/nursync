@@ -31,6 +31,8 @@ npm run dev
 
 The backend creates the watched directory when it is missing. The Vite client connects to `http://localhost:5151` by default; set `VITE_API_URL` if the API is hosted elsewhere.
 
+On Windows, run [`setup-and-start.bat`](./setup-and-start.bat) from the repository root. It checks for Node.js and npm, creates `.env` from `.env.example` when needed, installs dependencies, generates Prisma Client, applies committed migrations, and starts both development servers. If it creates `.env`, fill in the required database and secret values, then run the batch file again.
+
 ### API and realtime protocol
 
 - `GET /api/directory/tree` returns `{ root, tree, generatedAt }`.
