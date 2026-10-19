@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../integrations/prisma/prisma.service';
+import { getFileModificationFilename } from '../audit_logs/file-modification.util';
 
 @Injectable()
 export class DashboardService {
@@ -94,7 +95,7 @@ export class DashboardService {
       user: log.adminName,
       student_name: log.studentName,
       file_action: log.fileAction,
-      file_modified: log.fileModified,
+      file_modified: getFileModificationFilename(log.fileModified, log.fileLoc),
       file_loc: log.fileLoc,
       date_modified: log.createdAt,
     }));

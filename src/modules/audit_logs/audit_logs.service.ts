@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../integrations/prisma/prisma.service';
 import { CreateActivityLogDto } from './dto/create-activity-log.dto';
 import { CreateFileModificationLogDto } from './dto/create-file-modification-log.dto';
+import { getFileModificationFilename } from './file-modification.util';
 
 const activityLogInclude = {
   user: { include: { role: true, userAccount: true } },
@@ -81,11 +82,16 @@ export class AuditLogsService {
     );
   }
 
-  getFileModificationLogs() {
-    return this.prisma.fileModificationLog.findMany({
+  async getFileModificationLogs() {
+    const logs = await this.prisma.fileModificationLog.findMany({
       include: fileModificationLogInclude,
       orderBy: { createdAt: 'desc' },
     });
+
+    return logs.map((log) => ({
+      ...log,
+      fileModified: getFileModificationFilename(log.fileModified, log.fileLoc),
+    }));
   }
 
   async getFileModificationLog(fileModUuid: string) {
