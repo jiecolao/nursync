@@ -190,6 +190,7 @@ export default function StudentProfilePage() {
   const [editing, setEditing] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
@@ -379,6 +380,30 @@ export default function StudentProfilePage() {
       notify.error("Unable to update status", {
         description: cause instanceof Error ? cause.message : "Please try again.",
       });
+    }
+  };
+
+  const deleteStudent = async () => {
+    if (!saved.student_uuid || deleting) return;
+    setDeleting(true);
+    try {
+      const response = await fetch(`/api/student/${encodeURIComponent(saved.student_uuid)}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(getApiError(body, "Unable to delete student profile."));
+      }
+      setConfirmOpen(false);
+      notify.success("Student deleted");
+      navigate("/students");
+    } catch (cause) {
+      notify.error("Unable to delete student", {
+        description: cause instanceof Error ? cause.message : "Please try again.",
+      });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -745,27 +770,11 @@ export default function StudentProfilePage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={async () => {
-                try {
-                  const response = await fetch(`/api/student/${saved.student_uuid}`, {
-                    method: "DELETE",
-                    credentials: "include",
-                  });
-                  if (!response.ok) {
-                    const body = await response.json().catch(() => null);
-                    throw new Error(getApiError(body, "Unable to delete student profile."));
-                  }
-                  notify.success("Student deleted");
-                  navigate("/students");
-                } catch (cause) {
-                  notify.error("Unable to delete student", {
-                    description: cause instanceof Error ? cause.message : "Please try again.",
-                  });
-                }
-              }}
+              onClick={() => void deleteStudent()}
+              disabled={deleting}
               className="bg-red-600 text-white hover:bg-red-700"
             >
-              Delete account
+              {deleting ? "Deleting..." : "Delete account"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
