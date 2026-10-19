@@ -136,8 +136,8 @@ export default function StudentsPage(){
 
   const downloadStudentTemplate = () => {
     const csv = [
-      "First Name,Last Name,Email,Student ID,Grade/Level,Year Admitted,Year of Residency",
-      "Jamie,Santos,jamie.santos@example.com,2026-12345,1,2026,1",
+      "lastName,firstName,middleName,genderId,dob,contactNo,email,provincialAddr,cityAddr,yrAdmitted,yrResidency,yrGraduated,isNonGraduate",
+      "Santos,Jamie,,1,2000-01-15,09171234567,jamie.santos@example.com,Manila,Cebu,2026,1,,false",
     ].join("\r\n");
     const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8;" }));
     const link = document.createElement("a");
@@ -149,10 +149,19 @@ export default function StudentsPage(){
 
   const normalizeHeader = (value: unknown) => String(value ?? "").trim().toLowerCase().replace(/[^a-z0-9]/g, "");
   const headerAliases: Record<string, string[]> = {
-    firstName: ["firstname", "givenname"], lastName: ["lastname", "surname", "familyname"],
-    email: ["email", "emailaddress"], studentId: ["studentid", "idnumber"],
-    level: ["gradelevel", "grade", "level"], yrAdmitted: ["yearadmitted", "yradmitted", "admittedyear"],
-    yrResidency: ["yearofresidency", "yearresidency", "yrresidency", "residencyyear"],
+    lastName: ["lastname", "surname", "familyname"],
+    firstName: ["firstname", "givenname"],
+    middleName: ["middlename"],
+    genderId: ["genderid", "gender"],
+    dob: ["dob", "dateofbirth", "birthdate"],
+    contactNo: ["contactno", "contactnumber", "phonenumber", "phone"],
+    email: ["email", "emailaddress"],
+    provincialAddr: ["provincialaddr", "provincialaddress"],
+    cityAddr: ["cityaddr", "cityaddress"],
+    yrAdmitted: ["yradmitted", "yearadmitted", "admittedyear"],
+    yrResidency: ["yrresidency", "yearresidency", "yearofresidency", "residencyyear"],
+    yrGraduated: ["yrgraduated", "yeargraduated", "graduationyear"],
+    isNonGraduate: ["isnongraduate", "nongraduate"],
   };
 
   const handleImportFile = async (file?: File) => {
@@ -178,24 +187,53 @@ export default function StudentsPage(){
           const alias = headerAliases[key].find((name) => values.has(name));
           return alias ? String(values.get(alias) ?? "").trim() : "";
         };
+        const parseOptionalInteger = (key: string) => {
+          const value = get(key);
+          return value ? Number(value) : undefined;
+        };
+        const parseOptionalBoolean = (key: string) => {
+          const value = get(key).toLowerCase();
+          if (!value) return undefined;
+          if (["true", "1", "yes"].includes(value)) return true;
+          if (["false", "0", "no"].includes(value)) return false;
+          return null;
+        };
         const firstName = get("firstName");
         const lastName = get("lastName");
+        const middleName = get("middleName");
+        const genderId = parseOptionalInteger("genderId");
+        const dob = get("dob");
+        const contactNo = get("contactNo");
         const email = get("email");
-        const studentId = get("studentId");
-        const level = get("level");
+        const provincialAddr = get("provincialAddr");
+        const cityAddr = get("cityAddr");
         const yrAdmitted = Number(get("yrAdmitted"));
-        const yrResidency = Number(get("yrResidency") || level);
+        const yrResidency = Number(get("yrResidency"));
+        const yrGraduated = parseOptionalInteger("yrGraduated");
+        const isNonGraduate = parseOptionalBoolean("isNonGraduate");
         const errors: string[] = [];
         if (!firstName) errors.push("First Name is required.");
         if (!lastName) errors.push("Last Name is required.");
-        if (firstName.length > 255 || lastName.length > 255) errors.push("Names must be 255 characters or fewer.");
+        if (firstName.length > 255 || lastName.length > 255 || middleName.length > 255) errors.push("Names must be 255 characters or fewer.");
         if (email && (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 100)) errors.push("Email address is invalid.");
-        if (studentId && !/^[A-Za-z0-9]{4}-[A-Za-z0-9]{5,}$/.test(studentId)) errors.push("Student ID must look like 2026-12345 (4 alphanumeric characters, hyphen, then at least 5).");
+        if (genderId !== undefined && !Number.isInteger(genderId)) errors.push("Gender ID must be a whole number.");
+        if (contactNo.length > 50) errors.push("Contact Number must be 50 characters or fewer.");
+        if (dob && Number.isNaN(Date.parse(dob))) errors.push("Date of Birth must be a valid date.");
         if (!Number.isInteger(yrAdmitted) || yrAdmitted < 1900 || yrAdmitted > 2100) errors.push("Year Admitted must be a year from 1900 to 2100.");
-        if (!Number.isInteger(yrResidency) || yrResidency < 0) errors.push("Year of Residency (or Grade/Level) must be a non-negative whole number.");
+        if (!Number.isInteger(yrResidency)) errors.push("Year of Residency must be a whole number.");
+        if (yrGraduated !== undefined && !Number.isInteger(yrGraduated)) errors.push("Year Graduated must be a whole number.");
+        if (isNonGraduate === null) errors.push("Is Non-Graduate must be true or false.");
         const payload: Record<string, unknown> = {
-          firstName, lastName, yrAdmitted, yrResidency, isNonGraduate: false,
-          ...(studentId && { studentId }), ...(email && { email }),
+          firstName, lastName, yrAdmitted, yrResidency,
+          ...(middleName && { middleName }),
+          ...(genderId !== undefined && Number.isInteger(genderId) && { genderId }),
+          ...(dob && !Number.isNaN(Date.parse(dob)) && { dob: new Date(dob).toISOString() }),
+          ...(contactNo && { contactNo }),
+          ...(email && { email }),
+          ...(provincialAddr && { provincialAddr }),
+          ...(cityAddr && { cityAddr }),
+          ...(yrGraduated !== undefined && Number.isInteger(yrGraduated) && { yrGraduated }),
+          ...(isNonGraduate !== null && isNonGraduate !== undefined && { isNonGraduate }),
         };
         return { row: index + 2, payload, errors };
       });
@@ -343,13 +381,13 @@ export default function StudentsPage(){
                 exportFileName="Student Records"
                 actions={actions}
                 enableRowSelection={true}
-                pageSizeOptions={[10]}
+                pageSizeOptions={[10, 20, 50]}
               />
               {isImportOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="presentation">
                   <section role="dialog" aria-modal="true" aria-labelledby="student-import-title" className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-background p-6 shadow-xl">
                     <h3 id="student-import-title" className="text-xl font-semibold">Import Student Records</h3>
-                    <p className="mt-2 text-sm text-muted-foreground">Upload CSV or Excel. First Name, Last Name, Year Admitted, and Year of Residency (or Grade/Level) are required. Student IDs must follow the existing format, e.g. 2026-12345.</p>
+                    <p className="mt-2 text-sm text-muted-foreground">Upload CSV or Excel using the CreateStudentDto fields. First Name, Last Name, Year Admitted, and Year of Residency are required. Student IDs must follow the existing format, e.g. 2026-12345.</p>
                     <div className="my-5 flex flex-col gap-3">
                       <div
                         role="button"
