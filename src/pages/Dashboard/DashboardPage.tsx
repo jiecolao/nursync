@@ -17,6 +17,7 @@ type DashboardSummary = {
     total: number;
     active: number;
     inactive: number;
+    nonGraduates: number;
     byYearAdmitted: Array<{
       year: number;
       count: number;
@@ -160,9 +161,9 @@ export default function DashboardPage() {
             legend="Active Students"
           /> */}
           <DashboardCard
-            bg_color="bg-white"
-            data={summary?.students.inactive ?? 0}
-            legend="Inactive Students"
+            bg_color="bg-yellow-300"
+            data={summary?.students.nonGraduates ?? 0}
+            legend="Non-Graduates"
           />
           {summary?.students.byYearAdmitted.map((item) => (
             <DashboardCard
