@@ -411,11 +411,11 @@ export function DataTable<TData>({
               : "0 results"}
         </span>
         <div className="flex gap-2">
-          <Button variant="outline" size="icon" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
-            <ChevronLeft className="size-4" />
+          <Button variant="outline" className={"bg-primary hover:bg-green-800"} size="icon" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
+            <ChevronLeft className="size-4 text-white" />
           </Button>
-          <Button variant="outline" size="icon" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
-            <ChevronRight className="size-4" />
+          <Button variant="outline" className={"bg-primary hover:bg-green-800"} size="icon" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
+            <ChevronRight className="size-4 text-white" />
           </Button>
         </div>
       </div>
