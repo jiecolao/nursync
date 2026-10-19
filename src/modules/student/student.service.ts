@@ -25,7 +25,7 @@ export class StudentService {
     return this.prisma.$transaction(async (tx) => {
       const actor = await this.auditLogs.resolveActorInTransaction(tx, actorUserId);
       const student = await tx.student.create({ data: {
-        studentId: body.studentId, firstName: body.firstName, lastName: body.lastName,
+        studentId: body.studentId, firstName: body.firstName, lastName: body.lastName.toUpperCase(),
         middleName: body.middleName,
         gender: body.genderId ? { connect: { genderId: body.genderId } } : undefined,
         dob: body.dob ? new Date(body.dob) : undefined, contactNo: body.contactNo,
@@ -46,7 +46,7 @@ export class StudentService {
       const oldState = await tx.student.findUnique({ where: { studentUuid: studUuid } });
       if (!oldState) throw new NotFoundException('Student not found');
       const updateData: UpdateStudentDto = {
-        studentId: body.studentId, firstName: body.firstName, lastName: body.lastName,
+        studentId: body.studentId, firstName: body.firstName, lastName: body.lastName?.toUpperCase(),
         middleName: body.middleName, genderId: body.genderId,
         dob: body.dob ? new Date(body.dob) : undefined, contactNo: body.contactNo,
         email: body.email, provincialAddr: body.provincialAddr, cityAddr: body.cityAddr,
