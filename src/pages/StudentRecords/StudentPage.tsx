@@ -114,8 +114,8 @@ export default function StudentsPage(){
     const csv = [
       "First Name,Last Name,Email,Student ID,Grade/Level,Year Admitted,Year of Residency",
       "Jamie,Santos,jamie.santos@example.com,2026-12345,1,2026,1",
-    ].join("\\r\\n");
-    const url = URL.createObjectURL(new Blob(["\\uFEFF", csv], { type: "text/csv;charset=utf-8;" }));
+    ].join("\r\n");
+    const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8;" }));
     const link = document.createElement("a");
     link.href = url;
     link.download = "student-import-template.csv";
@@ -135,7 +135,7 @@ export default function StudentsPage(){
     setImportMessage(null);
     setImportPreview([]);
     if (!file) return;
-    if (!/\\.(csv|xlsx|xls)$/i.test(file.name)) {
+    if (!/\.(csv|xlsx|xls)$/i.test(file.name)) {
       setImportMessage("Choose a CSV or Excel (.xlsx, .xls) file.");
       return;
     }
@@ -163,7 +163,7 @@ export default function StudentsPage(){
         if (!firstName) errors.push("First Name is required.");
         if (!lastName) errors.push("Last Name is required.");
         if (firstName.length > 255 || lastName.length > 255) errors.push("Names must be 255 characters or fewer.");
-        if (email && (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) || email.length > 100)) errors.push("Email address is invalid.");
+        if (email && (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 100)) errors.push("Email address is invalid.");
         if (studentId && !/^[A-Za-z0-9]{4}-[A-Za-z0-9]{5,}$/.test(studentId)) errors.push("Student ID must look like 2026-12345 (4 alphanumeric characters, hyphen, then at least 5).");
         if (!Number.isInteger(yrAdmitted) || yrAdmitted < 1900 || yrAdmitted > 2100) errors.push("Year Admitted must be a year from 1900 to 2100.");
         if (!Number.isInteger(yrResidency) || yrResidency < 0) errors.push("Year of Residency (or Grade/Level) must be a non-negative whole number.");
@@ -316,6 +316,35 @@ export default function StudentsPage(){
                 enableRowSelection={true}
                 pageSizeOptions={[10]}
               />
+              {isImportOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="presentation">
+                  <section role="dialog" aria-modal="true" aria-labelledby="student-import-title" className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-background p-6 shadow-xl">
+                    <h3 id="student-import-title" className="text-xl font-semibold">Import Student Records</h3>
+                    <p className="mt-2 text-sm text-muted-foreground">Upload CSV or Excel. First Name, Last Name, Year Admitted, and Year of Residency (or Grade/Level) are required. Student IDs must follow the existing format, e.g. 2026-12345.</p>
+                    <div className="my-4 flex flex-wrap items-center gap-3">
+                      <Button type="button" variant="outline" onClick={downloadStudentTemplate}><Download className="mr-2 size-4" />Download CSV Template</Button>
+                      <input ref={importInputRef} type="file" accept=".csv,.xlsx,.xls" className="block max-w-full text-sm" onChange={(event) => void handleImportFile(event.target.files?.[0])} />
+                    </div>
+                    {importMessage && <p role="status" className="mb-3 text-sm">{importMessage}</p>}
+                    {importPreview.length > 0 && (
+                      <div className="mb-4 space-y-2">
+                        <p className="text-sm font-medium">{importPreview.length} row(s) detected</p>
+                        <div className="max-h-48 overflow-auto rounded border p-3 text-sm">
+                          {importPreview.map((record) => (
+                            <p key={record.row} className={record.errors.length ? "text-red-600" : "text-green-700"}>
+                              Row {record.row}: {String(record.payload.firstName)} {String(record.payload.lastName)}{record.errors.length ? ` — ${record.errors.join(" ")}` : " — Valid"}
+                            </p>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    <div className="flex justify-end gap-2">
+                      <Button type="button" variant="outline" disabled={importing} onClick={() => { setIsImportOpen(false); setImportPreview([]); setImportMessage(null); if (importInputRef.current) importInputRef.current.value = ""; }}>Cancel</Button>
+                      <Button type="button" disabled={importing || importPreview.length === 0 || importPreview.some((record) => record.errors.length > 0)} onClick={() => void submitImport()}>{importing ? "Importing..." : `Import ${importPreview.length || ""} Students`}</Button>
+                    </div>
+                  </section>
+                </div>
+              )}
               <AddStudentPanel
                 open={isAddStudentOpen}
                 onOpenChange={setIsAddStudentOpen}
