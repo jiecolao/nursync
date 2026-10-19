@@ -56,30 +56,88 @@ export default function MainLayout() {
       return;
     }
     const pageName = pageTitles[pathname] ?? "Nursync";
+    const routeLink = `a[href="${pathname}"]`;
+    const commonSteps = [
+      { title: `${pageName} navigation`, text: `This is the ${pageName} tab in the Nursync sidebar. Use it to return to this module whenever you need it.`, selector: routeLink },
+      { title: "Find what you need", text: "Use the page's search field to narrow the list by a name, identifier, or keyword.", selector: '[data-tour="table-search"]' },
+      { title: "Review the results", text: "Your records appear here. Column headings can often be used to sort results, and the controls below help you move between pages.", selector: '[data-tour="table-results"]' },
+      { title: "More tools", text: "Use the available date filters, column options, and export actions to tailor or download the information shown.", selector: '[data-tour="table-tools"]' },
+    ];
+    const pageSteps: Record<string, typeof commonSteps> = {
+      "/dashboard": [
+        { title: "Dashboard navigation", text: "Use this active sidebar tab to return to your workspace overview.", selector: routeLink },
+        { title: "Student overview", text: "These summary cards give you a quick snapshot of student counts and admission batches.", selector: 'main h1' },
+        { title: "Recent activity", text: "Review recent file changes here. Search the table or use the date filter to find a specific event.", selector: '[data-tour="table-search"]' },
+        { title: "Explore the records", text: "The table shows recent activity and supports sorting, paging, and export tools.", selector: '[data-tour="table-results"]' },
+      ],
+      "/directory": [
+        { title: "Directory navigation", text: "This is the Directory tab. Use it to return to the directory at any time.", selector: routeLink },
+        { title: "Browse directory entries", text: "Review the directory content here and use the available controls to locate an entry.", selector: 'main h2, main h1, main [data-tour="table-results"]' },
+        ...commonSteps.slice(1),
+      ],
+      "/students": [
+        { title: "Student Records tab", text: "This active tab opens the student records workspace.", selector: routeLink },
+        { title: "Search student records", text: "Search by student details to narrow the records displayed in the table.", selector: '[data-tour="table-search"]' },
+        { title: "Review student records", text: "Student IDs, names, and other available details are shown in this table. Select a row's arrow to open its profile.", selector: '[data-tour="table-results"]' },
+        { title: "Table tools", text: "Use the table tools to filter, adjust visible columns, and export records when those actions are available.", selector: '[data-tour="table-tools"]' },
+      ],
+      "/trash": [
+        { title: "Trash tab", text: "Open Trash from this sidebar tab to review deleted records.", selector: routeLink },
+        { title: "Find a deleted record", text: "Use search and any available filters to locate the record you need.", selector: '[data-tour="table-search"]' },
+        { title: "Review available actions", text: "Check the records carefully before choosing any recovery or removal action.", selector: '[data-tour="table-results"]' },
+      ],
+      "/system-users": [
+        { title: "System Users tab", text: "This area is for authorized users to review accounts and access.", selector: routeLink },
+        { title: "Find an account", text: "Search the list to locate a user account by the information available in the table.", selector: '[data-tour="table-search"]' },
+        { title: "Review user access", text: "Review the account details and assigned role before making access changes.", selector: '[data-tour="table-results"]' },
+        { title: "Table tools", text: "Use the available table controls to refine, sort, or export the account list.", selector: '[data-tour="table-tools"]' },
+      ],
+      "/file-logs": [
+        { title: "File History tab", text: "This tab opens file-related history for your account.", selector: routeLink },
+        { title: "Search file events", text: "Search by user, student, action, or file details to narrow down events.", selector: '[data-tour="table-search"]' },
+        { title: "Read an event", text: "Use the event columns and timestamps to understand what changed and when.", selector: '[data-tour="table-results"]' },
+        { title: "Filter or export", text: "Use date filters and export tools to focus on a time period or save the results.", selector: '[data-tour="table-tools"]' },
+      ],
+      "/activity-logs": [
+        { title: "Activity Log tab", text: "This tab opens recorded system activity.", selector: routeLink },
+        { title: "Find an activity", text: "Search for a user or action to narrow down the activity entries.", selector: '[data-tour="table-search"]' },
+        { title: "Review the event details", text: "Read the action and timestamp columns to help investigate unexpected behavior.", selector: '[data-tour="table-results"]' },
+        { title: "Use table controls", text: "Sort columns, move through result pages, or export the activity list where available.", selector: '[data-tour="table-tools"]' },
+      ],
+      "/my-account": [
+        { title: "My Account tab", text: "This is your personal account area.", selector: routeLink },
+        { title: "Review your information", text: "Review the profile details and settings shown on this page.", selector: 'main form, main [data-slot="card"], main section' },
+        { title: "Keep your account secure", text: "Use the account options provided here. Never share your password with anyone.", selector: 'main button, main input' },
+      ],
+    };
+    const steps = pageSteps[pathname] ?? commonSteps;
     const tour = new Shepherd.Tour({
       useModalOverlay: true,
       defaultStepOptions: {
         cancelIcon: { enabled: true },
         scrollTo: { behavior: "smooth", block: "center" },
         classes: "nursync-tour",
+        modalOverlayOpeningPadding: 8,
+        modalOverlayOpeningRadius: 12,
       },
     });
-    const steps = [
-      { title: `Welcome to ${pageName}`, text: `This is the ${pageName} module. This guided tour introduces the main areas and actions available on this page.`, selector: '[data-sidebar="sidebar"]' },
-      { title: "Explore the page", text: "Review the page content and use the available search, filters, and actions to complete your task." },
-      { title: "You're ready to go", text: "You can revisit this tour any time from the Help Center." },
+    const availableSteps = steps.filter((step) => {
+      if (!step.selector) return true;
+      return Boolean(document.querySelector(step.selector));
+    });
+    const tourSteps = availableSteps.length ? availableSteps : [
+      { title: `Welcome to ${pageName}`, text: `Explore the ${pageName} page and the controls available to your account.` },
     ];
-    steps.forEach((step, index) => tour.addStep({
+    tourSteps.forEach((step, index) => tour.addStep({
       title: step.title,
       text: step.text,
-      ...(step.selector && document.querySelector(step.selector) ? { attachTo: { element: step.selector, on: "right" as const } } : {}),
+      ...(step.selector ? { attachTo: { element: step.selector, on: "bottom" as const } } : {}),
       buttons: [
-        { text: "Skip tour", action: () => tour.cancel() },
-        ...(index > 0 ? [{ text: "Previous", action: () => tour.back(), secondary: true }] : []),
-        { text: index === steps.length - 1 ? "Finish" : "Next", action: () => tour.next() },
+        { text: "Exit tour", action: () => tour.cancel(), classes: "nursync-tour__button nursync-tour__button--quiet" },
+        ...(index > 0 ? [{ text: "Previous", action: () => tour.back(), secondary: true, classes: "nursync-tour__button nursync-tour__button--secondary" }] : []),
+        { text: index === tourSteps.length - 1 ? "Finish tour" : "Next step", action: () => tour.next(), classes: "nursync-tour__button nursync-tour__button--primary" },
       ],
     }));
-    const storageKey = `nursync-tour-completed:${pathname}`;
     tour.on("complete", () => {
       try { window.localStorage.setItem(storageKey, "true"); } catch { /* storage may be unavailable */ }
       navigate(pathname, { replace: true });
