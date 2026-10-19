@@ -188,7 +188,7 @@
   overflow: hidden;
   font-family: var(--font-sans, sans-serif);
 }
-.nursync-tour .shepherd-header {
+.nursync-tour.shepherd-element .shepherd-content .shepherd-header {
   padding: 18px 20px 10px;
   background: var(--color-primary, #025034);
   color: white;
@@ -245,7 +245,7 @@
 .shepherd-modal-is-visible .shepherd-element { z-index: 10000; }
 @media (max-width: 480px) {
   .nursync-tour.shepherd-element { max-width: calc(100vw - 20px); }
-  .nursync-tour .shepherd-header { padding: 15px 16px 9px; }
+  .nursync-tour.shepherd-element .shepherd-content .shepherd-header { padding: 15px 16px 9px; }
   .nursync-tour .shepherd-text { padding: 13px 16px 15px; }
   .nursync-tour .shepherd-footer { padding: 0 16px 15px; flex-wrap: wrap; }
 }

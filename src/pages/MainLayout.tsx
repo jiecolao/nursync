@@ -62,7 +62,7 @@ export default function MainLayout() {
       return;
     }
     const storageKey = `nursync-tour-completed:${pathname}`;
-    const pageName = pageTitles[pathname] ?? "Nursync";
+    const pageName = pageTitles[pathname] ?? "NurSync";
     const routeLink = `a[href="${pathname}"]`;
     const commonSteps: TourStep[] = [
       { title: `${pageName} navigation`, text: `This is the ${pageName} tab in the Nursync sidebar. Use it to return to this module whenever you need it.`, selector: routeLink },
@@ -114,7 +114,6 @@ export default function MainLayout() {
       "/my-account": [
         { title: "My Account tab", text: "This is your personal account area.", selector: routeLink },
         { title: "Review your information", text: "Review the profile details and settings shown on this page.", selector: 'main form, main [data-slot="card"], main section' },
-        { title: "Keep your account secure", text: "Use the account options provided here. Never share your password with anyone.", selector: 'main button, main input' },
       ],
     };
     const steps = pageSteps[pathname] ?? commonSteps;
