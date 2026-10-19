@@ -210,10 +210,10 @@ export function DataTable<TData>({
   }
 
   return (
-    <div className={cn("space-y-4", className)}>
+    <div data-tour="table-results" className={cn("space-y-4", className)}>
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative min-w-[220px] flex-1 sm:max-w-sm">
+      <div data-tour="table-tools" className="flex flex-wrap items-center gap-2">
+        <div data-tour="table-search" className="relative min-w-[220px] flex-1 sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={globalFilter}
