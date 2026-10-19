@@ -3,6 +3,8 @@
 # Build the NestJS API and Vite client from the same dependency graph.
 FROM node:24-bookworm-slim AS build
 WORKDIR /app
+# Prisma's config validates DATABASE_URL during client generation; this is build-only.
+ENV DATABASE_URL=mysql://nursync:build-only@127.0.0.1:3306/nursync
 COPY package*.json ./
 RUN npm ci
 COPY . .
@@ -16,7 +18,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends dumb-init \
   && rm -rf /var/lib/apt/lists/*
 COPY --from=build --chown=node:node /app/package*.json ./
 COPY --from=build --chown=node:node /app/node_modules ./node_modules
-RUN npm prune --omit=dev
+RUN DATABASE_URL=mysql://nursync:build-only@127.0.0.1:3306/nursync npm prune --omit=dev
 COPY --from=build --chown=node:node /app/dist ./dist
 COPY --from=build --chown=node:node /app/prisma ./prisma
 COPY --from=build --chown=node:node /app/prisma.config.ts ./prisma.config.ts
