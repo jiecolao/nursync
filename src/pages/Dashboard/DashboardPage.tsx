@@ -18,7 +18,7 @@ type DashboardSummary = {
     active: number;
     inactive: number;
     nonGraduates: number;
-    byYearAdmitted: Array<{
+    byYearGraduated: Array<{
       year: number;
       count: number;
     }>;
@@ -165,12 +165,12 @@ export default function DashboardPage() {
             data={summary?.students.nonGraduates ?? 0}
             legend="Non-Graduates"
           />
-          {summary?.students.byYearAdmitted.map((item) => (
+          {summary?.students.byYearGraduated.map((item) => (
             <DashboardCard
               key={`batch-${item.year}`}
               bg_color="bg-white"
               data={item.count}
-              legend={`Batch ${item.year}`}
+              legend={item.year ? `Batch ${item.year}` : "No Year Graduated"}
             />
           ))}
         </div>

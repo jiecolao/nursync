@@ -11,18 +11,19 @@ export class DashboardService {
       totalStudents,
       activeStudents,
       nonGraduateStudents,
-      studentsByYearAdmitted,
+      studentsByYearGraduated,
       totalDocuments,
       documentsByStatus,
       documentsByCategory,
     ] = await this.prisma.$transaction([
       this.prisma.student.count(),
-      this.prisma.student.count({ where: { status: true } }),
+      this.prisma.student.count({ where: { status: true, isNonGraduate: false } }),
       this.prisma.student.count({ where: { isNonGraduate: true } }),
       this.prisma.student.groupBy({
-        by: ['yrAdmitted'],
+        by: ['yrGraduated'],
         _count: { _all: true },
-        orderBy: { yrAdmitted: 'asc' },
+        where: { NOT: { yrGraduated: null } },
+        orderBy: { yrGraduated: 'asc' },
       }),
       this.prisma.studentDocument.count(),
       this.prisma.studentDocument.groupBy({
@@ -53,8 +54,8 @@ export class DashboardService {
         active: activeStudents,
         inactive: totalStudents - activeStudents,
         nonGraduates: nonGraduateStudents,
-        byYearAdmitted: studentsByYearAdmitted.map((item) => ({
-          year: item.yrAdmitted,
+        byYearGraduated: studentsByYearGraduated.map((item) => ({
+          year: item.yrGraduated,
           count: item._count._all,
         })),
       },
