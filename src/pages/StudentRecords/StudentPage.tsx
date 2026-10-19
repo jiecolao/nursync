@@ -69,6 +69,23 @@ function createColumns(navigate: NavigateFunction): ColumnDef<StudentTableType>[
   ];
 }
 
+function normalizeStudentId(value: unknown): string {
+  return String(value ?? "").trim().toLowerCase();
+}
+
+async function getImportRequestError(response: Response): Promise<string> {
+  const body = await response.json().catch(() => null) as {
+    message?: string | string[];
+    error?: string;
+  } | null;
+  const message = Array.isArray(body?.message) ? body.message.join(", ") : body?.message;
+
+  if (message) return message;
+  if (body?.error) return body.error;
+  if (response.status === 409) return "A student with the same Student ID already exists.";
+  return `Request failed with status ${response.status}.`;
+}
+
 export default function StudentsPage(){
   const [isOpen, setIsOpen] = useState(false);
   const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
@@ -188,9 +205,30 @@ export default function StudentsPage(){
         };
         return { row: index + 2, payload, errors };
       });
-      setImportPreview(records);
-      const invalid = records.filter((record) => record.errors.length).length;
-      setImportMessage(`Loaded ${records.length} row(s). ${invalid ? `${invalid} need correction.` : "All rows passed validation."}`);
+      const existingStudentIds = new Set(
+        students
+          .map((student) => normalizeStudentId(student.student_id))
+          .filter(Boolean),
+      );
+      const importedStudentIdCounts = new Map<string, number>();
+      for (const record of records) {
+        const studentId = normalizeStudentId(record.payload.studentId);
+        if (studentId) importedStudentIdCounts.set(studentId, (importedStudentIdCounts.get(studentId) ?? 0) + 1);
+      }
+      const validatedRecords = records.map((record) => {
+        const studentId = normalizeStudentId(record.payload.studentId);
+        const duplicateErrors: string[] = [];
+        if (studentId && existingStudentIds.has(studentId)) {
+          duplicateErrors.push("Student ID already exists.");
+        }
+        if (studentId && (importedStudentIdCounts.get(studentId) ?? 0) > 1) {
+          duplicateErrors.push("Student ID is duplicated in this file.");
+        }
+        return { ...record, errors: [...record.errors, ...duplicateErrors] };
+      });
+      setImportPreview(validatedRecords);
+      const invalid = validatedRecords.filter((record) => record.errors.length).length;
+      setImportMessage(`Loaded ${validatedRecords.length} row(s). ${invalid ? `${invalid} need correction.` : "All rows passed validation."}`);
     } catch (cause) {
       setImportMessage(cause instanceof Error ? cause.message : "Unable to read this file.");
     }
@@ -217,8 +255,7 @@ export default function StudentsPage(){
             body: JSON.stringify(record.payload),
           });
           if (!response.ok) {
-            const body = await response.json().catch(() => null);
-            throw new Error(Array.isArray(body?.message) ? body.message.join(", ") : body?.message || `HTTP ${response.status}`);
+            throw new Error(await getImportRequestError(response));
           }
           const student = await response.json() as StudentApiRecord;
           setStudents((current) => [toStudentTableRecord(student), ...current]);
@@ -228,7 +265,7 @@ export default function StudentsPage(){
         }
       }
       if (failures.length) {
-        setImportMessage(`Imported ${created} of ${importPreview.length} records. Failures: ${failures.slice(0, 5).join(" | ")}${failures.length > 5 ? " | …" : ""}`);
+        setImportMessage(`Import completed with errors. Imported ${created} of ${importPreview.length} records. ${failures.slice(0, 5).join(" | ")}${failures.length > 5 ? " | …" : ""}`);
       } else {
         notify.success("Students imported", { description: `${created} student record(s) created.` });
         setIsImportOpen(false);
