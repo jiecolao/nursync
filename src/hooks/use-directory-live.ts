@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { io, type Socket } from 'socket.io-client';
 import { useDirectoryStore, type DirectoryEvent } from '@/stores/directory-store';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5151';
+const API_URL = import.meta.env.VITE_API_URL || window.location.origin;
 
 export type DirectoryScope = 'students' | 'trash';
 
