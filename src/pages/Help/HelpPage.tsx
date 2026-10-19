@@ -75,10 +75,6 @@ export default function HelpPage() {
     }
     const storageKey = `nursync-tour-completed:${topic.route}`;
     try {
-      if (window.localStorage.getItem(storageKey) === "true") {
-        navigate(location.pathname, { replace: true });
-        return;
-      }
     } catch { /* Tours remain usable when browser storage is unavailable. */ }
 
     const tour = new Shepherd.Tour({
