@@ -94,6 +94,12 @@ export default function StudentDocumentsPanel({
   useEffect(() => {
     void refresh();
   }, [refresh]);
+  const completedCategoryCount = CATEGORIES.filter(
+    (name) => Boolean(completionByStudent[studentUuid]?.[name]),
+  ).length;
+  const completionPercent = Math.round((completedCategoryCount / CATEGORIES.length) * 100);
+  const totalDocumentCount = categories.reduce((total, category) => total + category.count, 0);
+
   const fileUrl = useMemo(
     () =>
       preview?.filepath
@@ -121,19 +127,57 @@ export default function StudentDocumentsPanel({
   };
 
   return (
-    <section id="student-documents" className="space-y-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 className="text-2xl font-semibold tracking-tight text-primary">
-            Student Documents
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Files are grouped by their directory category.
-          </p>
+    <section id="student-documents" className="space-y-6">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-indigo-50 text-indigo-700 ring-1 ring-indigo-100">
+              <FileText className="size-5" />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">
+                Student Documents
+              </h2>
+              <p className="mt-1 text-sm leading-5 text-slate-500">
+                Manage submissions and track completion by record category.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm font-medium text-slate-600">
+              <FileText className="size-4 text-slate-400" />
+              {totalDocumentCount} {totalDocumentCount === 1 ? 'file' : 'files'}
+            </span>
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-semibold tabular-nums ${completedCategoryCount === CATEGORIES.length ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-indigo-100 bg-indigo-50 text-indigo-700'}`}
+              role="status"
+              aria-live="polite"
+              aria-label={`${completedCategoryCount} of ${CATEGORIES.length} record categories completed`}
+            >
+              <CheckCircle2 className="size-4" />
+              {completedCategoryCount}/{CATEGORIES.length} Completed
+            </span>
+          </div>
         </div>
-        <span className="rounded-full bg-primary/10 px-3 py-1 text-sm font-medium">
-          {categories.reduce((n, c) => n + c.count, 0)} files
-        </span>
+        <div className="mt-5">
+          <div className="mb-2 flex items-center justify-between gap-3 text-xs font-medium">
+            <span className="text-slate-500">Overall completion</span>
+            <span className="tabular-nums text-slate-700">{completionPercent}%</span>
+          </div>
+          <div
+            className="h-2 overflow-hidden rounded-full bg-slate-100"
+            role="progressbar"
+            aria-label="Record category completion"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={completionPercent}
+          >
+            <div
+              className={`h-full rounded-full transition-all duration-300 ${completionPercent === 100 ? 'bg-emerald-500' : 'bg-indigo-600'}`}
+              style={{ width: `${completionPercent}%` }}
+            />
+          </div>
+        </div>
       </div>
       {error && (
         <p
@@ -152,9 +196,9 @@ export default function StudentDocumentsPanel({
           <article
             key={category.name}
             id={`documents-${category.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
-            className="overflow-hidden rounded-xl border bg-white shadow-sm"
+            className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md"
           >
-            <div className={`flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4 transition-colors ${completionByStudent[studentUuid]?.[category.name] ? "bg-emerald-50 border-emerald-200" : "bg-slate-50/80"}`}>
+            <div className={`flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4 transition-colors ${completionByStudent[studentUuid]?.[category.name] ? "border-emerald-100 bg-emerald-50/80" : "border-slate-100 bg-slate-50/70"}`}>
               <div className="flex items-center gap-3">
                 <div className="grid size-10 place-items-center rounded-lg bg-primary/10 text-primary">
                   <FileText className="size-5" />
