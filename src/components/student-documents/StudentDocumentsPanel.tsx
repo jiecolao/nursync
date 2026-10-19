@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Download, Eye, FileText, Trash2, UploadCloud } from 'lucide-react';
+import { CheckCircle2, Download, Eye, FileText, Trash2, UploadCloud } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import StudentFileUploader from './StudentFileUploader';
 import StudentFileViewer from './StudentFileViewer';
@@ -38,6 +38,32 @@ export default function StudentDocumentsPanel({
   const [documentToRemove, setDocumentToRemove] =
     useState<DocumentRecord | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [completionByStudent, setCompletionByStudent] = useState<Record<string, Record<string, boolean>>>(() => {
+    try {
+      const stored = localStorage.getItem('nursync:student-record-completion');
+      return stored ? JSON.parse(stored) as Record<string, Record<string, boolean>> : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const toggleCategoryCompletion = (categoryName: string, completed: boolean) => {
+    setCompletionByStudent((current) => {
+      const next = {
+        ...current,
+        [studentUuid]: {
+          ...current[studentUuid],
+          [categoryName]: completed,
+        },
+      };
+      try {
+        localStorage.setItem('nursync:student-record-completion', JSON.stringify(next));
+      } catch {
+        setError('Unable to save record completion status in this browser.');
+      }
+      return next;
+    });
+  };
 
   const refresh = useCallback(async () => {
     try {
@@ -128,18 +154,33 @@ export default function StudentDocumentsPanel({
             id={`documents-${category.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
             className="overflow-hidden rounded-xl border bg-white shadow-sm"
           >
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-slate-50/80 px-5 py-4">
+            <div className={`flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4 transition-colors ${completionByStudent[studentUuid]?.[category.name] ? "bg-emerald-50 border-emerald-200" : "bg-slate-50/80"}`}>
               <div className="flex items-center gap-3">
                 <div className="grid size-10 place-items-center rounded-lg bg-primary/10 text-primary">
                   <FileText className="size-5" />
                 </div>
                 <div>
                   <h3 className="font-semibold">{category.name}</h3>
+                  {completionByStudent[studentUuid]?.[category.name] && (
+                    <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800" role="status">
+                      <CheckCircle2 className="size-3" /> Completed
+                    </span>
+                  )}
                   <p className="text-xs text-muted-foreground">
                     {category.count} document{category.count === 1 ? '' : 's'}
                   </p>
                 </div>
               </div>
+              <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                <input
+                  type="checkbox"
+                  className="size-4 accent-emerald-600"
+                  checked={Boolean(completionByStudent[studentUuid]?.[category.name])}
+                  onChange={(event) => toggleCategoryCompletion(category.name, event.target.checked)}
+                  aria-label={`Mark ${category.name} complete`}
+                />
+                Complete
+              </label>
               <Button
                 size="sm"
                 onClick={() =>
