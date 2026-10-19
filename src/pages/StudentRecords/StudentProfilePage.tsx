@@ -133,7 +133,7 @@ function toStudent(student: ApiStudent): Student {
     image: null,
     student_uuid: student.studentUuid,
     student_id: student.studentId ?? "",
-    last_name: student.lastName,
+    last_name: student.lastName.toUpperCase(),
     first_name: student.firstName,
     middle_name: student.middleName ?? "",
     gender_id: student.genderId,
@@ -329,7 +329,7 @@ export default function StudentProfilePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           studentId: draft.student_id || undefined,
-          lastName: draft.last_name.trim(),
+          lastName: draft.last_name.trim().toUpperCase(),
           firstName: draft.first_name.trim(),
           middleName: draft.middle_name.trim() || undefined,
           genderId: draft.gender_id ?? undefined,
@@ -532,7 +532,7 @@ export default function StudentProfilePage() {
           <Section title="Personal information">
             <Field label="Last name" htmlFor="last_name" error={errors.last_name} className="md:col-span-2">
               {editing ? (
-                <Input id="last_name" className={fieldClass("last_name")} value={s.last_name} onChange={(e) => set("last_name", e.target.value)} />
+                <Input id="last_name" className={fieldClass("last_name")} value={s.last_name} onChange={(e) => set("last_name", e.target.value.toUpperCase())} />
               ) : (
                 <ReadValue value={s.last_name} />
               )}
