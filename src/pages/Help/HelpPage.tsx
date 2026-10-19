@@ -74,8 +74,6 @@ export default function HelpPage() {
       return;
     }
     const storageKey = `nursync-tour-completed:${topic.route}`;
-    try {
-    } catch { /* Tours remain usable when browser storage is unavailable. */ }
 
     const tour = new Shepherd.Tour({
       useModalOverlay: true,
@@ -111,7 +109,7 @@ export default function HelpPage() {
     });
     tour.on("cancel", () => navigate(location.pathname, { replace: true }));
     tour.start();
-    return () => tour.cancel();
+    return () => { tour.cancel(); };
   }, [location.pathname, location.search, navigate, user?.permissions]);
 
   return (

@@ -37,6 +37,12 @@ function getPageTitle(pathname: string): string {
   return matchedPattern ? pageTitles[matchedPattern] : "Dashboard";
 }
 
+type TourStep = {
+  title: string;
+  text: string;
+  selector?: string;
+};
+
 export default function MainLayout() {
   const [isOpen, setIsOpen] = useState(false);
   const { pathname, search } = useLocation();
@@ -55,15 +61,16 @@ export default function MainLayout() {
       navigate(pathname, { replace: true });
       return;
     }
+    const storageKey = `nursync-tour-completed:${pathname}`;
     const pageName = pageTitles[pathname] ?? "Nursync";
     const routeLink = `a[href="${pathname}"]`;
-    const commonSteps = [
+    const commonSteps: TourStep[] = [
       { title: `${pageName} navigation`, text: `This is the ${pageName} tab in the Nursync sidebar. Use it to return to this module whenever you need it.`, selector: routeLink },
       { title: "Find what you need", text: "Use the page's search field to narrow the list by a name, identifier, or keyword.", selector: '[data-tour="table-search"]' },
       { title: "Review the results", text: "Your records appear here. Column headings can often be used to sort results, and the controls below help you move between pages.", selector: '[data-tour="table-results"]' },
       { title: "More tools", text: "Use the available date filters, column options, and export actions to tailor or download the information shown.", selector: '[data-tour="table-tools"]' },
     ];
-    const pageSteps: Record<string, typeof commonSteps> = {
+    const pageSteps: Record<string, TourStep[]> = {
       "/dashboard": [
         { title: "Dashboard navigation", text: "Use this active sidebar tab to return to your workspace overview.", selector: routeLink },
         { title: "Student overview", text: "These summary cards give you a quick snapshot of student counts and admission batches.", selector: 'main h1' },
