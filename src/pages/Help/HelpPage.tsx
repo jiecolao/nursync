@@ -97,9 +97,9 @@ export default function HelpPage() {
           ? { attachTo: { element: step.attachTo, on: "right" as const } }
           : {}),
         buttons: [
-          { text: "Skip tour", action() { tour.cancel(); } },
-          ...(index > 0 ? [{ text: "Previous", action() { tour.back(); }, secondary: true }] : []),
-          { text: isLast ? "Finish" : "Next", action() { tour.next(); } },
+          { text: "Skip tour", action() { tour.cancel(); }, classes: "nursync-tour__button nursync-tour__button--quiet" },
+          ...(index > 0 ? [{ text: "Previous", action() { tour.back(); }, secondary: true, classes: "nursync-tour__button nursync-tour__button--secondary" }] : []),
+          { text: isLast ? "Finish" : "Next", action() { tour.next(); }, classes: "nursync-tour__button nursync-tour__button--primary" },
         ],
       });
     });
@@ -118,7 +118,7 @@ export default function HelpPage() {
         <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-24 size-72 rounded-full border-[38px] border-white/5" />
         <div aria-hidden="true" className="pointer-events-none absolute -bottom-32 -left-16 size-80 rounded-full border-[44px] border-white/5" />
         <div className="relative mx-auto max-w-2xl">
-          <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium tracking-wide text-emerald-50"><LifeBuoy size={14} /> NURSync Help Center</span>
+          <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium tracking-wide text-emerald-50"><LifeBuoy size={14} /> NurSync Help Center</span>
           <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">How Can We Assist You?</h1>
           <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-emerald-50/85 sm:text-base">Search step-by-step guides, explore modules, and find answers without waiting for support.</p>
           <div className="relative mx-auto mt-8 max-w-xl">
