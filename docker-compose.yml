@@ -1,0 +1,61 @@
+services:
+  app:
+    build:
+      context: .
+      target: app
+    image: nursync-api:local
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      BACKEND_PORT: 5151
+      FRONTEND_PORT: 80
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:8080}
+      DATABASE_URL: ${DATABASE_URL:-mysql://nursync:${DB_PASSWORD:-change-me}@db:3306/nursync}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in your .env file}
+      DIRECTORY_WATCH_PATH: /app/storage
+    volumes:
+      - app_storage:/app/storage
+    depends_on:
+      db:
+        condition: service_healthy
+    expose:
+      - "5151"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:5151/api').then(r=>process.exit(r.status < 500 ? 0 : 1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  frontend:
+    build:
+      context: .
+      target: frontend
+    image: nursync-frontend:local
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    depends_on:
+      app:
+        condition: service_started
+
+  db:
+    image: mariadb:11.4
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: nursync
+      MARIADB_USER: nursync
+      MARIADB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in your .env file}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in your .env file}
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+volumes:
+  mariadb_data:
+  app_storage:
