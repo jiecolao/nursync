@@ -8,13 +8,15 @@ RUN npm ci
 COPY . .
 RUN npm run build && npm run build:client
 
-# Runtime image for the API. The frontend is served by the nginx target below.
+# Minimal Node runtime for the API.
 FROM node:24-bookworm-slim AS app
 ENV NODE_ENV=production
 WORKDIR /app
-RUN apt-get update && apt-get install -y --no-install-recommends dumb-init   && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends dumb-init \
+  && rm -rf /var/lib/apt/lists/*
 COPY --from=build --chown=node:node /app/package*.json ./
 COPY --from=build --chown=node:node /app/node_modules ./node_modules
+RUN npm prune --omit=dev
 COPY --from=build --chown=node:node /app/dist ./dist
 COPY --from=build --chown=node:node /app/prisma ./prisma
 COPY --from=build --chown=node:node /app/prisma.config.ts ./prisma.config.ts
