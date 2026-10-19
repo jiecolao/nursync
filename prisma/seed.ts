@@ -53,8 +53,8 @@ async function seed() {
   await seedUserAccountRoles(prisma);
   logger.log('User Account Roles seeding complete.')
 
-  await seedStudents(prisma);
-  logger.log('Students seeding complete.')
+  // await seedStudents(prisma);
+  // logger.log('Students seeding complete.')
 
   await seedDocumentStatus(prisma);
   logger.log('Document Status seeding complete.')
@@ -62,11 +62,11 @@ async function seed() {
   await seedStudentDocuments(prisma);
   logger.log('Student Documents seeding complete.')
 
-  await seedActivityLogs(prisma);
-  logger.log('Audit Logs seeding complete.')
+  // await seedActivityLogs(prisma);
+  // logger.log('Audit Logs seeding complete.')
 
-  await seedFileModificationLogs(prisma);
-  logger.log('File Modification Logs seeding complete.')
+  // await seedFileModificationLogs(prisma);
+  // logger.log('File Modification Logs seeding complete.')
 
   logger.log('All seeds are completed.')
 }
