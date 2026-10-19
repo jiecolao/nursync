@@ -19,6 +19,11 @@ const CATEGORIES = [
 ] as const;
 const DEFAULT_STATUS_ID = 1;
 
+function capitalizeLastName(lastName: string) {
+  const trimmed = lastName.trim();
+  return trimmed ? trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase() : trimmed;
+}
+
 @Injectable()
 export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(StudentDocumentsService.name);
@@ -62,7 +67,7 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
     if (!categoryRecord) throw new BadRequestException(`Document category "${category}" is not configured in the database.`);
     const status = await this.prisma.documentStatus.findFirst({ where: { docuStatusId: DEFAULT_STATUS_ID } }) ?? await this.prisma.documentStatus.findFirst();
     if (!status) throw new BadRequestException('No document statuses are configured.');
-    const directory = path.resolve(this.root, `${student.lastName}, ${student.firstName}`, category);
+    const directory = path.resolve(this.root, `${capitalizeLastName(student.lastName)}, ${student.firstName}`, category);
     await fs.mkdir(directory, { recursive: true });
     const stageDir = path.join(directory, `.upload-${randomUUID()}`);
     await fs.mkdir(stageDir, { recursive: false });
@@ -94,7 +99,7 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
             ? await tx.studentDocument.update({ where: { studentDocId: existing.studentDocId }, data: { filename: item.name, filepath: item.relativePath, submittedAt: new Date(), docuId: categoryRecord.docuId, docuStatusId: status.docuStatusId } })
             : await tx.studentDocument.create({ data: { studentDocId: randomUUID(), studentUuid: uuid, docuId: categoryRecord.docuId, filename: item.name, filepath: item.relativePath, submittedAt: new Date(), docuStatusId: status.docuStatusId } });
           await this.auditLogs.createFileModificationLogInTransaction(tx, {
-            userAccId: actor.userAccId, roleId: actor.roleId, studentName: student.lastName + ', ' + student.firstName,
+            userAccId: actor.userAccId, roleId: actor.roleId, studentName: capitalizeLastName(student.lastName) + ', ' + student.firstName,
             fileAction: existing ? 'upload_overwrite' : 'upload', fileModified: '', fileLoc: item.relativePath,
           }, actor.adminName, existing ?? null, record);
           results.push(record);
@@ -211,7 +216,7 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
     const source = path.resolve(process.cwd(), record.filepath || '');
     const trashRoot = path.resolve(process.cwd(), 'Database/Trash');
     if (!record.filepath || !source.startsWith(trashRoot + path.sep)) throw new BadRequestException('Document path is outside the trash directory.');
-    const studentFolder = `${record.student.lastName}, ${record.student.firstName}`;
+    const studentFolder = `${capitalizeLastName(record.student.lastName)}, ${record.student.firstName}`;
     const destination = path.resolve(this.root, studentFolder, record.documentCategories.docuName, record.filename);
     const safeStudentRoot = path.resolve(this.root);
     if (!destination.startsWith(safeStudentRoot + path.sep)) throw new BadRequestException('Invalid restore destination.');
@@ -231,7 +236,7 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
         });
         await this.auditLogs.createFileModificationLogInTransaction(tx, {
           userAccId: actor.userAccId, roleId: actor.roleId,
-          studentName: record.student.lastName + ', ' + record.student.firstName,
+          studentName: capitalizeLastName(record.student.lastName) + ', ' + record.student.firstName,
           fileAction: 'restore', fileModified: '', fileLoc: result.filepath || '',
         }, actor.adminName, record, result);
         await this.auditLogs.createActivityLogInTransaction(tx, {
@@ -269,7 +274,7 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
         await tx.studentDocument.delete({ where: { studentDocId } });
         await this.auditLogs.createFileModificationLogInTransaction(tx, {
           userAccId: actor.userAccId, roleId: actor.roleId,
-          studentName: record.student.lastName + ', ' + record.student.firstName,
+          studentName: capitalizeLastName(record.student.lastName) + ', ' + record.student.firstName,
           fileAction: 'permanent_delete', fileModified: '', fileLoc: record.filepath || '',
         }, actor.adminName, record, null);
         await this.auditLogs.createActivityLogInTransaction(tx, { userAccId: actor.userAccId, roleId: actor.roleId, action: 'document.permanent_delete' }, actor.adminName, JSON.stringify({ studentDocId }));
@@ -311,7 +316,7 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
         for (const record of records) {
           await this.auditLogs.createFileModificationLogInTransaction(tx, {
             userAccId: actor.userAccId, roleId: actor.roleId,
-            studentName: record.student.lastName + ', ' + record.student.firstName,
+            studentName: capitalizeLastName(record.student.lastName) + ', ' + record.student.firstName,
             fileAction: 'empty_trash_delete', fileModified: '', fileLoc: record.filepath || '',
           }, actor.adminName, record, null);
         }
