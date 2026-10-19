@@ -6,7 +6,7 @@ export async function seedDocumentCategories (prisma: PrismaClient) {
         data: [
             { docuId: 1, docuName: "Personal Records" },
             { docuId: 2, docuName: "Academic Records" },
-            { docuId: 3, docuName: "RLE / Clinical Records" },
+            { docuId: 3, docuName: "Clinical Records" },
             { docuId: 4, docuName: "Completion and Certification Records" },
             { docuId: 5, docuName: "Others" },
         ],
