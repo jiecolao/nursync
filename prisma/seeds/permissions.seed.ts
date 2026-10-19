@@ -18,7 +18,7 @@ export async function seedPermissions(prisma: PrismaClient) {
         students_write: true,
         user_read: false,
         user_write: false,
-        logs_read: true,
+        logs_read: false,
         logs_write: false,
       },
       {
