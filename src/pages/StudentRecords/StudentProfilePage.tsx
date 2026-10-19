@@ -312,8 +312,10 @@ export default function StudentProfilePage() {
     const e: Record<string, string> = {};
     if (!draft.last_name.trim()) e.last_name = "Enter a last name.";
     if (!draft.first_name.trim()) e.first_name = "Enter a first name.";
-    if (!/^\S+@\S+\.\S+$/.test(draft.email ?? "")) e.email = "Enter a valid email address.";
     setErrors(e);
+    if (draft.email?.trim() && !/^\S+@\S+\.\S+$/.test(draft.email.trim())) {
+      e.email = "Enter a valid email address.";
+    }
     return Object.keys(e).length === 0;
   };
 
