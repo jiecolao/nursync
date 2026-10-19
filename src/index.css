@@ -175,3 +175,77 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
 }
+
+/* Nursync Shepherd product-tour styling */
+.nursync-tour.shepherd-element {
+  z-index: 10000;
+  max-width: min(390px, calc(100vw - 28px));
+  border: 1px solid color-mix(in srgb, var(--color-primary) 16%, white);
+  border-radius: 16px;
+  background: var(--color-secondary, #f6f3ec);
+  color: #17231d;
+  box-shadow: 0 22px 60px rgb(2 30 20 / 24%), 0 4px 14px rgb(2 30 20 / 10%);
+  overflow: hidden;
+  font-family: var(--font-sans, sans-serif);
+}
+.nursync-tour .shepherd-header {
+  padding: 18px 20px 10px;
+  background: var(--color-primary, #025034);
+  color: white;
+}
+.nursync-tour .shepherd-title {
+  color: white;
+  font-size: 16px;
+  line-height: 1.35;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.nursync-tour .shepherd-cancel-icon {
+  color: rgb(255 255 255 / 78%);
+  font-size: 24px;
+}
+.nursync-tour .shepherd-cancel-icon:hover { color: white; }
+.nursync-tour .shepherd-text {
+  padding: 16px 20px 18px;
+  color: #46564d;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.nursync-tour .shepherd-footer {
+  padding: 0 20px 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.nursync-tour .shepherd-button {
+  border-radius: 9px;
+  padding: 9px 12px;
+  font-size: 12px;
+  line-height: 1.2;
+  font-weight: 650;
+  transition: background .15s ease, transform .15s ease;
+}
+.nursync-tour .shepherd-button:hover { transform: translateY(-1px); }
+.nursync-tour .nursync-tour__button--primary {
+  margin-left: auto;
+  background: var(--color-primary, #025034);
+  color: white;
+}
+.nursync-tour .nursync-tour__button--primary:hover { background: #036342; }
+.nursync-tour .nursync-tour__button--secondary {
+  background: #e8eee9;
+  color: #244638;
+}
+.nursync-tour .nursync-tour__button--quiet {
+  background: transparent;
+  color: #66746c;
+}
+.nursync-tour .nursync-tour__button--quiet:hover { background: #e8eee9; color: #244638; }
+.shepherd-modal-overlay-container { z-index: 9998; }
+.shepherd-modal-is-visible .shepherd-element { z-index: 10000; }
+@media (max-width: 480px) {
+  .nursync-tour.shepherd-element { max-width: calc(100vw - 20px); }
+  .nursync-tour .shepherd-header { padding: 15px 16px 9px; }
+  .nursync-tour .shepherd-text { padding: 13px 16px 15px; }
+  .nursync-tour .shepherd-footer { padding: 0 16px 15px; flex-wrap: wrap; }
+}
