@@ -59,8 +59,8 @@ async function seed() {
   await seedDocumentStatus(prisma);
   logger.log('Document Status seeding complete.')
 
-  await seedStudentDocuments(prisma);
-  logger.log('Student Documents seeding complete.')
+  // await seedStudentDocuments(prisma);
+  // logger.log('Student Documents seeding complete.')
 
   // await seedActivityLogs(prisma);
   // logger.log('Audit Logs seeding complete.')
