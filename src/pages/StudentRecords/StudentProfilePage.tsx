@@ -49,21 +49,21 @@ import StudentDocumentsPanel from "@/components/student-documents/StudentDocumen
 type Status = "active" | "inactive" | "graduated" | "disabled";
 
 interface Student {
-  image: string | null;
+  image?: string | null;
   student_uuid: string;
-  student_id: string;
+  student_id?: string | null;
   last_name: string;
   first_name: string;
-  middle_name: string;
-  gender_id: number | null;
-  dob: string; // YYYY-MM-DD
-  contact_no: string;
-  email: string;
-  provincial_addr: string;
-  city_addr: string;
+  middle_name?: string | null;
+  gender_id?: number | null;
+  dob?: string | null; // YYYY-MM-DD
+  contact_no?: string | null;
+  email?: string | null;
+  provincial_addr?: string | null;
+  city_addr?: string | null;
   yr_admitted: number | null;
   yr_residency: number | null;
-  yr_graduated: number | null;
+  yr_graduated?: number | null;
   is_non_graduate: boolean;
   status: Status;
   created_at: string; // ISO
@@ -72,23 +72,23 @@ interface Student {
 
 type ApiStudent = {
   studentUuid: string;
-  studentId: string | null;
+  studentId?: string | null;
   lastName: string;
   firstName: string;
-  middleName: string | null;
-  genderId: number | null;
-  dob: string | null;
-  contactNo: string | null;
-  email: string | null;
-  provincialAddr: string | null;
-  cityAddr: string | null;
+  middleName?: string | null;
+  genderId?: number | null;
+  dob?: string | null;
+  contactNo?: string | null;
+  email?: string | null;
+  provincialAddr?: string | null;
+  cityAddr?: string | null;
   yrAdmitted: number;
   yrResidency: number;
-  yrGraduated: number | null;
-  isNonGraduate: boolean;
-  status: boolean;
-  createdAt: string;
-  updatedAt: string;
+  yrGraduated?: number | null;
+  isNonGraduate?: boolean;
+  status?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 type Gender = { genderId: number; genderName: string };
@@ -145,10 +145,10 @@ function toStudent(student: ApiStudent): Student {
     yr_admitted: student.yrAdmitted,
     yr_residency: student.yrResidency,
     yr_graduated: student.yrGraduated,
-    is_non_graduate: student.isNonGraduate,
-    status: student.status ? "active" : "disabled",
-    created_at: student.createdAt,
-    updated_at: student.updatedAt,
+    is_non_graduate: student.isNonGraduate ?? false,
+    status: student.status === false ? "disabled" : "active",
+    created_at: student.createdAt ?? "",
+    updated_at: student.updatedAt ?? "",
   };
 }
 
@@ -312,9 +312,7 @@ export default function StudentProfilePage() {
     const e: Record<string, string> = {};
     if (!draft.last_name.trim()) e.last_name = "Enter a last name.";
     if (!draft.first_name.trim()) e.first_name = "Enter a first name.";
-    if (!/^\S+@\S+\.\S+$/.test(draft.email)) e.email = "Enter a valid email address.";
-    if (!draft.gender_id) e.gender_id = "Select a gender.";
-    if (!draft.dob) e.dob = "Enter a date of birth.";
+    if (!/^\S+@\S+\.\S+$/.test(draft.email ?? "")) e.email = "Enter a valid email address.";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -331,13 +329,13 @@ export default function StudentProfilePage() {
           studentId: draft.student_id || undefined,
           lastName: draft.last_name.trim().toUpperCase(),
           firstName: draft.first_name.trim(),
-          middleName: draft.middle_name.trim() || undefined,
+          middleName: draft.middle_name?.trim() || undefined,
           genderId: draft.gender_id ?? undefined,
           dob: draft.dob || undefined,
-          contactNo: draft.contact_no.trim() || undefined,
-          email: draft.email.trim() || undefined,
-          provincialAddr: draft.provincial_addr.trim() || undefined,
-          cityAddr: draft.city_addr.trim() || undefined,
+          contactNo: draft.contact_no?.trim() || undefined,
+          email: draft.email?.trim() || undefined,
+          provincialAddr: draft.provincial_addr?.trim() || undefined,
+          cityAddr: draft.city_addr?.trim() || undefined,
           yrAdmitted: draft.yr_admitted,
           yrResidency: draft.yr_residency,
           yrGraduated: draft.yr_graduated ?? undefined,
@@ -532,21 +530,21 @@ export default function StudentProfilePage() {
           <Section title="Personal information">
             <Field label="Last name" htmlFor="last_name" error={errors.last_name} className="md:col-span-2">
               {editing ? (
-                <Input id="last_name" className={fieldClass("last_name")} value={s.last_name} onChange={(e) => set("last_name", e.target.value.toUpperCase())} />
+                <Input id="last_name" className={fieldClass("last_name")} value={s.last_name ?? ""} onChange={(e) => set("last_name", e.target.value.toUpperCase())} />
               ) : (
                 <ReadValue value={s.last_name} />
               )}
             </Field>
             <Field label="First name" htmlFor="first_name" error={errors.first_name} className="md:col-span-2">
               {editing ? (
-                <Input id="first_name" className={fieldClass("first_name")} value={s.first_name} onChange={(e) => set("first_name", e.target.value)} />
+                <Input id="first_name" className={fieldClass("first_name")} value={s.first_name ?? ""} onChange={(e) => set("first_name", e.target.value)} />
               ) : (
                 <ReadValue value={s.first_name} />
               )}
             </Field>
             <Field label="Middle name" htmlFor="middle_name" className="md:col-span-2">
               {editing ? (
-                <Input id="middle_name" className={fieldClass("middle_name")} value={s.middle_name} onChange={(e) => set("middle_name", e.target.value)} />
+                <Input id="middle_name" className={fieldClass("middle_name")} value={s.middle_name ?? ""} onChange={(e) => set("middle_name", e.target.value)} />
               ) : (
                 <ReadValue value={s.middle_name} />
               )}
@@ -577,9 +575,9 @@ export default function StudentProfilePage() {
             </Field>
             <Field label="Date of birth" htmlFor="dob" error={errors.dob} className="md:col-span-3">
               {editing ? (
-                <Input id="dob" type="date" className={fieldClass("dob")} value={s.dob} onChange={(e) => set("dob", e.target.value)} />
+                <Input id="dob" type="date" className={fieldClass("dob")} value={s.dob ?? ""} onChange={(e) => set("dob", e.target.value)} />
               ) : (
-                <ReadValue value={formatDate(s.dob)} />
+                <ReadValue value={formatDate(s.dob ?? "")} />
               )}
             </Field>
           </Section>
@@ -591,7 +589,7 @@ export default function StudentProfilePage() {
                   id="contact_no"
                   type="tel"
                   className={fieldClass("contact_no")}
-                  value={s.contact_no}
+                  value={s.contact_no ?? ""}
                   onChange={(e) => set("contact_no", e.target.value)}
                 />
               ) : (
@@ -600,7 +598,7 @@ export default function StudentProfilePage() {
             </Field>
             <Field label="Email" htmlFor="email" error={errors.email} className="md:col-span-3">
               {editing ? (
-                <Input id="email" type="email" className={fieldClass("email")} value={s.email} onChange={(e) => set("email", e.target.value)} />
+                <Input id="email" type="email" className={fieldClass("email")} value={s.email ?? ""} onChange={(e) => set("email", e.target.value)} />
               ) : (
                 <ReadValue value={s.email} />
               )}
@@ -611,7 +609,7 @@ export default function StudentProfilePage() {
                   id="provincial_addr"
                   rows={3}
                   className={fieldClass("provincial_addr")}
-                  value={s.provincial_addr}
+                  value={s.provincial_addr ?? ""}
                   onChange={(e) => set("provincial_addr", e.target.value)}
                 />
               ) : (
@@ -624,7 +622,7 @@ export default function StudentProfilePage() {
                   id="city_addr"
                   rows={3}
                   className={fieldClass("city_addr")}
-                  value={s.city_addr}
+                  value={s.city_addr ?? ""}
                   onChange={(e) => set("city_addr", e.target.value)}
                 />
               ) : (
@@ -639,7 +637,7 @@ export default function StudentProfilePage() {
                 <Input
                   id="student_id"
                   className={fieldClass("student_id")}
-                  value={s.student_id}
+                  value={s.student_id ?? ""}
                   onChange={(e) => set("student_id", e.target.value)}
                 />
               ) : (
