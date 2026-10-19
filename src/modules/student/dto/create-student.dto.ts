@@ -2,7 +2,7 @@ import {
   IsString, IsNotEmpty, IsOptional,
   IsEmail, IsInt, IsBoolean,
   IsDate, MaxLength, Min, Max,
-  IsUUID,
+  IsUUID, Matches,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -10,6 +10,7 @@ export class CreateStudentDto {
   @IsOptional()
   @IsString()
   @MaxLength(20)
+  @Matches(/^[A-Za-z0-9]{4}-[A-Za-z0-9]{5,}$/)
   studentId?: string;
 
   @IsString()
