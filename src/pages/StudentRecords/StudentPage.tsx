@@ -136,8 +136,8 @@ export default function StudentsPage(){
 
   const downloadStudentTemplate = () => {
     const csv = [
-      "lastName,firstName,middleName,genderId,dob,contactNo,email,provincialAddr,cityAddr,yrAdmitted,yrResidency,yrGraduated,isNonGraduate",
-      "Santos,Jamie,,1,2000-01-15,09171234567,jamie.santos@example.com,Manila,Cebu,2026,1,,false",
+      "studentID,lastName,firstName,middleName,genderId,dob,contactNo,email,provincialAddr,cityAddr,yrAdmitted,yrResidency,yrGraduated,isNonGraduate",
+      "2026-12345,Santos,Jamie,,1,2000-01-15,09171234567,jamie.santos@example.com,Manila,Cebu,2026,1,,false",
     ].join("\r\n");
     const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8;" }));
     const link = document.createElement("a");
@@ -149,6 +149,7 @@ export default function StudentsPage(){
 
   const normalizeHeader = (value: unknown) => String(value ?? "").trim().toLowerCase().replace(/[^a-z0-9]/g, "");
   const headerAliases: Record<string, string[]> = {
+    studentId: ["studentid", "studentnumber", "studentno"],
     lastName: ["lastname", "surname", "familyname"],
     firstName: ["firstname", "givenname"],
     middleName: ["middlename"],
@@ -198,6 +199,7 @@ export default function StudentsPage(){
           if (["false", "0", "no"].includes(value)) return false;
           return null;
         };
+        const studentId = get("studentId");
         const firstName = get("firstName");
         const lastName = get("lastName");
         const middleName = get("middleName");
@@ -214,6 +216,9 @@ export default function StudentsPage(){
         const errors: string[] = [];
         if (!firstName) errors.push("First Name is required.");
         if (!lastName) errors.push("Last Name is required.");
+        if (studentId && (studentId.length > 20 || !/^[A-Za-z0-9]{4}-[A-Za-z0-9]{5,}$/.test(studentId))) {
+          errors.push("Student ID must have 4 letters or numbers, followed by at least 5 letters or numbers.");
+        }
         if (firstName.length > 255 || lastName.length > 255 || middleName.length > 255) errors.push("Names must be 255 characters or fewer.");
         if (email && (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 100)) errors.push("Email address is invalid.");
         if (genderId !== undefined && !Number.isInteger(genderId)) errors.push("Gender ID must be a whole number.");
@@ -225,6 +230,7 @@ export default function StudentsPage(){
         if (isNonGraduate === null) errors.push("Is Non-Graduate must be true or false.");
         const payload: Record<string, unknown> = {
           firstName, lastName, yrAdmitted, yrResidency,
+          ...(studentId && { studentId }),
           ...(middleName && { middleName }),
           ...(genderId !== undefined && Number.isInteger(genderId) && { genderId }),
           ...(dob && !Number.isNaN(Date.parse(dob)) && { dob: new Date(dob).toISOString() }),
