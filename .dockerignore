@@ -1,0 +1,16 @@
+node_modules
+dist
+dist-client
+coverage
+.git
+.github
+.vscode
+.idea
+*.log
+npm-debug.log*
+.env
+.env.*
+!.env.example
+.DS_Store
+storage
+uploads
