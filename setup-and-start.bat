@@ -8,6 +8,16 @@ echo NurSync setup and development startup
 echo ========================================
 echo.
 
+echo Pulling the latest changes...
+git pull
+if errorlevel 1 (
+    echo ERROR: Git pull failed.
+    echo Check your repository connection and credentials.
+    echo.
+    pause
+    exit /b 1
+)
+
 where node >nul 2>&1
 if errorlevel 1 (
     echo ERROR: Node.js was not found on PATH.
