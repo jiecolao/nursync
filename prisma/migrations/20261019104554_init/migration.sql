@@ -7,7 +7,6 @@ CREATE TABLE `Users` (
     `middle_name` VARCHAR(255) NULL,
     `suffix` VARCHAR(5) NULL,
     `gender_id` INTEGER NULL,
-    `status` BOOLEAN NOT NULL DEFAULT true,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
 
@@ -20,6 +19,7 @@ CREATE TABLE `User_accounts` (
     `user_acc_id` VARCHAR(36) NOT NULL,
     `user_id` VARCHAR(64) NOT NULL,
     `username` VARCHAR(64) NOT NULL,
+    `email` VARCHAR(100) NOT NULL,
     `hashed_pass` VARCHAR(255) NOT NULL,
     `hashed_refresh_token` TEXT NULL,
     `status` BOOLEAN NOT NULL DEFAULT true,
@@ -27,7 +27,7 @@ CREATE TABLE `User_accounts` (
     `updated_at` DATETIME(3) NOT NULL,
 
     UNIQUE INDEX `User_accounts_user_id_key`(`user_id`),
-    UNIQUE INDEX `User_accounts_username_key`(`username`),
+    UNIQUE INDEX `User_accounts_email_key`(`email`),
     PRIMARY KEY (`user_acc_id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -70,14 +70,31 @@ CREATE TABLE `Permissions` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `Audit_logs` (
-    `audit_uuid` VARCHAR(36) NOT NULL,
+CREATE TABLE `File_modification_logs` (
+    `file_mod_uuid` VARCHAR(36) NOT NULL,
     `user_acc_id` VARCHAR(36) NOT NULL,
     `role_id` INTEGER NOT NULL,
-    `action` TEXT NOT NULL,
+    `admin_name` VARCHAR(255) NOT NULL,
+    `student_name` VARCHAR(255) NOT NULL,
+    `file_action` VARCHAR(100) NOT NULL,
+    `file_modified` TEXT NOT NULL,
+    `file_loc` TEXT NOT NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
-    PRIMARY KEY (`audit_uuid`)
+    PRIMARY KEY (`file_mod_uuid`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `Activity_logs` (
+    `activity_uuid` VARCHAR(36) NOT NULL,
+    `user_acc_id` VARCHAR(36) NOT NULL,
+    `role_id` INTEGER NOT NULL,
+    `admin_name` VARCHAR(255) NOT NULL,
+    `action` TEXT NOT NULL,
+    `description` TEXT NOT NULL,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    PRIMARY KEY (`activity_uuid`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
@@ -96,7 +113,7 @@ CREATE TABLE `Students` (
     `yr_admitted` INTEGER NOT NULL,
     `yr_residency` INTEGER NOT NULL,
     `yr_graduated` INTEGER NULL,
-    `is_HD` BOOLEAN NOT NULL DEFAULT false,
+    `is_non_graduate` BOOLEAN NOT NULL DEFAULT false,
     `status` BOOLEAN NOT NULL DEFAULT true,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
@@ -110,8 +127,8 @@ CREATE TABLE `Student_Documents` (
     `student_doc_id` VARCHAR(64) NOT NULL,
     `student_uuid` VARCHAR(255) NOT NULL,
     `docu_id` INTEGER NOT NULL,
-    `filename` VARCHAR(255) NULL,
-    `filepath` VARCHAR(255) NULL,
+    `filename` TEXT NULL,
+    `filepath` TEXT NULL,
     `submitted_at` DATETIME(3) NULL,
     `docu_status_id` INTEGER NOT NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
@@ -123,7 +140,7 @@ CREATE TABLE `Student_Documents` (
 -- CreateTable
 CREATE TABLE `Document_categories` (
     `docu_id` INTEGER NOT NULL,
-    `docu_name` VARCHAR(20) NOT NULL,
+    `docu_name` VARCHAR(50) NOT NULL,
     `status` BOOLEAN NOT NULL DEFAULT true,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
@@ -169,7 +186,10 @@ ALTER TABLE `User_account_roles` ADD CONSTRAINT `User_account_roles_role_id_fkey
 ALTER TABLE `Roles` ADD CONSTRAINT `Roles_permission_id_fkey` FOREIGN KEY (`permission_id`) REFERENCES `Permissions`(`permission_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Audit_logs` ADD CONSTRAINT `Audit_logs_user_acc_id_role_id_fkey` FOREIGN KEY (`user_acc_id`, `role_id`) REFERENCES `User_account_roles`(`user_acc_id`, `role_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `File_modification_logs` ADD CONSTRAINT `File_modification_logs_user_acc_id_role_id_fkey` FOREIGN KEY (`user_acc_id`, `role_id`) REFERENCES `User_account_roles`(`user_acc_id`, `role_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Activity_logs` ADD CONSTRAINT `Activity_logs_user_acc_id_role_id_fkey` FOREIGN KEY (`user_acc_id`, `role_id`) REFERENCES `User_account_roles`(`user_acc_id`, `role_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Students` ADD CONSTRAINT `Students_genderId_fkey` FOREIGN KEY (`genderId`) REFERENCES `Genders`(`gender_id`) ON DELETE SET NULL ON UPDATE CASCADE;
