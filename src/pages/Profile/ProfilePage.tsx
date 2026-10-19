@@ -126,7 +126,7 @@ function ReadValue({ value, mono = false }: { value?: string | number | null; mo
         empty ? "text-neutral-400" : "text-neutral-900"
       }`}
     >
-      {empty ? "Not provided" : value}
+      {empty ? "-" : value}
     </p>
   );
 }
