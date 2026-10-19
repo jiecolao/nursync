@@ -3,7 +3,7 @@ import { StudentTableType, StudentApiRecord } from "./student.type";
 import { ColumnDef } from "@tanstack/react-table";
 import { useEffect, useRef, useState } from "react";
 import * as XLSX from "xlsx";
-import { ChevronRight, Plus, Trash2, Upload, Download } from "lucide-react"
+import { ChevronRight, Download, FileSpreadsheet, Plus, Trash2, Upload, X } from "lucide-react"
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger,
@@ -74,6 +74,8 @@ export default function StudentsPage(){
   const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [isDraggingFile, setIsDraggingFile] = useState(false);
   const [importPreview, setImportPreview] = useState<Array<{ row: number; payload: Record<string, unknown>; errors: string[] }>>([]);
   const [importMessage, setImportMessage] = useState<string | null>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
@@ -94,6 +96,17 @@ export default function StudentsPage(){
       visible: ({ selectedRows }) => selectedRows.length <= 0,
       onClick: () => {
         setIsAddStudentOpen(true);
+      },
+    },
+    {
+      id: "import-students",
+      label: "Import Students",
+      icon: Upload,
+      variant: "outline",
+      visible: ({ selectedRows }) => selectedRows.length <= 0,
+      onClick: () => {
+        setIsImportOpen(true);
+        setImportMessage(null);
       },
     },
     {
@@ -134,11 +147,13 @@ export default function StudentsPage(){
   const handleImportFile = async (file?: File) => {
     setImportMessage(null);
     setImportPreview([]);
+    setImportFile(null);
     if (!file) return;
     if (!/\.(csv|xlsx|xls)$/i.test(file.name)) {
       setImportMessage("Choose a CSV or Excel (.xlsx, .xls) file.");
       return;
     }
+    setImportFile(file);
     try {
       const buffer = await file.arrayBuffer();
       const workbook = XLSX.read(buffer, { type: "array", cellDates: true });
@@ -181,6 +196,13 @@ export default function StudentsPage(){
     }
   };
 
+  const clearImportFile = () => {
+    setImportFile(null);
+    setImportPreview([]);
+    setImportMessage(null);
+    if (importInputRef.current) importInputRef.current.value = "";
+  };
+
   const submitImport = async () => {
     if (!importPreview.length || importPreview.some((record) => record.errors.length)) return;
     setImporting(true);
@@ -211,6 +233,7 @@ export default function StudentsPage(){
         notify.success("Students imported", { description: `${created} student record(s) created.` });
         setIsImportOpen(false);
         setImportPreview([]);
+        setImportFile(null);
         setImportMessage(null);
         if (importInputRef.current) importInputRef.current.value = "";
       }
@@ -302,10 +325,6 @@ export default function StudentsPage(){
               <p className="mt-1 mb-8 text-[.95rem] text-stone-600">Manage, organize, and track student profiles.</p>
               {isLoading && <p>Loading student records...</p>}
               {error && <p className="text-red-600">{error}</p>}
-              <div className="mb-4 flex flex-wrap gap-2">
-                <Button onClick={() => { setIsImportOpen(true); setImportMessage(null); }}><Upload className="mr-2 size-4" />Import Students</Button>
-                <Button variant="outline" onClick={downloadStudentTemplate}><Download className="mr-2 size-4" />Download Template</Button>
-              </div>
               <DataTable
                 columns={columns}
                 data={students}
@@ -321,9 +340,63 @@ export default function StudentsPage(){
                   <section role="dialog" aria-modal="true" aria-labelledby="student-import-title" className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-background p-6 shadow-xl">
                     <h3 id="student-import-title" className="text-xl font-semibold">Import Student Records</h3>
                     <p className="mt-2 text-sm text-muted-foreground">Upload CSV or Excel. First Name, Last Name, Year Admitted, and Year of Residency (or Grade/Level) are required. Student IDs must follow the existing format, e.g. 2026-12345.</p>
-                    <div className="my-4 flex flex-wrap items-center gap-3">
-                      <Button type="button" variant="outline" onClick={downloadStudentTemplate}><Download className="mr-2 size-4" />Download CSV Template</Button>
-                      <input ref={importInputRef} type="file" accept=".csv,.xlsx,.xls" className="block max-w-full text-sm" onChange={(event) => void handleImportFile(event.target.files?.[0])} />
+                    <div className="my-5 flex flex-col gap-3">
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        aria-label="Choose a student import file"
+                        className={`rounded-xl border-2 border-dashed p-8 text-center transition-colors ${
+                          isDraggingFile
+                            ? "border-primary bg-primary/10"
+                            : "border-muted-foreground/30 bg-muted/20 hover:border-primary/60 hover:bg-muted/40"
+                        }`}
+                        onDragOver={(event) => {
+                          event.preventDefault();
+                          setIsDraggingFile(true);
+                        }}
+                        onDragLeave={() => setIsDraggingFile(false)}
+                        onDrop={(event) => {
+                          event.preventDefault();
+                          setIsDraggingFile(false);
+                          void handleImportFile(event.dataTransfer.files[0]);
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            importInputRef.current?.click();
+                          }
+                        }}
+                      >
+                        <input
+                          ref={importInputRef}
+                          type="file"
+                          accept=".csv,.xlsx,.xls"
+                          className="sr-only"
+                          onChange={(event) => void handleImportFile(event.target.files?.[0])}
+                        />
+                        <FileSpreadsheet className="mx-auto size-10 text-primary" />
+                        <p className="mt-3 font-medium">
+                          {isDraggingFile ? "Drop your file here" : "Drag and drop your file here"}
+                        </p>
+                        <p className="mt-1 text-sm text-muted-foreground">CSV, XLSX, or XLS files only</p>
+                        <Button type="button" variant="outline" className="mt-4" onClick={() => importInputRef.current?.click()}>
+                          <Upload className="mr-2 size-4" />Choose File
+                        </Button>
+                      </div>
+                      {importFile && (
+                        <div className="flex items-center justify-between rounded-lg border bg-muted/30 px-3 py-2 text-sm">
+                          <div className="flex min-w-0 items-center gap-2">
+                            <FileSpreadsheet className="size-4 shrink-0 text-primary" />
+                            <span className="truncate">{importFile.name}</span>
+                          </div>
+                          <Button type="button" variant="ghost" size="icon" className="size-7 shrink-0" onClick={clearImportFile} aria-label="Remove selected file">
+                            <X className="size-4" />
+                          </Button>
+                        </div>
+                      )}
+                      <Button type="button" variant="outline" className="self-start" onClick={downloadStudentTemplate}>
+                        <Download className="mr-2 size-4" />Download CSV Template
+                      </Button>
                     </div>
                     {importMessage && <p role="status" className="mb-3 text-sm">{importMessage}</p>}
                     {importPreview.length > 0 && (
@@ -339,7 +412,7 @@ export default function StudentsPage(){
                       </div>
                     )}
                     <div className="flex justify-end gap-2">
-                      <Button type="button" variant="outline" disabled={importing} onClick={() => { setIsImportOpen(false); setImportPreview([]); setImportMessage(null); if (importInputRef.current) importInputRef.current.value = ""; }}>Cancel</Button>
+                      <Button type="button" variant="outline" disabled={importing} onClick={() => { setIsImportOpen(false); clearImportFile(); }}>Cancel</Button>
                       <Button type="button" disabled={importing || importPreview.length === 0 || importPreview.some((record) => record.errors.length > 0)} onClick={() => void submitImport()}>{importing ? "Importing..." : `Import ${importPreview.length || ""} Students`}</Button>
                     </div>
                   </section>
