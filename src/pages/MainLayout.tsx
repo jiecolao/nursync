@@ -100,13 +100,6 @@ export default function MainLayout() {
           <SidebarTrigger className="cursor-pointer text-muted-foreground transition-all duration-200 hover:scale-110 hover:text-primary hover:drop-shadow-sm hover:bg-transparent" />
           <div className="font-bold text-sm text-primary">{pageTitle}</div>
 
-          {pageTitle === "Dashboard" && (
-            <Undo2
-              className="size-5 ml-auto cursor-pointer text-muted-foreground transition-all duration-200 hover:scale-110 hover:text-primary hover:drop-shadow-sm"
-              onClick={() => navigate("/login")}
-            />
-          )}
-
           {pageTitle === "Student Profile" && (
             <Undo2
               className="size-5 ml-auto cursor-pointer text-muted-foreground transition-all duration-200 hover:scale-110 hover:text-primary hover:drop-shadow-sm"
@@ -124,26 +117,6 @@ export default function MainLayout() {
               yesBtnStyle="bg-red-700 hover:bg-red-600"
             >
               <p>If you leave this page, any unsaved changes will be lost.</p>
-            </DialogBox>
-          )}
-          
-          {pageTitle === "Help" && (
-            <Undo2
-              className="size-5 ml-auto cursor-pointer text-muted-foreground transition-all duration-200 hover:scale-110 hover:text-primary hover:drop-shadow-sm"
-              onClick={() => setIsOpen(true)}
-            />
-          )}
-          
-          {pathname === "/help" && (
-            <DialogBox
-              title="Discard input?"
-              open={isOpen}
-              onOpenChange={setIsOpen}
-              onClick={() => navigate("/students")}
-              yesBtnName="Discard"
-              yesBtnStyle="bg-red-700 hover:bg-red-600"
-            >
-              <p>If you leave this page, the information you entered won't be saved.</p>
             </DialogBox>
           )}
         </header>
