@@ -210,7 +210,7 @@ export function DataTable<TData>({
   }
 
   return (
-    <div data-tour="table-results" className={cn("space-y-4", className)}>
+    <div className={cn("space-y-4", className)}>
       {/* Toolbar */}
       <div data-tour="table-tools" className="flex flex-wrap items-center gap-2">
         <div data-tour="table-search" className="relative min-w-[220px] flex-1 sm:max-w-sm">
@@ -356,7 +356,7 @@ export function DataTable<TData>({
       </div>
 
       {/* Table */}
-      <div className={cn("overflow-hidden bg-background", stickyHeader && "max-h-[560px] overflow-auto")}>
+      <div data-tour="table-results" className={cn("overflow-hidden bg-background", stickyHeader && "max-h-[560px] overflow-auto")}>
         <Table className="border-separate border-spacing-y-1">
           <TableHeader className={cn("[&>tr]:border-b-0 bg-primary text-white", stickyHeader && "sticky top-0 z-10")}>
             {table.getHeaderGroups().map((hg) => (
