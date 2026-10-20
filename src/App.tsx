@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 // Layouts & Guards
 import { RootLayout } from "./RootLayout"
 import { AuthProvider, ProtectedRoute } from "./components/auth/ProtectedRoute"
+import { SessionActivityMonitor } from "./components/auth/SessionActivityMonitor"
 import { CanAccess } from "./components/auth/CanAccess"
 import AuthLayout from "./pages/AuthLayout"
 import MainLayout from "./pages/MainLayout"
@@ -49,7 +50,7 @@ export default function App() {
           {/* Protected Application Routes */}
           <Route
             element={
-              <ProtectedRoute><MainLayout /></ProtectedRoute>
+              <ProtectedRoute><SessionActivityMonitor><MainLayout /></SessionActivityMonitor></ProtectedRoute>
             }
           >
             <Route path="dashboard" element={<DashboardPage />} />
