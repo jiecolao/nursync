@@ -199,11 +199,11 @@ export default function StudentDocumentsPanel({
             className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md"
           >
             <div className={`flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4 transition-colors ${completionByStudent[studentUuid]?.[category.name] ? "border-emerald-100 bg-emerald-50/80" : "border-slate-100 bg-slate-50/70"}`}>
-              <div className="flex items-center gap-3">
+              <div className="flex min-w-0 items-center gap-3">
                 <div className="grid size-10 place-items-center rounded-lg bg-primary/10 text-primary">
                   <FileText className="size-5" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <h3 className="font-semibold">{category.name}</h3>
                   {completionByStudent[studentUuid]?.[category.name] && (
                     <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800" role="status">
@@ -215,27 +215,37 @@ export default function StudentDocumentsPanel({
                   </p>
                 </div>
               </div>
-              <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
-                <input
-                  type="checkbox"
-                  className="size-4 accent-emerald-600"
-                  checked={Boolean(completionByStudent[studentUuid]?.[category.name])}
-                  onChange={(event) => toggleCategoryCompletion(category.name, event.target.checked)}
-                  aria-label={`Mark ${category.name} complete`}
-                />
-                Complete
-              </label>
-              <Button
-                size="sm"
-                onClick={() =>
-                  setUploadCategory(
-                    uploadCategory === category.name ? null : category.name,
-                  )
-                }
-              >
-                <UploadCloud className="mr-2 size-4" />
-                Upload
-              </Button>
+              <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
+                {!completionByStudent[studentUuid]?.[category.name] && (
+                  <Button
+                    size="sm"
+                    onClick={() =>
+                      setUploadCategory(
+                        uploadCategory === category.name ? null : category.name,
+                      )
+                    }
+                  >
+                    <UploadCloud className="mr-2 size-4" />
+                    Upload
+                  </Button>
+                )}
+                <label
+                  className={`inline-flex cursor-pointer items-center gap-2 rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
+                    completionByStudent[studentUuid]?.[category.name]
+                      ? 'border-emerald-200 text-emerald-700 '
+                      : 'border-slate-200 bg-white/80 text-slate-700 hover:border-emerald-200 hover:bg-white'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    className="size-4 accent-emerald-600"
+                    checked={Boolean(completionByStudent[studentUuid]?.[category.name])}
+                    onChange={(event) => toggleCategoryCompletion(category.name, event.target.checked)}
+                    aria-label={`Mark ${category.name} complete`}
+                  />
+                  Complete
+                </label>
+              </div>
             </div>
             {uploadCategory === category.name && (
               <div className="border-b p-4">
