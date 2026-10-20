@@ -16,7 +16,6 @@ export function SessionActivityMonitor({ children }: { children: ReactNode }) {
   const warningToastId = useRef<string | number | undefined>(undefined);
   const warningTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const logoutTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const lastPointerActivity = useRef(0);
   const endingSession = useRef(false);
 
   const clearTimers = useCallback(() => {
@@ -76,14 +75,9 @@ export function SessionActivityMonitor({ children }: { children: ReactNode }) {
     endingSession.current = false;
     resetInactivityTimer();
 
-    // Pointer movement can fire dozens of times per second; throttle it while
-    // still treating ordinary mouse movement as activity.
-    const onPointerMove = () => {
-      const now = Date.now();
-      if (now - lastPointerActivity.current < 1000) return;
-      lastPointerActivity.current = now;
-      resetInactivityTimer();
-    };
+    // Reset on every pointer movement so the inactivity window is measured
+    // from the most recent user input, not a throttled approximation.
+    const onPointerMove = () => resetInactivityTimer();
     const onActivity = () => resetInactivityTimer();
     const events: Array<[keyof WindowEventMap, EventListener]> = [
       ["keydown", onActivity],
