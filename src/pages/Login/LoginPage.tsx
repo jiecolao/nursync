@@ -1,7 +1,7 @@
 // src/pages/LoginPage.tsx
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import type { FormEvent } from "react"
-import { Link, useNavigate } from "react-router-dom"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 import { Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,12 +17,19 @@ const fieldClass =
 
 export default function LoginPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { refresh } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (new URLSearchParams(location.search).get("reason") === "session-expired") {
+      setError("Your session has expired due to inactivity. Please sign in again.")
+    }
+  }, [location.search])
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
