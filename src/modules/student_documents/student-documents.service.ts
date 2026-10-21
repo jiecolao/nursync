@@ -378,9 +378,9 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
       const [folder, categoryFolder, filename] = parts;
       const category = IMPORT_CATEGORY_MAP[normalizeName(categoryFolder)];
       if (!category || filename.startsWith('.upload-') || filename.startsWith('.bulk-import-')) return;
-      const match = folder.match(/^\\s*([^,]+),\\s*([^,]+?)(?:\\s+(.+))?\\s*$/);
-      if (!match) return;
-      const [, lastName, firstName, middleName] = match;
+      const nameParts = folder.split(',').map((part) => part.trim());
+      if (nameParts.length < 2 || nameParts.length > 3 || nameParts.some((part) => !part)) return;
+      const [lastName, firstName, middleName] = nameParts;
       const candidates = await this.prisma.student.findMany({ select: { studentUuid: true, lastName: true, firstName: true, middleName: true } });
       const matches = candidates.filter((student) => normalizeName(student.lastName) === normalizeName(lastName)
         && normalizeName(student.firstName) === normalizeName(firstName)
