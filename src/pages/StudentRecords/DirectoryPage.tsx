@@ -98,7 +98,7 @@ export default function DirectoryPage() {
     const paths = selected.map((file) => file.webkitRelativePath.split('/').slice(1).join('/'));
     setImportPaths(paths); setImportBusy(true);
     try {
-      const response = await fetch(API_URL + '/student-documents/import/preview', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paths }) });
+      const response = await fetch(API_URL + '/api/student-documents/import/preview', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paths }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || 'Could not preview the selected folder.');
       setImportPreview(data.items || []);
@@ -113,7 +113,7 @@ export default function DirectoryPage() {
       const body = new FormData();
       importFiles.forEach((file) => body.append('files', file, file.name));
       body.append('paths', JSON.stringify(importPaths));
-      const response = await fetch(API_URL + '/student-documents/import', { method: 'POST', credentials: 'include', body });
+      const response = await fetch(API_URL + '/api/student-documents/import', { method: 'POST', credentials: 'include', body });
       const data = await response.json();
       if (!response.ok) throw new Error(typeof data.message === 'string' ? data.message : 'Bulk import failed.');
       setImportMessage('Successfully imported ' + data.count + ' file(s).');
