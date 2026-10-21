@@ -326,7 +326,7 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
       for (const record of records) {
         if (!record.filepath) continue;
         const original = path.resolve(process.cwd(), record.filepath);
-        if (!original.startsWith(trashRoot + path.sep)) throw new BadRequestException(`Unsafe trash path for document ${record.studentDocId}.`);
+        if (!original.startsWith(trashRoot + path.sep)) throw new BadRequestException(`Unsafe trash path for document ${record.filename}.`);
         try {
           await fs.access(original);
           const temporary = path.join(path.dirname(original), `.deleting-${randomUUID()}`);
