@@ -1,17 +1,29 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Activity, ChevronRight, File, FileArchive, FileCode2, FileImage,
   FileText, Folder, FolderOpen, HardDrive, LayoutGrid, List, RefreshCw,
   Search, Wifi, WifiOff, Upload, CheckCircle2, AlertCircle,
-  X,
+  X, MoreHorizontal, UserRound,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import StudentFileViewer from '@/components/student-documents/StudentFileViewer';
 import { useDirectoryLive } from '@/hooks/use-directory-live';
 import { useDirectoryStore, type DirectoryEntry } from '@/stores/directory-store';
 
 type ViewMode = 'grid' | 'list';
 type ImportPreviewItem = { path: string; valid: boolean; reason?: string; studentName?: string; category?: string };
+type StudentSummary = {
+  studentUuid: string;
+  firstName: string;
+  lastName: string;
+  middleName?: string | null;
+};
+type PreviewFile = { entry: DirectoryEntry; studentUuid: string };
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5151';
 
 function formatBytes(bytes: number) {
@@ -29,6 +41,21 @@ function formatDate(value: string) {
   });
 }
 
+function normalizeName(value: string) {
+  return value.trim().toLocaleLowerCase().replace(/\s+/g, ' ');
+}
+
+function studentFolderNames(student: StudentSummary) {
+  const lastName = student.lastName.trim();
+  const firstName = student.firstName.trim();
+  const middleName = student.middleName?.trim();
+  return [
+    `${lastName}, ${firstName}`,
+    middleName ? `${lastName}, ${firstName} ${middleName}` : '',
+    middleName ? `${lastName}, ${firstName} ${middleName.charAt(0)}.` : '',
+  ].filter(Boolean).map(normalizeName);
+}
+
 function FileGlyph({ entry }: { entry: DirectoryEntry }) {
   if (entry.type === 'directory') return <Folder className="size-6 fill-emerald-100 text-primary" strokeWidth={1.6} />;
   if (['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'].includes(entry.extension)) return <FileImage className="size-6 text-violet-600" strokeWidth={1.6} />;
@@ -40,6 +67,7 @@ function FileGlyph({ entry }: { entry: DirectoryEntry }) {
 
 export default function DirectoryPage() {
   useDirectoryLive();
+  const navigate = useNavigate();
   const tree = useDirectoryStore((state) => state.tree);
   const root = useDirectoryStore((state) => state.root);
   const connected = useDirectoryStore((state) => state.connected);
@@ -54,6 +82,28 @@ export default function DirectoryPage() {
   const [importPreview, setImportPreview] = useState<ImportPreviewItem[]>([]);
   const [importBusy, setImportBusy] = useState(false);
   const [importMessage, setImportMessage] = useState('');
+  const [students, setStudents] = useState<StudentSummary[]>([]);
+  const [studentLookupError, setStudentLookupError] = useState('');
+  const [previewFile, setPreviewFile] = useState<PreviewFile | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadStudents = async () => {
+      try {
+        const response = await fetch('/api/student', { credentials: 'include' });
+        if (!response.ok) throw new Error('Unable to load students for folder actions.');
+        const data = await response.json() as StudentSummary[];
+        if (!cancelled) {
+          setStudents(data);
+          setStudentLookupError('');
+        }
+      } catch (error) {
+        if (!cancelled) setStudentLookupError(error instanceof Error ? error.message : 'Unable to load students for folder actions.');
+      }
+    };
+    void loadStudents();
+    return () => { cancelled = true; };
+  }, []);
 
   const currentEntries = useMemo(() => {
     if (!currentPath) return tree;
@@ -142,6 +192,24 @@ export default function DirectoryPage() {
     }
   };
 
+  const studentForFolder = (folderName: string) =>
+    students.find((student) => studentFolderNames(student).includes(normalizeName(folderName)));
+
+  const studentForEntry = (entry: DirectoryEntry) => {
+    const folderName = entry.path.split('/')[0];
+    return studentForFolder(folderName);
+  };
+
+  const previewEntry = (entry: DirectoryEntry) => {
+    if (entry.type === 'directory' || !['pdf', 'txt'].includes(entry.extension)) return;
+    const student = studentForEntry(entry);
+    if (student) setPreviewFile({ entry, studentUuid: student.studentUuid });
+  };
+
+  const fileUrl = previewFile
+    ? `/api/students/${encodeURIComponent(previewFile.studentUuid)}/documents/file?path=${encodeURIComponent(`Database/Students/${previewFile.entry.path}`)}`
+    : '';
+
   return (
     <div className="flex min-w-0 flex-col gap-6">
       <section className="relative overflow-hidden rounded-2xl bg-primary px-6 py-6 text-secondary shadow-sm sm:px-8">
@@ -214,19 +282,26 @@ export default function DirectoryPage() {
           </div>
         </div>
 
+        {studentLookupError && <p role="alert" className="border-b border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-800">{studentLookupError}</p>}
         {visibleEntries.length ? view === 'grid' ? (
           <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 sm:p-5">
             {visibleEntries.map((entry) => (
-              <button key={entry.path} type="button" onClick={() => goToFolder(entry)} disabled={entry.type !== 'directory'}
-                className={`group flex min-w-0 items-start gap-3 rounded-xl border border-stone-200/80 p-4 text-left transition hover:border-primary/30 hover:bg-secondary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${entry.type === 'directory' ? 'cursor-pointer' : 'cursor-default'}`}>
+              <div key={entry.path} className={`group flex min-w-0 items-start gap-3 rounded-xl border border-stone-200/80 p-4 text-left transition hover:border-primary/30 hover:bg-secondary/50 ${entry.type === 'directory' || ['pdf', 'txt'].includes(entry.extension) ? 'cursor-pointer' : 'cursor-default'}`}>
                 <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-secondary transition group-hover:bg-emerald-100"><FileGlyph entry={entry} /></div>
-                <div className="min-w-0 flex-1">
+                <button type="button" onClick={() => entry.type === 'directory' ? goToFolder(entry) : previewEntry(entry)} disabled={entry.type !== 'directory' && !['pdf', 'txt'].includes(entry.extension)} className="min-w-0 flex-1 text-left disabled:cursor-default">
                   <div className="truncate text-sm font-medium text-stone-800" title={entry.name}>{entry.name}</div>
                   <div className="mt-1 text-xs text-stone-500">{entry.type === 'directory' ? `${entry.children?.length ?? 0} items` : formatBytes(entry.size)}</div>
                   <div className="mt-2 truncate text-[11px] text-stone-400">{formatDate(entry.modifiedAt)}</div>
-                </div>
-                {entry.type === 'directory' && <ChevronRight className="mt-1 size-4 shrink-0 text-stone-300 group-hover:text-primary" />}
-              </button>
+                </button>
+                {entry.type === 'directory' && studentForFolder(entry.name) ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger render={<Button type="button" variant="ghost" size="icon" className="size-8 shrink-0" aria-label={`Actions for ${entry.name}`} onClick={(event) => event.stopPropagation()} />}><MoreHorizontal className="size-4" /></DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => navigate(`/students/profile/${studentForFolder(entry.name)?.studentUuid}`)}><UserRound className="size-4" />See Student</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : entry.type === 'directory' ? <ChevronRight className="mt-1 size-4 shrink-0 text-stone-300 group-hover:text-primary" /> : null}
+              </div>
             ))}
           </div>
         ) : (
@@ -238,10 +313,10 @@ export default function DirectoryPage() {
               <tbody className="divide-y divide-stone-100">
                 {visibleEntries.map((entry) => (
                   <tr key={entry.path} className="group hover:bg-secondary/40">
-                    <td className="px-5 py-3"><button type="button" disabled={entry.type !== 'directory'} onClick={() => goToFolder(entry)} className="flex max-w-sm items-center gap-3 text-left disabled:cursor-default"><FileGlyph entry={entry} /><span className="truncate font-medium text-stone-800">{entry.name}</span></button></td>
+                    <td className="px-5 py-3"><button type="button" disabled={entry.type !== 'directory' && !['pdf', 'txt'].includes(entry.extension)} onClick={() => entry.type === 'directory' ? goToFolder(entry) : previewEntry(entry)} className="flex max-w-sm items-center gap-3 text-left disabled:cursor-default"><FileGlyph entry={entry} /><span className="truncate font-medium text-stone-800">{entry.name}</span></button></td>
                     <td className="px-5 py-3 text-stone-500">{entry.type === 'directory' ? 'Folder' : entry.extension ? `.${entry.extension}` : 'File'}</td>
                     <td className="px-5 py-3 text-right tabular-nums text-stone-600">{entry.type === 'directory' ? '—' : formatBytes(entry.size)}</td>
-                    <td className="px-5 py-3 text-stone-500">{formatDate(entry.modifiedAt)}</td>
+                    <td className="px-5 py-3 text-stone-500"><div className="flex items-center justify-between gap-3">{formatDate(entry.modifiedAt)}{entry.type === 'directory' && studentForFolder(entry.name) && <DropdownMenu><DropdownMenuTrigger render={<Button type="button" variant="ghost" size="icon" className="size-8" aria-label={`Actions for ${entry.name}`} />}><MoreHorizontal className="size-4" /></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => navigate(`/students/profile/${studentForFolder(entry.name)?.studentUuid}`)}><UserRound className="size-4" />See Student</DropdownMenuItem></DropdownMenuContent></DropdownMenu>}</div></td>
                   </tr>
                 ))}
               </tbody>
@@ -314,6 +389,20 @@ export default function DirectoryPage() {
               </Button>
             </div>
           </section>
+        </div>
+      )}
+      {previewFile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-label="File preview">
+          <div className="max-h-[95vh] w-full max-w-5xl overflow-y-auto rounded-xl bg-white p-4">
+            <div className="mb-3 flex justify-end">
+              <Button variant="outline" onClick={() => setPreviewFile(null)}>Close preview</Button>
+            </div>
+            <StudentFileViewer
+              fileUrl={fileUrl}
+              fileName={previewFile.entry.name}
+              fileType={previewFile.entry.extension === 'txt' ? 'txt' : 'pdf'}
+            />
+          </div>
         </div>
       )}
     </div>
