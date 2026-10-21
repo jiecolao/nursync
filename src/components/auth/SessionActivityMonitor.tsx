@@ -9,6 +9,7 @@ import { useAuth } from "@/components/auth/ProtectedRoute";
 const INACTIVITY_WARNING_MS = 12 * 60 * 1000;
 const INACTIVITY_TIMEOUT_MS = 15 * 60 * 1000;
 const WARNING_DURATION_MS = INACTIVITY_TIMEOUT_MS - INACTIVITY_WARNING_MS;
+const ACCESS_TOKEN_REFRESH_INTERVAL_MS = 10 * 60 * 1000;
 
 export function SessionActivityMonitor({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
@@ -17,6 +18,7 @@ export function SessionActivityMonitor({ children }: { children: ReactNode }) {
   const warningTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const logoutTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const endingSession = useRef(false);
+  const lastAccessTokenRefresh = useRef(Date.now());
 
   const clearTimers = useCallback(() => {
     if (warningTimer.current) clearTimeout(warningTimer.current);
@@ -49,10 +51,20 @@ export function SessionActivityMonitor({ children }: { children: ReactNode }) {
     }
   }, [clearTimers, dismissWarning, navigate, refresh]);
 
+  const refreshAccessTokenIfNeeded = useCallback(async () => {
+    if (Date.now() - lastAccessTokenRefresh.current < ACCESS_TOKEN_REFRESH_INTERVAL_MS) return;
+
+    await authRequest("/api/auth/refresh", { method: "POST" });
+    lastAccessTokenRefresh.current = Date.now();
+  }, []);
+
   const resetInactivityTimer = useCallback(() => {
     if (endingSession.current) return;
     clearTimers();
     dismissWarning();
+    void refreshAccessTokenIfNeeded().catch(() => {
+      void refresh();
+    });
 
     warningTimer.current = setTimeout(() => {
       warningToastId.current = notify.warning(
@@ -69,7 +81,13 @@ export function SessionActivityMonitor({ children }: { children: ReactNode }) {
         void logoutForInactivity();
       }, WARNING_DURATION_MS);
     }, INACTIVITY_WARNING_MS);
-  }, [clearTimers, dismissWarning, logoutForInactivity]);
+  }, [
+    clearTimers,
+    dismissWarning,
+    logoutForInactivity,
+    refresh,
+    refreshAccessTokenIfNeeded,
+  ]);
 
   useEffect(() => {
     endingSession.current = false;

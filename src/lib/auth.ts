@@ -20,12 +20,39 @@ export type AuthUser = {
   };
 };
 
+let refreshPromise: Promise<void> | null = null;
+
+async function refreshAccessToken() {
+  if (!refreshPromise) {
+    refreshPromise = fetch(`${API_BASE}/api/auth/refresh`, {
+      method: 'POST',
+      credentials: 'include',
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error('Session refresh failed');
+      })
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+
+  return refreshPromise;
+}
+
 export async function authRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`, {
+  const request = () => fetch(`${API_BASE}${path}`, {
     ...init,
     credentials: 'include',
     headers: { 'Content-Type': 'application/json', ...init.headers },
   });
+
+  let response = await request();
+  const canRefresh = !path.startsWith('/api/auth/');
+  if (response.status === 401 && canRefresh) {
+    await refreshAccessToken();
+    response = await request();
+  }
+
   if (!response.ok) {
     const result = await response.json().catch(() => null);
     throw new Error(result?.message ?? 'Request failed');
