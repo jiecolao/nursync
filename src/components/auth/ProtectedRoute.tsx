@@ -10,11 +10,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const refresh = async () => {
-    try { const result = await authRequest<{ user: AuthUser }>('/api/auth/session'); setUser(result.user); }
-    catch { setUser(null); }
-    finally { setLoading(false); }
+    // A browser history traversal can restore a page from the back-forward
+    // cache without remounting the React application. Revalidate the session.
+    setLoading(true);
+    try {
+      const result = await authRequest<{ user: AuthUser }>('/api/auth/session');
+      setUser(result.user);
+    } catch {
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
   };
-  useEffect(() => { void refresh(); }, []);
+
+  useEffect(() => {
+    void refresh();
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) void refresh();
+    };
+    window.addEventListener('pageshow', handlePageShow);
+    return () => window.removeEventListener('pageshow', handlePageShow);
+  }, []);
+
   return <AuthContext.Provider value={{ user, loading, refresh }}>{children}</AuthContext.Provider>;
 }
 
