@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../integrations/prisma/prisma.service';
 import { AuditLogsService } from '../audit_logs/audit_logs.service';
 import { promises as fs } from 'node:fs';
@@ -18,7 +18,6 @@ const ROOT = path.resolve(process.env.STUDENT_DOCUMENTS_ROOT || './Database/Stud
 const norm = (value: string) => value.trim().toLocaleLowerCase().replace(/\s+/g, ' ');
 const categoryFor = (value: string) => CATEGORY_MAP[norm(value)];
 
-type ImportItem = { relativePath: string; studentFolder: string; categoryFolder: string; filename: string };
 type UploadFile = Express.Multer.File & { importPath?: string };
 
 @Injectable()
