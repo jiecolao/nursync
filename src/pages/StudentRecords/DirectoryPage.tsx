@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   Activity, ChevronRight, File, FileArchive, FileCode2, FileImage,
   FileText, Folder, FolderOpen, HardDrive, LayoutGrid, List, RefreshCw,
-  Search, Wifi, WifiOff,
+  Search, Wifi, WifiOff, Upload, CheckCircle2, AlertCircle,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,8 @@ import { useDirectoryLive } from '@/hooks/use-directory-live';
 import { useDirectoryStore, type DirectoryEntry } from '@/stores/directory-store';
 
 type ViewMode = 'grid' | 'list';
+type ImportPreviewItem = { path: string; valid: boolean; reason?: string; studentName?: string; category?: string };
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5151';
 
 function formatBytes(bytes: number) {
   if (bytes === 0) return '—';
@@ -44,6 +46,12 @@ export default function DirectoryPage() {
   const [currentPath, setCurrentPath] = useState('');
   const [search, setSearch] = useState('');
   const [view, setView] = useState<ViewMode>('grid');
+  const importInput = useRef<HTMLInputElement>(null);
+  const [importFiles, setImportFiles] = useState<globalThis.File[]>([]);
+  const [importPaths, setImportPaths] = useState<string[]>([]);
+  const [importPreview, setImportPreview] = useState<ImportPreviewItem[]>([]);
+  const [importBusy, setImportBusy] = useState(false);
+  const [importMessage, setImportMessage] = useState('');
 
   const currentEntries = useMemo(() => {
     if (!currentPath) return tree;
@@ -84,6 +92,37 @@ export default function DirectoryPage() {
     return count(tree);
   }, [tree]);
 
+  const prepareImport = async (selected: globalThis.File[]) => {
+    setImportFiles(selected); setImportPreview([]); setImportMessage('');
+    if (!selected.length) { setImportPaths([]); return; }
+    const paths = selected.map((file) => file.webkitRelativePath.split('/').slice(1).join('/'));
+    setImportPaths(paths); setImportBusy(true);
+    try {
+      const response = await fetch(API_URL + '/student-documents/import/preview', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paths }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Could not preview the selected folder.');
+      setImportPreview(data.items || []);
+    } catch (error) { setImportMessage(error instanceof Error ? error.message : 'Could not preview the selected folder.'); }
+    finally { setImportBusy(false); }
+  };
+
+  const runImport = async () => {
+    if (!importFiles.length || importPreview.some((item) => !item.valid)) return;
+    setImportBusy(true); setImportMessage('');
+    try {
+      const body = new FormData();
+      importFiles.forEach((file) => body.append('files', file, file.name));
+      body.append('paths', JSON.stringify(importPaths));
+      const response = await fetch(API_URL + '/student-documents/import', { method: 'POST', credentials: 'include', body });
+      const data = await response.json();
+      if (!response.ok) throw new Error(typeof data.message === 'string' ? data.message : 'Bulk import failed.');
+      setImportMessage('Successfully imported ' + data.count + ' file(s).');
+      setImportFiles([]); setImportPaths([]); setImportPreview([]);
+      if (importInput.current) importInput.current.value = '';
+    } catch (error) { setImportMessage(error instanceof Error ? error.message : 'Bulk import failed.'); }
+    finally { setImportBusy(false); }
+  };
+
   const goToFolder = (entry: DirectoryEntry) => {
     if (entry.type === 'directory') {
       setCurrentPath(entry.path);
@@ -112,6 +151,33 @@ export default function DirectoryPage() {
             <span className={`size-2 rounded-full ${connected ? 'bg-emerald-300' : 'animate-pulse bg-amber-300'}`} />
           </div>
         </div>
+      </section>
+
+
+      <section className="rounded-2xl border border-stone-200/80 bg-white p-5 shadow-sm sm:p-6">
+        <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+          <div><h3 className="font-semibold text-stone-900">Bulk import student folders</h3><p className="mt-1 max-w-2xl text-sm leading-6 text-stone-500">Choose a directory containing student folders. Files are checked against the student database before import; invalid entries block the import.</p></div>
+          <Button type="button" onClick={() => importInput.current?.click()} disabled={importBusy} className="shrink-0"><Upload className="mr-2 size-4" />Choose folder</Button>
+          <input ref={importInput} type="file" multiple className="hidden" aria-label="Choose student folder for bulk import" {...({ webkitdirectory: '', directory: '' } as any)} onChange={(event) => void prepareImport(Array.from(event.target.files ?? []))} />
+        </div>
+        <div className="mt-4 rounded-xl bg-secondary/50 p-4 text-sm text-stone-600">
+          <p className="font-medium text-stone-800">Folder structure and naming guide</p>
+          <ol className="mt-2 list-decimal space-y-1 pl-5">
+            <li>Each student folder must be named <code>LAST NAME, First Name, Middle Name</code>. Omit the middle name only when it is blank in the student record.</li>
+            <li>Inside each student folder, use category folders named <code>Academic</code>, <code>Personal</code>, <code>Completion &amp; Certificate</code>, <code>Others</code>, or <code>Clinical</code>.</li>
+            <li>Put files directly inside the category folder. Preview verifies each student match and category before importing.</li>
+            <li>Correct every invalid row before importing. Existing files at the same destination are replaced and each file plus the bulk operation is audited.</li>
+          </ol>
+        </div>
+        {importBusy && <p className="mt-3 text-sm text-stone-500">Validating or importing folder contents…</p>}
+        {importMessage && <p role="status" className="mt-3 text-sm text-stone-700">{importMessage}</p>}
+        {importPreview.length > 0 && <div className="mt-4">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-sm"><span className="font-medium text-stone-800">{importPreview.length} files · {importPreview.filter((item) => item.valid).length} valid · {importPreview.filter((item) => !item.valid).length} need attention</span><Button type="button" onClick={() => void runImport()} disabled={importBusy || importPreview.some((item) => !item.valid)}><Upload className="mr-2 size-4" />Import files</Button></div>
+          <div className="max-h-72 overflow-auto rounded-lg border border-stone-200"><table className="w-full text-left text-sm">
+            <thead className="sticky top-0 bg-secondary text-xs uppercase text-stone-500"><tr><th className="px-3 py-2">File path</th><th className="px-3 py-2">Student / category</th><th className="px-3 py-2">Validation</th></tr></thead>
+            <tbody className="divide-y divide-stone-100">{importPreview.map((item, index) => <tr key={item.path + '-' + index}><td className="max-w-64 break-all px-3 py-2 text-stone-600">{item.path}</td><td className="px-3 py-2">{item.valid ? <>{item.studentName}<div className="text-xs text-stone-500">{item.category}</div></> : '—'}</td><td className="px-3 py-2">{item.valid ? <span className="inline-flex items-center gap-1 text-emerald-700"><CheckCircle2 className="size-4" />Valid</span> : <span className="inline-flex items-start gap-1 text-rose-700"><AlertCircle className="mt-0.5 size-4 shrink-0" />{item.reason}</span>}</td></tr>)}</tbody>
+          </table></div>
+        </div>}
       </section>
 
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
