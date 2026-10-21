@@ -82,9 +82,11 @@ export interface DataTableProps<TData> {
   getRowId?: (row: TData, index: number) => string
   /** Extra toolbar actions rendered after the built-in filters and before view/export controls. */
   actions?: DataTableAction<TData>[]
+  /** Column ids shown initially. Omitted columns remain available in View settings. */
+  defaultVisibleColumnIds?: string[]
+  /** Called when a row is clicked outside of an interactive cell control. */
+  onRowClick?: (row: TData) => void
 }
-
-type Density = "compact" | "comfortable"
 
 /* ---------- Component ---------- */
 
@@ -100,17 +102,69 @@ export function DataTable<TData>({
   onSelectionChange,
   getRowId,
   actions = [],
+  defaultVisibleColumnIds,
+  onRowClick,
 }: DataTableProps<TData>) {
   const [globalFilter, setGlobalFilter] = React.useState("")
   const [sorting, setSorting] = React.useState<SortingState>([])
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>(() => {
+    if (!defaultVisibleColumnIds) return {}
+    const visible = new Set(defaultVisibleColumnIds)
+    return Object.fromEntries(
+      columns
+        .map((column) => {
+          const id = "id" in column && column.id
+            ? column.id
+            : "accessorKey" in column && typeof column.accessorKey === "string"
+              ? column.accessorKey
+              : undefined
+          return id
+            ? [id, column.enableHiding === false || visible.has(id)]
+            : null
+        })
+        .filter((entry): entry is [string, boolean] => entry !== null),
+    )
+  })
+
+  React.useEffect(() => {
+    if (!defaultVisibleColumnIds) return
+    const visible = new Set(defaultVisibleColumnIds)
+    const columnIds = columns
+    .map((column) => {
+      if ("id" in column && column.id) return column.id
+      if ("accessorKey" in column && typeof column.accessorKey === "string") {
+        return column.accessorKey
+      }
+      return undefined
+    })
+    .filter((id): id is string => Boolean(id))
+
+    setColumnVisibility((current) => {
+    const next = { ...current }
+    let changed = false
+    for (const id of columnIds) {
+      if (!(id in next)) {
+        const column = columns.find((candidate) => {
+          const candidateId =
+            "id" in candidate && candidate.id
+              ? candidate.id
+              : "accessorKey" in candidate && typeof candidate.accessorKey === "string"
+                ? candidate.accessorKey
+                : undefined
+          return candidateId === id
+        })
+        next[id] = column?.enableHiding === false || visible.has(id)
+        changed = true
+      }
+    }
+    return changed ? next : current
+    })
+  }, [columns, defaultVisibleColumnIds])
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({})
   const [range, setRange] = React.useState<DateRange | undefined>()
 
   // Table settings
-  const [density, setDensity] = React.useState<Density>("comfortable")
   const [bordered, setBordered] = React.useState(false)
-  const [stickyHeader, setStickyHeader] = React.useState(false)
 
   // Date range filter is applied to the data before the table sees it
   const filteredData = React.useMemo(() => {
@@ -200,7 +254,7 @@ export function DataTable<TData>({
 
   /* ---------- Render ---------- */
 
-  const cell = density === "compact" ? "px-5 py-0" : "px-5 py-0"
+  const cell = "px-5 py-1"
   const rows = table.getRowModel().rows
   const { pageIndex, pageSize } = table.getState().pagination
   const total = table.getFilteredRowModel().rows.length
@@ -310,16 +364,6 @@ export function DataTable<TData>({
             </PopoverTrigger>
             <PopoverContent align="end" className="w-64 space-y-4">
               <div className="space-y-1.5">
-                <Label>Row density</Label>
-                <Select value={density} onValueChange={(v) => setDensity(v as Density)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="comfortable">Comfortable</SelectItem>
-                    <SelectItem value="compact">Compact</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
                 <Label>Rows per page</Label>
                 <Select value={String(pageSize)} onValueChange={(v) => table.setPageSize(Number(v))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
@@ -330,7 +374,6 @@ export function DataTable<TData>({
               </div>
               {([
                 ["Cell borders", bordered, setBordered],
-                ["Sticky header", stickyHeader, setStickyHeader],
               ] as const).map(([label, value, set]) => (
                 <div key={label} className="flex items-center justify-between">
                   <Label>{label}</Label>
@@ -356,9 +399,9 @@ export function DataTable<TData>({
       </div>
 
       {/* Table */}
-      <div data-tour="table-results" className={cn("overflow-hidden bg-background", stickyHeader && "max-h-[560px] overflow-auto")}>
+      <div data-tour="table-results" className={cn("overflow-hidden bg-background", "max-h-[560px] overflow-auto")}>
         <Table className="border-separate border-spacing-y-1">
-          <TableHeader className={cn("[&>tr]:border-b-0 bg-primary text-white", stickyHeader && "sticky top-0 z-10")}>
+          <TableHeader className={cn("[&>tr]:border-b-0 bg-primary text-white", "sticky top-0 z-10")}>
             {table.getHeaderGroups().map((hg) => (
               <TableRow key={hg.id} className="border-b-0 bg-primary hover:bg-primary [&>th:first-child]:rounded-tl-lg [&>th:first-child]:rounded-bl-lg [&>th:last-child]:rounded-tr-lg [&>th:last-child]:rounded-br-lg">
                 {hg.headers.map((h) => (
@@ -382,7 +425,20 @@ export function DataTable<TData>({
           <TableBody>
             {rows.length ? (
               rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"} className="bg-white data-[state=selected]:bg-white hover:bg-secondary/70 [&>td:first-child]:rounded-l-lg [&>td:last-child]:rounded-r-lg border-0">
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                  className={cn(
+                    "bg-white data-[state=selected]:bg-white hover:bg-secondary/70 [&>td:first-child]:rounded-l-lg [&>td:last-child]:rounded-r-lg border-0",
+                    onRowClick && "cursor-pointer",
+                  )}
+                  onClick={(event) => {
+                    if (!onRowClick) return
+                    const target = event.target as HTMLElement
+                    if (target.closest("button, a, input, [role='checkbox']")) return
+                    onRowClick(row.original)
+                  }}
+                >
                   {row.getVisibleCells().map((c) => (
                     <TableCell key={c.id} className={cn(cell, bordered && "border-r last:border-r-0")}>
                       {flexRender(c.column.columnDef.cell, c.getContext())}
