@@ -435,9 +435,32 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async removeByPath(file: string) {
-    // Do not delete metadata on unlink events: the soft-delete flow moves the
-    // file out of the watched tree before updating its row to the Trashed status.
-    // Deleting here would race with that update and destroy the retained record.
-    this.logger.debug(`File removed from watched directory: ${file}; metadata is retained for soft deletion.`);
+    // File moves used by the trash flow emit unlink events before their database
+    // transaction updates filepath. Wait briefly, then only remove a row that
+    // still points at this missing file. This keeps soft-deleted records intact.
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    try {
+      await fs.access(file);
+      // The file was recreated or moved back while the unlink event was settling.
+      return;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+        this.logger.error(`Could not verify removed file ${file}: ${String(error)}`);
+        return;
+      }
+    }
+
+    const filepath = path.relative(process.cwd(), file).split(path.sep).join('/');
+    try {
+      const result = await this.prisma.studentDocument.deleteMany({
+        where: { filepath },
+      });
+      if (result.count > 0) {
+        this.logger.log(`Removed ${result.count} stale student document record(s) for ${filepath}`);
+      }
+    } catch (error) {
+      this.logger.error(`Could not remove stale document metadata for ${filepath}: ${String(error)}`);
+    }
   }
 }
