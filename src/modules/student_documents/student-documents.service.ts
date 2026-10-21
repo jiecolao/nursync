@@ -454,7 +454,10 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
     const filepath = path.relative(process.cwd(), file).split(path.sep).join('/');
     try {
       const result = await this.prisma.studentDocument.deleteMany({
-        where: { filepath },
+        where: {
+          filepath,
+          documentStatus: { docuStatusName: { not: 'Trashed' } },
+        },
       });
       if (result.count > 0) {
         this.logger.log(`Removed ${result.count} stale student document record(s) for ${filepath}`);
