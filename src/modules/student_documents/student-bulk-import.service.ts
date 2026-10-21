@@ -36,8 +36,8 @@ export class StudentBulkImportService {
       const [studentFolder, categoryFolder, ...rest] = parts;
       const filename = rest[rest.length - 1];
       const category = categoryFor(categoryFolder);
-      const match = studentFolder.match(/^\s*([^,]+),\s*([^,]+?)(?:\s+(.+))?\s*$/);
-      if (!match) return { path: raw, valid: false, reason: 'Student folder must be LAST NAME, First Name, Middle Name.' };
+      const nameParts = studentFolder.split(',').map((part) => part.trim());
+      if (nameParts.length < 2 || nameParts.length > 3 || nameParts.some((part) => !part)) return { path: raw, valid: false, reason: 'Student folder must be LAST NAME, First Name, Middle Name.' };
       if (!category) return { path: raw, valid: false, reason: `Unknown category folder "${categoryFolder}". Use Academic, Personal, Completion & Certificate, Others, or Clinical.` };
       const [lastName, firstName, middleName] = nameParts;
       const matches = students.filter((s) => norm(s.lastName) === norm(lastName) && norm(s.firstName) === norm(firstName)
