@@ -40,7 +40,7 @@ export class StudentBulkImportService {
       const match = studentFolder.match(/^\s*([^,]+),\s*([^,]+?)(?:\s+(.+))?\s*$/);
       if (!match) return { path: raw, valid: false, reason: 'Student folder must be LAST NAME, First Name, Middle Name.' };
       if (!category) return { path: raw, valid: false, reason: `Unknown category folder "${categoryFolder}". Use Academic, Personal, Completion & Certificate, Others, or Clinical.` };
-      const [, lastName, firstName, middleName] = match;
+      const [lastName, firstName, middleName] = nameParts;
       const matches = students.filter((s) => norm(s.lastName) === norm(lastName) && norm(s.firstName) === norm(firstName)
         && norm(s.middleName || '') === norm(middleName || ''));
       if (matches.length !== 1) return { path: raw, valid: false, reason: matches.length ? 'Student name is ambiguous; include the exact middle name.' : 'No matching student found in the student database.' };
