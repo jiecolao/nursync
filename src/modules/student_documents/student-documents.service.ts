@@ -18,6 +18,24 @@ const CATEGORIES = [
   'Others', 
 ] as const;
 const DEFAULT_STATUS_ID = 1;
+const IMPORT_CATEGORY_MAP: Record<string, string> = {
+  academic: 'Academic Records',
+  'academic records': 'Academic Records',
+  personal: 'Personal Records',
+  'personal records': 'Personal Records',
+  'completion records': 'Completion and Certification Records',
+  'completion and certification records': 'Completion and Certification Records',
+  'completion & certification records': 'Completion and Certification Records',
+  'completion and certification': 'Completion and Certification Records',
+  'completion & certificate': 'Completion and Certification Records',
+  'rle/clinical records': 'Clinical Records',
+  'rle clinical records': 'Clinical Records',
+  clinical: 'Clinical Records',
+  'clinical records': 'Clinical Records',
+  others: 'Others',
+  ...Object.fromEntries(CATEGORIES.map((name) => [name.toLocaleLowerCase(), name])),
+};
+const normalizeName = (value: string) => value.trim().toLocaleLowerCase().replace(/\\s+/g, ' ');
 
 function capitalizeLastName(lastName: string) {
   const trimmed = lastName.trim();
@@ -372,13 +390,21 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
     try {
       const relative = path.relative(this.root, file);
       const parts = relative.split(path.sep);
-      if (parts.length !== 3 || !CATEGORIES.includes(parts[1] as typeof CATEGORIES[number])) return;
-      const [folder, category, filename] = parts;
-      const [lastName, ...firstParts] = folder.split(', ');
-      if (!lastName || !firstParts.length) return;
-      const student = await this.prisma.student.findFirst({
-        where: { lastName, firstName: firstParts.join(', ') },
-      });
+      if (parts.length !== 3) return;
+      const [folder, categoryFolder, filename] = parts;
+      const category = IMPORT_CATEGORY_MAP[normalizeName(categoryFolder)];
+      if (!category || filename.startsWith('.upload-') || filename.startsWith('.bulk-import-')) return;
+      const nameParts = folder.split(',').map((part) => part.trim());
+      if (nameParts.length !== 2 || nameParts.some((part) => !part)) return;
+      const [lastName, givenNames] = nameParts;
+      const candidates = await this.prisma.student.findMany({ select: { studentUuid: true, lastName: true, firstName: true, middleName: true } });
+      const matches = candidates.filter((student) => normalizeName(student.lastName) === normalizeName(lastName)
+        && normalizeName([student.firstName, student.middleName].filter(Boolean).join(' ')) === normalizeName(givenNames));
+      if (matches.length !== 1) {
+        this.logger.warn(`Skipping watched file with ${matches.length ? 'ambiguous' : 'unmatched'} student folder "${folder}": ${file}`);
+        return;
+      }
+      const student = matches[0];
       const categoryRecord = await this.prisma.documentCategories.findFirst({ where: { docuName: category } });
       const status = await this.prisma.documentStatus.findFirst({ where: { docuStatusId: DEFAULT_STATUS_ID } })
         ?? await this.prisma.documentStatus.findFirst();
