@@ -59,7 +59,6 @@ interface Faculty {
 const GENDERS = [
   { id: 1, label: "Male" },
   { id: 2, label: "Female" },
-  { id: 3, label: "Other" },
 ];
 
 const INITIAL_FACULTY: Faculty = {
@@ -617,7 +616,9 @@ export default function ProfilePage() {
                     onValueChange={(v) => set("genderId", Number(v))}
                   >
                     <SelectTrigger id="genderId" className="w-full">
-                      <SelectValue placeholder="Select gender" />
+                      <SelectValue placeholder="Select gender">
+                        {GENDERS.find((g) => String(g.id) === String(f.genderId))?.label}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       {GENDERS.map((g) => (
