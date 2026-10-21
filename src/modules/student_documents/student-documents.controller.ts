@@ -9,6 +9,10 @@ import { JwtAuthGuard } from '../auth/guards/jwt.guard';
 import { createReadStream } from 'node:fs';
 import path from 'node:path';
 import { StudentDocumentsService } from './student-documents.service';
+import {
+  documentUploadStorage,
+  maxDocumentUploadSize,
+} from './student-document-upload.config';
 
 @Controller('students/:uuid/documents')
 @UseGuards(JwtAuthGuard)
@@ -42,7 +46,8 @@ export class StudentDocumentsController {
 
   @Post('upload')
   @UseInterceptors(FilesInterceptor('files', 20, {
-    limits: { fileSize: 25 * 1024 * 1024 },
+    storage: documentUploadStorage,
+    limits: { fileSize: maxDocumentUploadSize },
   }))
   upload(
     @Param('uuid') uuid: string,

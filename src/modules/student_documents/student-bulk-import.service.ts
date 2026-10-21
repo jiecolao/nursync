@@ -192,7 +192,7 @@ export class StudentBulkImportService {
         if (!name) throw new BadRequestException('Invalid filename.');
         const destination = path.join(directory, name);
         const stage = path.join(stageRoot, String(i));
-        await fs.writeFile(stage, files[i].buffer, { flag: 'wx' });
+        await fs.rename(files[i].path, stage);
         staged.push({
           destination,
           stage,
@@ -305,6 +305,11 @@ export class StudentBulkImportService {
       await fs
         .rm(stageRoot, { recursive: true, force: true })
         .catch((error) => this.logger.warn(String(error)));
+      for (const file of files) {
+        await fs
+          .rm(file.path, { force: true })
+          .catch((error) => this.logger.warn(`Could not clean temporary upload ${file.path}: ${String(error)}`));
+      }
     }
   }
 }

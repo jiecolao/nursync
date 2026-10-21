@@ -96,7 +96,7 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
         if (!name) throw new BadRequestException('Invalid filename.');
         const destination = path.join(directory, name);
         const stage = path.join(stageDir, name);
-        await fs.writeFile(stage, file.buffer, { flag: 'wx' });
+        await fs.rename(file.path, stage);
         staged.push({ stage, destination, relativePath: path.relative(process.cwd(), destination).split(path.sep).join('/'), name });
       }
       const saved = await this.prisma.$transaction(async (tx) => {
@@ -139,6 +139,14 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
       try { await fs.rm(stageDir, { recursive: true, force: true }); }
       catch (cleanupError) { this.logger.error(`Could not clean upload staging directory: ${String(cleanupError)}`); }
       throw error;
+    } finally {
+      for (const file of files) {
+        try {
+          await fs.rm(file.path, { force: true });
+        } catch (cleanupError) {
+          this.logger.error(`Could not clean temporary upload ${file.path}: ${String(cleanupError)}`);
+        }
+      }
     }
   }
 
