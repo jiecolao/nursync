@@ -22,7 +22,7 @@ export type AuthUser = {
 
 let refreshPromise: Promise<void> | null = null;
 
-async function refreshAccessToken() {
+export async function refreshAuthSession() {
   if (!refreshPromise) {
     refreshPromise = fetch(`${API_BASE}/api/auth/refresh`, {
       method: 'POST',
@@ -49,7 +49,7 @@ export async function authRequest<T>(path: string, init: RequestInit = {}): Prom
   let response = await request();
   const canRefresh = !path.startsWith('/api/auth/');
   if (response.status === 401 && canRefresh) {
-    await refreshAccessToken();
+    await refreshAuthSession();
     response = await request();
   }
 

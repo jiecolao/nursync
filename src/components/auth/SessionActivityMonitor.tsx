@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { notify } from "@/components/layout/Toasty";
-import { authRequest } from "@/lib/auth";
+import { authRequest, refreshAuthSession } from "@/lib/auth";
 import { useAuth } from "@/components/auth/ProtectedRoute";
 
 // Keep these configurable without changing the timer logic.
@@ -54,7 +54,7 @@ export function SessionActivityMonitor({ children }: { children: ReactNode }) {
   const refreshAccessTokenIfNeeded = useCallback(async () => {
     if (Date.now() - lastAccessTokenRefresh.current < ACCESS_TOKEN_REFRESH_INTERVAL_MS) return;
 
-    await authRequest("/api/auth/refresh", { method: "POST" });
+    await refreshAuthSession();
     lastAccessTokenRefresh.current = Date.now();
   }, []);
 
