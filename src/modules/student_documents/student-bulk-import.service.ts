@@ -44,7 +44,7 @@ export class StudentBulkImportService {
       const matches = students.filter((s) => norm(s.lastName) === norm(lastName) && norm(s.firstName) === norm(firstName)
         && norm(s.middleName || '') === norm(middleName || ''));
       if (matches.length !== 1) return { path: raw, valid: false, reason: matches.length ? 'Student name is ambiguous; include the exact middle name.' : 'No matching student found in the student database.' };
-      return { path: raw, valid: true, studentUuid: matches[0].studentUuid, studentName: [matches[0].lastName, matches[0].firstName, matches[0].middleName].filter(Boolean).join(', '), category, filename };
+      return { path: raw, studentFolder, categoryFolder, valid: true, studentUuid: matches[0].studentUuid, studentName: [matches[0].lastName, matches[0].firstName, matches[0].middleName].filter(Boolean).join(', '), category, filename };
     });
     return { total: items.length, valid: items.filter((i) => i.valid).length, invalid: items.filter((i) => !i.valid).length, items };
   }
@@ -56,11 +56,11 @@ export class StudentBulkImportService {
     const preview = await this.preview(paths);
     const invalid = preview.items.filter((item) => !item.valid);
     if (invalid.length) throw new BadRequestException({ message: 'Import contains invalid files. Correct the folder names and preview again.', invalid });
-    const resolved = preview.items as Array<{ path: string; valid: true; studentUuid: string; studentName: string; category: string; filename: string }>;
+    const resolved = preview.items as Array<{ path: string; studentFolder: string; categoryFolder: string; valid: true; studentUuid: string; studentName: string; category: string; filename: string }>;
     const status = await this.prisma.documentStatus.findFirst({ where: { docuStatusId: 1 } }) ?? await this.prisma.documentStatus.findFirst();
     if (!status) throw new BadRequestException('No document statuses are configured.');
     const categoryRecords = await this.prisma.documentCategories.findMany();
-    const staged: Array<{ destination: string; stage: string; relative: string; item: typeof resolved[number]; name: string }> = [];
+    const staged: Array<{ destination: string; stage: string; relative: string; item: typeof resolved[number]; name: string; backup?: string; installed?: boolean }> = [];
     const stageRoot = path.join(ROOT, `.bulk-import-${randomUUID()}`);
     await fs.mkdir(stageRoot, { recursive: true });
     try {
@@ -68,8 +68,7 @@ export class StudentBulkImportService {
         const item = resolved[i];
         const categoryRecord = categoryRecords.find((c) => c.docuName === item.category);
         if (!categoryRecord) throw new BadRequestException(`Document category "${item.category}" is not configured in the database.`);
-        const studentFolder = item.path.replace(/\\/g, '/').split('/')[0];
-        const directory = path.resolve(ROOT, studentFolder, item.category);
+        const directory = path.resolve(ROOT, item.studentFolder, item.categoryFolder);
         if (!directory.startsWith(ROOT + path.sep)) throw new BadRequestException('Invalid import destination.');
         await fs.mkdir(directory, { recursive: true });
         const name = sanitize(path.basename(item.filename));
@@ -84,7 +83,9 @@ export class StudentBulkImportService {
         const records = [];
         for (const file of staged) {
           const category = categoryRecords.find((c) => c.docuName === file.item.category)!;
+          try { await fs.access(file.destination); file.backup = path.join(stageRoot, `backup-${staged.indexOf(file)}`); await fs.rename(file.destination, file.backup); } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
           await fs.rename(file.stage, file.destination);
+          file.installed = true;
           const existing = await tx.studentDocument.findFirst({ where: { studentUuid: file.item.studentUuid, filepath: file.relative } });
           const record = existing
             ? await tx.studentDocument.update({ where: { studentDocId: existing.studentDocId }, data: { filename: file.name, filepath: file.relative, submittedAt: new Date(), docuId: category.docuId, docuStatusId: status.docuStatusId } })
@@ -102,7 +103,8 @@ export class StudentBulkImportService {
       });
       return { count: saved.length, documents: saved };
     } catch (error) {
-      for (const file of staged) {
+      for (const file of [...staged].reverse()) {
+        try { if (file.installed) await fs.rm(file.destination, { force: true }); if (file.backup) await fs.rename(file.backup, file.destination); } catch (rollbackError) { this.logger.error(`Bulk import rollback failed for ${file.destination}: ${String(rollbackError)}`); }
         try { await fs.rm(file.stage, { force: true }); } catch {}
       }
       throw error;
