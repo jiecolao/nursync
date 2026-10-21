@@ -205,46 +205,6 @@ export default function StudentProfilePage() {
       },
     },
   ]
-  
-  const columns: ColumnDef<DocumentsTableType>[] = [
-    { accessorKey: "fileName", header: "Filename" },
-    { accessorKey: "filePath", header: "File Path" },
-    { accessorKey: "docuStatus", header: "Document Status" },
-    { accessorKey: "createdAt", header: "Created" },
-    { accessorKey: "updatedAt", header: "Updated" },
-    { 
-    id: "actions", 
-    enableHiding: false, 
-    enableSorting: false, 
-    cell: ({ row }) => {
-      const order = row.original // the full data object for this row
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger >
-            <Button variant="ghost" size="icon" className="size-8">
-              <MoreHorizontal className="size-4" />
-              <span className="sr-only">Open menu</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {/* <DropdownMenuItem onClick={() => navigator.clipboard.writeText(order.uuid)}>
-              Copy UUID
-            </DropdownMenuItem> */}
-            <DropdownMenuItem onClick={() => console.log("view", order)}>
-              Edit File
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => console.log("view", order)}>
-              File Location...
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive" onClick={() => console.log("delete", order)}>
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )
-    }},
-  ]
 
   useEffect(() => {
     if (!studentUuid) {
