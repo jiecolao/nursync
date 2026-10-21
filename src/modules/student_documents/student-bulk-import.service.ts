@@ -30,7 +30,7 @@ export class StudentBulkImportService {
     const students = await this.prisma.student.findMany({ select: { studentUuid: true, lastName: true, firstName: true, middleName: true } });
     const items = paths.map((raw) => {
       const parts = raw.replace(/\\/g, '/').split('/').filter(Boolean);
-      if (parts.length < 3 || parts.some((part) => part === '.' || part === '..')) {
+      if (parts.length !== 3 || parts.some((part) => part === '.' || part === '..')) {
         return { path: raw, valid: false, reason: 'Expected Student Folder / Category / File.' };
       }
       const [studentFolder, categoryFolder, ...rest] = parts;
