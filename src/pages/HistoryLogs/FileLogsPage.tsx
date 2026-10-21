@@ -71,6 +71,7 @@ export default function FileLogsPage(){
                 dateKey="date_modified"
                 searchPlaceholder="Search file logs…"
                 exportFileName="file_logs"
+                defaultVisibleColumnIds={["user", "student_name", "file_action", "file_modified", "date_modified"]}
             />
         </>
     )

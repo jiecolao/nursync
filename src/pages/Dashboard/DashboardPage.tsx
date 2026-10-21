@@ -40,15 +40,15 @@ type DashboardSummary = {
 
 type RecentChange = FileLogsType;
 
-const columns: ColumnDef<RecentChange>[] = [
-  { accessorKey: "uuid", header: "UUID" },
-  { accessorKey: "user", header: "User" },
-  { accessorKey: "student_name", header: "Student" },
-  { accessorKey: "file_action", header: "Action" },
-  { accessorKey: "file_modified", header: "File Modified" },
-  { accessorKey: "file_loc", header: "File Path" },
-  { accessorKey: "date_modified", header: "Date Modified" },
-  {
+function formatColumnHeader(key: string) {
+  return key
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/[_-]+/g, " ")
+    .replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
+function createActionColumn(): ColumnDef<RecentChange> {
+  return {
     id: "actions",
     enableHiding: false,
     enableSorting: false,
@@ -73,8 +73,8 @@ const columns: ColumnDef<RecentChange>[] = [
         </DropdownMenuContent>
       </DropdownMenu>
     ),
-  },
-];
+  };
+}
 
 async function getJson<T>(path: string, signal: AbortSignal): Promise<T> {
   const response = await fetch(path, {
@@ -95,6 +95,17 @@ export default function DashboardPage() {
   const [recentError, setRecentError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [recentLoading, setRecentLoading] = useState(true);
+  const columns: ColumnDef<RecentChange>[] = recentChanges.length
+    ? [
+        ...Array.from(
+          new Set(recentChanges.flatMap((change) => Object.keys(change))),
+        ).map((key) => ({
+          accessorKey: key,
+          header: formatColumnHeader(key),
+        })),
+        createActionColumn(),
+      ]
+    : [createActionColumn()];
 
   useEffect(() => {
     const controller = new AbortController();
@@ -207,6 +218,7 @@ export default function DashboardPage() {
           dateKey="date_modified"
           searchPlaceholder="Search uuid, user, or action"
           exportFileName="recent-file-changes"
+          defaultVisibleColumnIds={["user", "student_name", "file_action", "file_modified"]}
         />
       </div>
     </div>

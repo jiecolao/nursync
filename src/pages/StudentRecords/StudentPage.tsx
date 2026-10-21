@@ -55,12 +55,12 @@ function createColumns(navigate: NavigateFunction): ColumnDef<StudentTableType>[
     enableSorting: false, 
     cell: ({ row }) => {
       return (
-        <div className="size-8">
-          <Button variant="ghost" size="icon" className="size-8" 
+        <div>
+          <Button variant="ghost" size="icon"
             onClick={() => {
             navigate(`/students/profile/${row.original.student_uuid}`)
             }}>
-            <ChevronRight/>
+            <ChevronRight className="size-4 p-0 m-0"/>
           </Button>
         </div>
       )
@@ -388,6 +388,8 @@ export default function StudentsPage(){
                 actions={actions}
                 enableRowSelection={true}
                 pageSizeOptions={[10, 20, 50]}
+                defaultVisibleColumnIds={["student_id", "full_name", "dob", "is_non_graduate"]}
+                onRowClick={(student) => navigate(`/students/profile/${student.student_uuid}`)}
               />
               {isImportOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="presentation">

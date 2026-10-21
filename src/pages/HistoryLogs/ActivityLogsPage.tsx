@@ -64,6 +64,7 @@ export default function ActivityLogsPage(){
                 dateKey="date_modified"
                 searchPlaceholder="Search activity logs"
                 exportFileName="activity_logs"
+                defaultVisibleColumnIds={["user", "action", "date_modified"]}
             />
         </>
     )

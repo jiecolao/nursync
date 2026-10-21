@@ -50,6 +50,7 @@ const columns: ColumnDef<UserRow>[] = [
   {
     id: 'actions',
     header: 'Actions',
+    enableHiding: false,
     enableSorting: false,
     cell: ({ row }) => (
       <Button
@@ -161,6 +162,7 @@ export default function UsersPage() {
         exportFileName="system-users"
         actions={actions}
         pageSizeOptions={[10]}
+        defaultVisibleColumnIds={["name", "username", "email", "role", "status"]}
       />
       <AddUserPanel
         open={panelOpen}
