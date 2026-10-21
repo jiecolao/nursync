@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { DataTable } from "@/components/layout/DataTable";
 import type { ColumnDef } from "@tanstack/react-table";
 import { MoreHorizontal } from "lucide-react";
@@ -39,6 +40,12 @@ type DashboardSummary = {
 };
 
 type RecentChange = FileLogsType;
+type StudentSummary = {
+  studentUuid: string;
+  firstName: string;
+  lastName: string;
+  middleName?: string | null;
+};
 
 function formatColumnHeader(key: string) {
   return key
@@ -47,7 +54,14 @@ function formatColumnHeader(key: string) {
     .replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
-function createActionColumn(): ColumnDef<RecentChange> {
+function normalizeStudentName(value: string) {
+  return value.trim().toLocaleLowerCase().replace(/\s+/g, " ");
+}
+
+function createActionColumn(
+  students: StudentSummary[],
+  navigate: ReturnType<typeof useNavigate>,
+): ColumnDef<RecentChange> {
   return {
     id: "actions",
     enableHiding: false,
@@ -61,15 +75,35 @@ function createActionColumn(): ColumnDef<RecentChange> {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => console.log("view user", row.original.user)}>
-            See User
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => console.log("view student", row.original.student_name)}>
+          <DropdownMenuItem
+            onClick={() => {
+              const student = students.find((candidate) => {
+                const names = [
+                  `${candidate.lastName}, ${candidate.firstName}`,
+                  candidate.middleName
+                    ? `${candidate.lastName}, ${candidate.firstName} ${candidate.middleName}`
+                    : "",
+                ];
+                return names
+                  .filter(Boolean)
+                  .map(normalizeStudentName)
+                  .includes(normalizeStudentName(row.original.student_name));
+              });
+              if (student) navigate(`/students/profile/${student.studentUuid}`);
+            }}
+            disabled={!students.some((student) => {
+              const names = [
+                `${student.lastName}, ${student.firstName}`,
+                student.middleName ? `${student.lastName}, ${student.firstName} ${student.middleName}` : "",
+              ];
+              return names.filter(Boolean).map(normalizeStudentName).includes(normalizeStudentName(row.original.student_name));
+            })}
+          >
             See Student
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => console.log("view file", row.original.file_loc)}>
+          {/* <DropdownMenuItem onClick={() => console.log("view file", row.original.file_loc)}>
             Go to File
-          </DropdownMenuItem>
+          </DropdownMenuItem> */}
         </DropdownMenuContent>
       </DropdownMenu>
     ),
@@ -89,8 +123,10 @@ async function getJson<T>(path: string, signal: AbortSignal): Promise<T> {
 }
 
 export default function DashboardPage() {
+  const navigate = useNavigate();
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [recentChanges, setRecentChanges] = useState<RecentChange[]>([]);
+  const [students, setStudents] = useState<StudentSummary[]>([]);
   const [summaryError, setSummaryError] = useState<string | null>(null);
   const [recentError, setRecentError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -103,17 +139,18 @@ export default function DashboardPage() {
           accessorKey: key,
           header: formatColumnHeader(key),
         })),
-        createActionColumn(),
+        createActionColumn(students, navigate),
       ]
-    : [createActionColumn()];
+    : [createActionColumn(students, navigate)];
 
   useEffect(() => {
     const controller = new AbortController();
 
     const loadDashboard = async () => {
-      const [summaryResult, recentResult] = await Promise.allSettled([
+      const [summaryResult, recentResult, studentsResult] = await Promise.allSettled([
         getJson<DashboardSummary>("/api/dashboard/summary", controller.signal),
         getJson<RecentChange[]>("/api/dashboard/recent-changes?limit=10", controller.signal),
+        getJson<StudentSummary[]>("/api/student", controller.signal),
       ]);
 
       if (controller.signal.aborted) return;
@@ -138,6 +175,10 @@ export default function DashboardPage() {
             ? recentResult.reason.message
             : "Unable to load recent changes.",
         );
+      }
+
+      if (studentsResult.status === "fulfilled" && Array.isArray(studentsResult.value)) {
+        setStudents(studentsResult.value);
       }
 
       setLoading(false);
