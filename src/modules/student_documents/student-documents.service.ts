@@ -18,7 +18,23 @@ const CATEGORIES = [
   'Others', 
 ] as const;
 const DEFAULT_STATUS_ID = 1;
-const IMPORT_CATEGORY_MAP: Record<string, string> = { academic: 'Academic Records', personal: 'Personal Records', 'completion & certificate': 'Completion and Certification Records', 'completion and certificate': 'Completion and Certification Records', others: 'Others', clinical: 'Clinical Records', ...Object.fromEntries(CATEGORIES.map((name) => [name.toLocaleLowerCase(), name])) };
+const IMPORT_CATEGORY_MAP: Record<string, string> = {
+  academic: 'Academic Records',
+  'academic records': 'Academic Records',
+  personal: 'Personal Records',
+  'personal records': 'Personal Records',
+  'completion records': 'Completion and Certification Records',
+  'completion and certification records': 'Completion and Certification Records',
+  'completion & certification records': 'Completion and Certification Records',
+  'completion and certification': 'Completion and Certification Records',
+  'completion & certificate': 'Completion and Certification Records',
+  'rle/clinical records': 'Clinical Records',
+  'rle clinical records': 'Clinical Records',
+  clinical: 'Clinical Records',
+  'clinical records': 'Clinical Records',
+  others: 'Others',
+  ...Object.fromEntries(CATEGORIES.map((name) => [name.toLocaleLowerCase(), name])),
+};
 const normalizeName = (value: string) => value.trim().toLocaleLowerCase().replace(/\\s+/g, ' ');
 
 function capitalizeLastName(lastName: string) {
@@ -379,12 +395,11 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
       const category = IMPORT_CATEGORY_MAP[normalizeName(categoryFolder)];
       if (!category || filename.startsWith('.upload-') || filename.startsWith('.bulk-import-')) return;
       const nameParts = folder.split(',').map((part) => part.trim());
-      if (nameParts.length < 2 || nameParts.length > 3 || nameParts.some((part) => !part)) return;
-      const [lastName, firstName, middleName] = nameParts;
+      if (nameParts.length !== 2 || nameParts.some((part) => !part)) return;
+      const [lastName, givenNames] = nameParts;
       const candidates = await this.prisma.student.findMany({ select: { studentUuid: true, lastName: true, firstName: true, middleName: true } });
       const matches = candidates.filter((student) => normalizeName(student.lastName) === normalizeName(lastName)
-        && normalizeName(student.firstName) === normalizeName(firstName)
-        && normalizeName(student.middleName || '') === normalizeName(middleName || ''));
+        && normalizeName([student.firstName, student.middleName].filter(Boolean).join(' ')) === normalizeName(givenNames));
       if (matches.length !== 1) {
         this.logger.warn(`Skipping watched file with ${matches.length ? 'ambiguous' : 'unmatched'} student folder "${folder}": ${file}`);
         return;

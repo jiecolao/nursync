@@ -3,6 +3,7 @@ import {
   Activity, ChevronRight, File, FileArchive, FileCode2, FileImage,
   FileText, Folder, FolderOpen, HardDrive, LayoutGrid, List, RefreshCw,
   Search, Wifi, WifiOff, Upload, CheckCircle2, AlertCircle,
+  X,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -47,6 +48,7 @@ export default function DirectoryPage() {
   const [search, setSearch] = useState('');
   const [view, setView] = useState<ViewMode>('grid');
   const importInput = useRef<HTMLInputElement>(null);
+  const [isImportOpen, setIsImportOpen] = useState(false);
   const [importFiles, setImportFiles] = useState<globalThis.File[]>([]);
   const [importPaths, setImportPaths] = useState<string[]>([]);
   const [importPreview, setImportPreview] = useState<ImportPreviewItem[]>([]);
@@ -123,6 +125,16 @@ export default function DirectoryPage() {
     finally { setImportBusy(false); }
   };
 
+  const closeImport = () => {
+    if (importBusy) return;
+    setIsImportOpen(false);
+    setImportFiles([]);
+    setImportPaths([]);
+    setImportPreview([]);
+    setImportMessage('');
+    if (importInput.current) importInput.current.value = '';
+  };
+
   const goToFolder = (entry: DirectoryEntry) => {
     if (entry.type === 'directory') {
       setCurrentPath(entry.path);
@@ -153,33 +165,6 @@ export default function DirectoryPage() {
         </div>
       </section>
 
-
-      <section className="rounded-2xl border border-stone-200/80 bg-white p-5 shadow-sm sm:p-6">
-        <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
-          <div><h3 className="font-semibold text-stone-900">Bulk import student folders</h3><p className="mt-1 max-w-2xl text-sm leading-6 text-stone-500">Choose a directory containing student folders. Files are checked against the student database before import; invalid entries block the import.</p></div>
-          <Button type="button" onClick={() => importInput.current?.click()} disabled={importBusy} className="shrink-0"><Upload className="mr-2 size-4" />Choose folder</Button>
-          <input ref={importInput} type="file" multiple className="hidden" aria-label="Choose student folder for bulk import" {...({ webkitdirectory: '', directory: '' } as any)} onChange={(event) => void prepareImport(Array.from(event.target.files ?? []))} />
-        </div>
-        <div className="mt-4 rounded-xl bg-secondary/50 p-4 text-sm text-stone-600">
-          <p className="font-medium text-stone-800">Folder structure and naming guide</p>
-          <ol className="mt-2 list-decimal space-y-1 pl-5">
-            <li>Each student folder must be named <code>LAST NAME, First Name, Middle Name</code>. Omit the middle name only when it is blank in the student record.</li>
-            <li>Inside each student folder, use category folders named <code>Academic</code>, <code>Personal</code>, <code>Completion &amp; Certificate</code>, <code>Others</code>, or <code>Clinical</code>.</li>
-            <li>Put files directly inside the category folder. Preview verifies each student match and category before importing.</li>
-            <li>Correct every invalid row before importing. Existing files at the same destination are replaced and each file plus the bulk operation is audited.</li>
-          </ol>
-        </div>
-        {importBusy && <p className="mt-3 text-sm text-stone-500">Validating or importing folder contents…</p>}
-        {importMessage && <p role="status" className="mt-3 text-sm text-stone-700">{importMessage}</p>}
-        {importPreview.length > 0 && <div className="mt-4">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-sm"><span className="font-medium text-stone-800">{importPreview.length} files · {importPreview.filter((item) => item.valid).length} valid · {importPreview.filter((item) => !item.valid).length} need attention</span><Button type="button" onClick={() => void runImport()} disabled={importBusy || importPreview.some((item) => !item.valid)}><Upload className="mr-2 size-4" />Import files</Button></div>
-          <div className="max-h-72 overflow-auto rounded-lg border border-stone-200"><table className="w-full text-left text-sm">
-            <thead className="sticky top-0 bg-secondary text-xs uppercase text-stone-500"><tr><th className="px-3 py-2">File path</th><th className="px-3 py-2">Student / category</th><th className="px-3 py-2">Validation</th></tr></thead>
-            <tbody className="divide-y divide-stone-100">{importPreview.map((item, index) => <tr key={item.path + '-' + index}><td className="max-w-64 break-all px-3 py-2 text-stone-600">{item.path}</td><td className="px-3 py-2">{item.valid ? <>{item.studentName}<div className="text-xs text-stone-500">{item.category}</div></> : '—'}</td><td className="px-3 py-2">{item.valid ? <span className="inline-flex items-center gap-1 text-emerald-700"><CheckCircle2 className="size-4" />Valid</span> : <span className="inline-flex items-start gap-1 text-rose-700"><AlertCircle className="mt-0.5 size-4 shrink-0" />{item.reason}</span>}</td></tr>)}</tbody>
-          </table></div>
-        </div>}
-      </section>
-
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="rounded-xl border border-stone-200/80 bg-white p-4">
           <div className="flex items-center justify-between text-sm text-stone-500"><span>Files</span><FileText className="size-4" /></div>
@@ -205,6 +190,7 @@ export default function DirectoryPage() {
               <h3 className="font-semibold text-stone-900">All files</h3>
               <p className="mt-1 text-xs text-stone-500">{root || 'Loading watched directory…'}</p>
             </div>
+              <Button type="button" onClick={() => setIsImportOpen(true)} disabled={importBusy} className="ml-auto shrink-0"><Upload className="mr-2 size-4" />Import</Button>
             <div className="flex items-center gap-2 self-start rounded-lg border border-stone-200 bg-secondary/60 p-1">
               <Button type="button" variant={view === 'grid' ? 'default' : 'ghost'} size="icon" aria-label="Grid view" onClick={() => setView('grid')}><LayoutGrid className="size-4" /></Button>
               <Button type="button" variant={view === 'list' ? 'default' : 'ghost'} size="icon" aria-label="List view" onClick={() => setView('list')}><List className="size-4" /></Button>
@@ -275,6 +261,61 @@ export default function DirectoryPage() {
           <span className="flex items-center gap-2"><span className={`size-1.5 rounded-full ${connected ? 'bg-emerald-600' : 'bg-amber-500'}`} />{connected ? 'Changes sync automatically' : 'Live updates reconnect automatically'}</span>
         </div>
       </section>
+
+      {isImportOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="presentation">
+          <section role="dialog" aria-modal="true" aria-labelledby="directory-import-title" className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-lg bg-background p-6 shadow-xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 id="directory-import-title" className="text-xl font-semibold">Import Student Folders</h3>
+                <p className="mt-2 text-sm text-muted-foreground">Choose a directory containing student folders. Every file must match an existing student and supported document category before it can be imported.</p>
+              </div>
+              <Button type="button" variant="ghost" size="icon" className="size-8 shrink-0" onClick={closeImport} disabled={importBusy} aria-label="Close import dialog">
+                <X className="size-4" />
+              </Button>
+            </div>
+
+            <div className="my-5 rounded-xl border border-dashed border-stone-300 bg-secondary/30 p-5">
+              <input ref={importInput} type="file" multiple className="hidden" aria-label="Choose student folder for bulk import" {...({ webkitdirectory: '', directory: '' } as any)} onChange={(event) => void prepareImport(Array.from(event.target.files ?? []))} />
+              <div className="flex flex-col items-center text-center">
+                <FolderOpen className="size-10 text-primary" />
+                <p className="mt-3 font-medium text-stone-800">Select the student folders directory</p>
+                <p className="mt-1 text-sm text-muted-foreground">The directory should contain one folder per student.</p>
+                <Button type="button" variant="outline" className="mt-4" onClick={() => importInput.current?.click()} disabled={importBusy}>
+                  <FolderOpen className="mr-2 size-4" />Choose Directory
+                </Button>
+              </div>
+            </div>
+
+            <div className="rounded-xl bg-secondary/50 p-4 text-sm text-stone-600">
+              <p className="font-medium text-stone-800">Folder structure and naming guide</p>
+              <ol className="mt-2 list-decimal space-y-1 pl-5">
+                <li>Each student folder must be named <code>LAST NAME, First Name Middle Name</code>. Omit the middle name only when it is blank in the student record.</li>
+                <li>Inside each student folder, use category folders named <code>Academic Records</code>, <code>Personal Records</code>, <code>Completion Records</code>, or <code>Clinical Records</code>.</li>
+                <li>Put files directly inside the category folder. Preview verifies each student match and category before importing.</li>
+                <li>Correct every invalid row before importing. Existing files at the same destination are replaced and each file plus the bulk operation is audited.</li>
+              </ol>
+            </div>
+
+            {importBusy && <p className="mt-3 text-sm text-stone-500">Validating or importing folder contents...</p>}
+            {importMessage && <p role="status" className="mt-3 text-sm text-stone-700">{importMessage}</p>}
+            {importPreview.length > 0 && <div className="mt-4">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-sm"><span className="font-medium text-stone-800">{importPreview.length} files · {importPreview.filter((item) => item.valid).length} valid · {importPreview.filter((item) => !item.valid).length} need attention</span><Button type="button" onClick={() => void runImport()} disabled={importBusy || importPreview.some((item) => !item.valid)}><Upload className="mr-2 size-4" />Import files</Button></div>
+              <div className="max-h-72 overflow-auto rounded-lg border border-stone-200"><table className="w-full text-left text-sm">
+                <thead className="sticky top-0 bg-secondary text-xs uppercase text-stone-500"><tr><th className="px-3 py-2">File path</th><th className="px-3 py-2">Student / category</th><th className="px-3 py-2">Validation</th></tr></thead>
+                <tbody className="divide-y divide-stone-100">{importPreview.map((item, index) => <tr key={item.path + '-' + index}><td className="max-w-64 break-all px-3 py-2 text-stone-600">{item.path}</td><td className="px-3 py-2">{item.valid ? <>{item.studentName}<div className="text-xs text-stone-500">{item.category}</div></> : '—'}</td><td className="px-3 py-2">{item.valid ? <span className="inline-flex items-center gap-1 text-emerald-700"><CheckCircle2 className="size-4" />Valid</span> : <span className="inline-flex items-start gap-1 text-rose-700"><AlertCircle className="mt-0.5 size-4 shrink-0" />{item.reason}</span>}</td></tr>)}</tbody>
+              </table></div>
+            </div>}
+
+            <div className="mt-5 flex justify-end gap-2">
+              <Button type="button" variant="outline" disabled={importBusy} onClick={closeImport}>Cancel</Button>
+              <Button type="button" disabled={importBusy || importPreview.length === 0 || importPreview.some((item) => !item.valid)} onClick={() => void runImport()}>
+                {importBusy ? "Importing..." : `Import ${importPreview.length || ""} Files`}
+              </Button>
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }
