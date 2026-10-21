@@ -417,8 +417,12 @@ export default function StudentProfilePage() {
     e.target.value = "";
   };
 
-  const fullName = [s.first_name, s.middle_name, s.last_name].filter(Boolean).join(" ");
-  const initials = `${saved.first_name[0] ?? ""}${saved.last_name[0] ?? ""}`.toUpperCase();
+  const fullName = [
+    s.last_name ? `${s.last_name},` : null,
+    s.first_name, 
+    s.middle_name
+  ].filter(Boolean).join(" ");
+  const initials = `${saved.last_name[0] ?? ""}${saved.first_name[0] ?? ""}`.toUpperCase();
   const genderLabel = genders.find((g) => g.genderId === s.gender_id)?.genderName;
 
   /* ----------------------------- render --------------------------- */
