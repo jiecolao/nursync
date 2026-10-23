@@ -541,15 +541,15 @@ export default function StudentProfilePage() {
               )}
             </Field>
 
-            <Field label="Gender" htmlFor="gender_id" error={errors.gender_id} className="md:col-span-3">
+            <Field label="Sex" htmlFor="gender_id" error={errors.gender_id} className="md:col-span-3">
               {editing ? (
                 <Select
                   value={s.gender_id ? String(s.gender_id) : ""}
                   onValueChange={(v) => set("gender_id", Number(v))}
                 >
                   <SelectTrigger id="gender_id" className={`w-full ${fieldClass("gender_id")}`}>
-                    <SelectValue placeholder="Select gender">
-                      {genderLabel ?? "Select gender"}
+                    <SelectValue placeholder="Select sex">
+                      {genderLabel ?? "Select sex"}
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>

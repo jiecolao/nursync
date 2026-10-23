@@ -354,7 +354,7 @@ export default function ProfilePage() {
     const e: Record<string, string> = {};
     if (!draft.last_name.trim()) e.last_name = "Enter a last name.";
     if (!draft.first_name.trim()) e.first_name = "Enter a first name.";
-    if (!draft.genderId) e.genderId = "Select a gender.";
+    if (!draft.genderId) e.genderId = "Select a sex.";
     if (!/^\S+@\S+\.\S+$/.test(draft.email)) e.email = "Enter a valid email address.";
     setErrors(e);
     if (Object.keys(e).length) return;
@@ -609,14 +609,14 @@ export default function ProfilePage() {
                   <ReadValue value={f.suffix} />
                 )}
               </Field>
-              <Field label="Gender" htmlFor="genderId" error={errors.genderId} className="sm:col-span-3">
+              <Field label="Sex" htmlFor="genderId" error={errors.genderId} className="sm:col-span-3">
                 {editing ? (
                   <Select
                     value={f.genderId ? String(f.genderId) : ""}
                     onValueChange={(v) => set("genderId", Number(v))}
                   >
                     <SelectTrigger id="genderId" className="w-full">
-                      <SelectValue placeholder="Select gender">
+                      <SelectValue placeholder="Select sex">
                         {GENDERS.find((g) => String(g.id) === String(f.genderId))?.label}
                       </SelectValue>
                     </SelectTrigger>
