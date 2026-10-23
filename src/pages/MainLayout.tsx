@@ -185,7 +185,7 @@ export default function MainLayout() {
           )}
         </header>
 
-        <main className="flex-1 min-w-0 w-full max-w-full px-6 py-5 overflow-x-auto">
+        <main className="flex-1 min-w-0 w-full max-w-full px-6 py-5">
           <Outlet />
         </main>
       </SidebarInset>
