@@ -119,9 +119,9 @@ function ReadValue({ value, mono = false }: { value?: string | number | null; mo
   const empty = value === null || value === undefined || value === "";
   return (
     <p
-      className={`min-h-9 py-1.5 text-[15px] ${mono ? "font-mono text-sm break-all" : ""} ${
-        empty ? "text-neutral-400" : "text-neutral-900"
-      }`}
+      className={`min-h-9 py-1.5 text-[15px] break-all ${
+        mono ? "font-mono text-sm" : ""
+      } ${empty ? "text-neutral-400" : "text-neutral-900"}`}
     >
       {empty ? "-" : value}
     </p>
