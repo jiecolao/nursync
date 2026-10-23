@@ -416,26 +416,7 @@ export default function StudentProfilePage() {
                 {initials}
               </AvatarFallback>
             </Avatar>
-            {editing && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => fileRef.current?.click()}
-                  aria-label="Change photo"
-                  className="absolute -right-1 -bottom-1 grid size-9 place-items-center rounded-full border-2 shadow focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-                  style={{ backgroundColor: SECONDARY, color: PRIMARY, borderColor: PRIMARY }}
-                >
-                  <Camera className="size-4" />
-                </button>
-                <input
-                  ref={fileRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={pickImage}
-                />
-              </>
-            )}
+            
           </div>
 
           <div className="min-w-0 flex-1 space-y-1">
