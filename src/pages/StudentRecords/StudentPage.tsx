@@ -14,6 +14,7 @@ import { DialogBox } from "@/components/layout/DialogBox";
 import { AddStudentPanel } from "./AddStudentPanel";
 import { useNavigate, type NavigateFunction } from "react-router-dom";
 import { notify } from "@/components/layout/Toasty";
+import { parseSafeDate } from "@/lib/utils";
 
 
 function toStudentTableRecord(student: StudentApiRecord): StudentTableType {
@@ -205,6 +206,8 @@ export default function StudentsPage(){
         const middleName = get("middleName");
         const genderId = parseOptionalInteger("genderId");
         const dob = get("dob");
+        const rawDobValue = row["dob"] ?? row["DOB"] ?? row["Date of Birth"]; // adjust based on your aliases
+        const dobFormatted = parseSafeDate(rawDobValue);
         const contactNo = get("contactNo");
         const email = get("email");
         const provincialAddr = get("provincialAddr");
@@ -223,7 +226,7 @@ export default function StudentsPage(){
         if (email && (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 100)) errors.push("Email address is invalid.");
         if (genderId !== undefined && !Number.isInteger(genderId)) errors.push("Gender ID must be a whole number.");
         if (contactNo.length > 50) errors.push("Contact Number must be 50 characters or fewer.");
-        if (dob && Number.isNaN(Date.parse(dob))) errors.push("Date of Birth must be a valid date.");
+        if (dobFormatted && Number.isNaN(Date.parse(dobFormatted))) errors.push("Date of Birth must be a valid date.");
         if (!Number.isInteger(yrAdmitted) || yrAdmitted < 1900 || yrAdmitted > 2100) errors.push("Year Admitted must be a year from 1900 to 2100.");
         if (!Number.isInteger(yrResidency)) errors.push("Year of Residency must be a whole number.");
         if (yrGraduated !== undefined && !Number.isInteger(yrGraduated)) errors.push("Year Graduated must be a whole number.");
@@ -233,7 +236,7 @@ export default function StudentsPage(){
           ...(studentId && { studentId }),
           ...(middleName && { middleName }),
           ...(genderId !== undefined && Number.isInteger(genderId) && { genderId }),
-          ...(dob && !Number.isNaN(Date.parse(dob)) && { dob: new Date(dob).toISOString() }),
+          ...(dobFormatted && { dob: `${dobFormatted}T00:00:00.000Z` }),
           ...(contactNo && { contactNo }),
           ...(email && { email }),
           ...(provincialAddr && { provincialAddr }),
