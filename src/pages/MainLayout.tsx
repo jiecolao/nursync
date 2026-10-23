@@ -13,6 +13,7 @@ export const pageTitles: Record<string, string> = {
   "/directory": "Directory",
   "/students": "Student Records",
   "/students/profile/:studentUuid": "Student Profile",
+  "/student-archive": "Student Archive",
   "/add-student": "Add Student Record",
   "/trash": "Trash",
   "/system-users": "System Users",

@@ -28,6 +28,7 @@ import ActivityLogsPage from "./pages/HistoryLogs/ActivityLogsPage"
 import TrashPage from "./pages/StudentRecords/TrashPage"
 import DirectoryPage from "./pages/StudentRecords/DirectoryPage"
 import StudentProfilePage from "./pages/StudentRecords/StudentProfilePage"
+import StudentArchivePage from "./pages/StudentRecords/StudentArchivePage"
 
 
 export default function App() {
@@ -59,6 +60,7 @@ export default function App() {
               <Route index element={<CanAccess permissions={["students_read"]} fallback={<p className="p-8">You do not have permission to view student records.</p>}><StudentRecordsPage /></CanAccess>} />
               <Route path="profile/:studentUuid" element={<CanAccess permissions={["students_read"]} fallback={<p className="p-8">You do not have permission to view student records.</p>}><StudentProfilePage /></CanAccess>} />
             </Route>
+            <Route path="student-archive" element={<CanAccess permissions={["students_read"]} fallback={<p className="p-8">You do not have permission to view student archive.</p>}><StudentArchivePage /></CanAccess>} />
             <Route path="trash" element={<CanAccess permissions={["students_read"]} fallback={<p className="p-8">You do not have permission to view deleted records.</p>}><TrashPage /></CanAccess>} />
 
 

@@ -11,6 +11,7 @@ import {
   FileClock,
   Folder,
   Trash,
+  ArchiveIcon,
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -63,6 +64,7 @@ const items1: NavItem[] = [
   { title: "Directory", url: "/directory", icon: Folder },
   { title: "Students", url: "/students", icon: GraduationCap },
   { title: "Trash", url: "/trash", icon: Trash },
+  { title: "Archive", url: "/student-archive", icon: ArchiveIcon },
   // {
   //   title: "Student Records",
   //   url: "/students",
