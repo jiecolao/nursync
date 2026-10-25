@@ -144,7 +144,7 @@ export default function HelpPage() {
               </button>
               <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4">
                 <span className="text-xs text-slate-400">Module shortcut</span>
-                <button type="button" onClick={() => navigate(topic.route)} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-900 transition hover:bg-emerald-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600">Go to Module<ChevronRight size={14} /></button>
+                <button type="button" onClick={() => navigate(`${topic.route}?tour=1`) } className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-900 transition hover:bg-emerald-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600">Go to Module<ChevronRight size={14} /></button>
               </div>
             </article>;
           })}
@@ -204,7 +204,7 @@ export default function HelpPage() {
         <section role="dialog" aria-modal="true" aria-labelledby="help-guide-title" className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
           <header className="sticky top-0 flex items-start justify-between gap-4 border-b border-slate-100 bg-white px-6 py-5"><div><p className="text-xs font-semibold uppercase tracking-wider text-emerald-800">Nursync guide</p><h2 id="help-guide-title" className="mt-1 text-xl font-semibold text-slate-900">{guide.title}</h2><p className="mt-1 text-sm text-slate-500">{guide.description}</p></div><button type="button" aria-label="Close guide" onClick={() => setGuide(null)} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100"><X size={18} /></button></header>
           <div className="space-y-5 px-6 py-6">{guide.guide.map((section, index) => <div key={section.heading} className="flex gap-4"><span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-sm font-semibold text-emerald-800">{index + 1}</span><div><h3 className="font-semibold text-slate-900">{section.heading}</h3><p className="mt-1 text-sm leading-6 text-slate-600">{section.body}</p></div></div>)}</div>
-          <footer className="flex flex-wrap justify-end gap-3 border-t border-slate-100 px-6 py-4"><button type="button" onClick={() => setGuide(null)} className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Close guide</button><button type="button" onClick={() => { const selected = guide; setGuide(null); navigate(selected.route); }} className="rounded-lg bg-emerald-800 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-900">Go to module <ChevronRight size={15} className="ml-1 inline" /></button></footer>
+          <footer className="flex flex-wrap justify-end gap-3 border-t border-slate-100 px-6 py-4"><button type="button" onClick={() => setGuide(null)} className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Close guide</button><button type="button" onClick={() => { const selected = guide; setGuide(null); navigate(`${selected.route}?tour=1`); }} className="rounded-lg bg-emerald-800 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-900">Go to module <ChevronRight size={15} className="ml-1 inline" /></button></footer>
         </section>
       </div>}
     </div>
