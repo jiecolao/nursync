@@ -60,7 +60,22 @@ export default function StudentArchivePage() {
   const columns: ColumnDef<StudentApiRecord>[] = [
     { accessorKey: "studentId", header: "Student ID" },
     { id: "fullName", header: "Full Name", accessorFn: (row) => `${row.lastName.toUpperCase()}, ${row.firstName} ${row.middleName ?? ""}`.trim() },
+    { accessorKey: "lastName", header: "Last Name" },
+    { accessorKey: "firstName", header: "First Name" },
+    { accessorKey: "middleName", header: "Middle Name" },
+    { accessorKey: "genderId", header: "Gender ID" },
+    { accessorKey: "dob", header: "Date of Birth" },
+    { accessorKey: "contactNo", header: "Contact No." },
+    { accessorKey: "email", header: "Email" },
+    { accessorKey: "provincialAddr", header: "Provincial Address" },
+    { accessorKey: "cityAddr", header: "City Address" },
     { accessorKey: "yrAdmitted", header: "Year Admitted" },
+    { accessorKey: "yrResidency", header: "Year Residency" },
+    { accessorKey: "yrGraduated", header: "Year Graduated" },
+    { accessorKey: "isNonGraduate", header: "Non-Graduate" },
+    { accessorKey: "status", header: "Status" },
+    { accessorKey: "createdAt", header: "Created At" },
+    { accessorKey: "updatedAt", header: "Date Modified" },
     { id: "actions", header: "Actions", enableHiding: false, enableSorting: false,
       cell: ({ row }) => (
         <div className="flex flex-wrap gap-2">
@@ -83,7 +98,7 @@ export default function StudentArchivePage() {
       {error && <p role="alert" className="mb-4 text-sm text-red-600">{error}</p>}
       {!loading && !error && (
         <DataTable columns={columns} data={students} searchPlaceholder="Search archived students"
-          exportFileName="Student Archive" defaultVisibleColumnIds={["studentId", "fullName", "yrAdmitted", "actions"]} />
+          exportFileName="Student Archive" defaultVisibleColumnIds={["studentId", "fullName", "dob", "yrGraduated", "actions"]} />
       )}
     </>
   );
