@@ -35,7 +35,7 @@ const IMPORT_CATEGORY_MAP: Record<string, string> = {
   others: 'Others',
   ...Object.fromEntries(CATEGORIES.map((name) => [name.toLocaleLowerCase(), name])),
 };
-const normalizeName = (value: string) => value.trim().toLocaleLowerCase().replace(/\\s+/g, ' ');
+const normalizeName = (value: string) => value.trim().toLocaleLowerCase().replace(/\s+/g, ' ');
 
 function capitalizeLastName(lastName: string) {
   const trimmed = lastName.trim();
@@ -71,8 +71,8 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
     });
     // The database is the metadata source; also discover PDFs that exist on disk
     // but have not yet been indexed in Student_Documents.
-    const normalize = (value: string) => value.normalize('NFKC').trim().toLocaleLowerCase().replace(/\\s+/g, ' ');
-    const aliases = (value: string) => normalize(value).replace(/[^\\p{L}\\p{N}]+/gu, '');
+    const normalize = (value: string) => value.normalize('NFKC').trim().toLocaleLowerCase().replace(/\s+/g, ' ');
+    const aliases = (value: string) => normalize(value).replace(/[^\p{L}\p{N}]+/gu, '');
     const studentFolderCandidates = [
       `${student.lastName}, ${student.firstName} ${student.middleName ?? ''}`,
       `${student.lastName}, ${student.firstName}`,
@@ -80,7 +80,7 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
     const directoryDocuments: Array<Record<string, unknown>> = [];
     try {
       const roots = await fs.readdir(this.root, { withFileTypes: true });
-      for (const batch of roots.filter((entry) => entry.isDirectory() && (/^batch\\s+\\d{4}$/i.test(entry.name) || /^non-graduate$/i.test(entry.name)))) {
+      for (const batch of roots.filter((entry) => entry.isDirectory() && (/^batch\s+\d{4}$/i.test(entry.name) || /^non-graduate$/i.test(entry.name)))) {
         let studentDirs: import('node:fs').Dirent[];
         try { studentDirs = await fs.readdir(path.join(this.root, batch.name), { withFileTypes: true }); }
         catch (error) {
@@ -105,7 +105,7 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
               if ((error as NodeJS.ErrnoException).code === 'ENOENT') continue;
               throw error;
             }
-            for (const file of files.filter((entry) => entry.isFile() && /\\.pdf$/i.test(entry.name))) {
+            for (const file of files.filter((entry) => entry.isFile() && /\.pdf$/i.test(entry.name))) {
               const filepath = path.relative(process.cwd(), path.join(studentPath, categoryDir.name, file.name)).split(path.sep).join('/');
               if (documents.some((doc) => doc.filepath && normalize(doc.filepath) === normalize(filepath))) continue;
               directoryDocuments.push({
