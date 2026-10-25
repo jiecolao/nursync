@@ -3,7 +3,7 @@ import { StudentTableType, StudentApiRecord } from "./student.type";
 import { ColumnDef } from "@tanstack/react-table";
 import { useEffect, useRef, useState } from "react";
 import * as XLSX from "xlsx";
-import { ChevronRight, Download, FileSpreadsheet, Plus, Trash2, Upload, X } from "lucide-react"
+import { Archive, ChevronRight, Download, FileSpreadsheet, Plus, Upload, X } from "lucide-react"
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger,
@@ -96,8 +96,8 @@ export default function BatchPage(){
   const [importPreview, setImportPreview] = useState<Array<{ row: number; payload: Record<string, unknown>; errors: string[] }>>([]);
   const [importMessage, setImportMessage] = useState<string | null>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
-  const [studentsToDelete, setStudentsToDelete] = useState<StudentTableType[]>([]);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [studentsToDisable, setStudentsToDisable] = useState<StudentTableType[]>([]);
+  const [isDisabling, setIsDisabling] = useState(false);
   const [students, setStudents] = useState<StudentTableType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -128,16 +128,17 @@ export default function BatchPage(){
       },
     },
     {
-      id: "delete",
-      label: "Delete",
-      icon: Trash2,
-      variant: "destructive",
+      id: "disable",
+      label: "Disable",
+      icon: Archive,
+      variant: "outline",
+      className: "border-amber-600 text-amber-700 hover:bg-amber-50 hover:text-amber-800",
       visible: ({ selectedRows }) => selectedRows.length > 0,
       onClick: ({ selectedRows }) => {
-        setStudentsToDelete(selectedRows);
+        setStudentsToDisable(selectedRows);
         setIsOpen(true);
       },
-      disabled: isDeleting,
+      disabled: isDisabling,
     },
   ]
 
@@ -328,12 +329,12 @@ export default function BatchPage(){
     }
   };
 
-  const deleteStudents = async () => {
-    if (!studentsToDelete.length) return;
+  const disableStudents = async () => {
+    if (!studentsToDisable.length) return;
 
-    setIsDeleting(true);
+    setIsDisabling(true);
     try {
-      const uuids = studentsToDelete.map((student) => student.student_uuid);
+      const uuids = studentsToDisable.map((student) => student.student_uuid);
       await Promise.all(uuids.map(async (uuid) => {
         const response = await fetch(`/api/student/${encodeURIComponent(uuid)}/status`, {
           method: "PUT", credentials: "include",
@@ -350,7 +351,7 @@ export default function BatchPage(){
       setStudents((current) =>
         current.filter((student) => !uuids.includes(student.student_uuid)),
       );
-      setStudentsToDelete([]);
+      setStudentsToDisable([]);
       notify.success(
         uuids.length === 1 ? "Student archived" : "Students archived",
         { description: `${uuids.length} student record${uuids.length === 1 ? "" : "s"} moved to the archive.` },
@@ -362,7 +363,7 @@ export default function BatchPage(){
           : "Please try again.",
       });
     } finally {
-      setIsDeleting(false);
+      setIsDisabling(false);
     }
   };
 
@@ -540,19 +541,19 @@ export default function BatchPage(){
               
               {isOpen && (
                 <DialogBox
-                  title={`Delete ${studentsToDelete.length === 1 ? "student" : "students"}?`}
+                  title={`Disable ${studentsToDisable.length === 1 ? "student" : "students"}?`}
                   open={isOpen}
                   onOpenChange={(open) => {
                     setIsOpen(open);
-                    if (!open && !isDeleting) setStudentsToDelete([]);
+                    if (!open && !isDisabling) setStudentsToDisable([]);
                   }}
-                  onClick={() => { void deleteStudents(); }}
-                  yesBtnName={isDeleting ? "Deleting..." : "Delete"}
-                  yesBtnStyle="bg-red-700 hover:bg-red-600"
+                  onClick={() => { void disableStudents(); }}
+                  yesBtnName={isDisabling ? "Disabling..." : "Disable"}
+                  yesBtnStyle="bg-amber-600 hover:bg-amber-700"
                 >
                   <p>
-                    This will permanently delete {studentsToDelete.length} selected student
-                    record including their documents{studentsToDelete.length === 1 ? "" : "s"}. This action cannot be undone.
+                    This will move {studentsToDisable.length} selected student
+                    record{studentsToDisable.length === 1 ? "" : "s"} to the archive. Their records and documents will be retained.
                   </p>
                 </DialogBox>
               )}

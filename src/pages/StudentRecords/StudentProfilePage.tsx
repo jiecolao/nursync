@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from "react";
 import { 
-  Camera, Pencil, RotateCcw, Save, X, Trash, Upload
+  Archive, Camera, Pencil, RotateCcw, Save, X, Upload
  } from "lucide-react";
 import {
   AlertDialog,
@@ -343,7 +343,7 @@ export default function StudentProfilePage() {
     }
   };
 
-  const deleteStudent = async () => {
+  const disableStudent = async () => {
     if (!saved.student_uuid || deleting) return;
     setDeleting(true);
     try {
@@ -474,9 +474,9 @@ export default function StudentProfilePage() {
                 <Button
                   variant="outline"
                   onClick={() => setConfirmOpen(true)}
-                  className="border-white/40 bg-red-500 text-inherit hover:bg-red-700 hover:text-inherit"
+                  className="border-white/40 bg-amber-500 text-inherit hover:bg-amber-600 hover:text-inherit"
                 >
-                  <Trash className="size-4" /> Delete
+                  <Archive className="size-4" /> Disable
                 </Button>
               </>
             )}
@@ -715,9 +715,9 @@ export default function StudentProfilePage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => void deleteStudent()}
+              onClick={() => void disableStudent()}
               disabled={deleting}
-              className="bg-red-600 text-white hover:bg-red-700"
+              className="bg-amber-600 text-white hover:bg-amber-700"
             >
               {deleting ? "Archiving..." : "Archive student"}
             </AlertDialogAction>
