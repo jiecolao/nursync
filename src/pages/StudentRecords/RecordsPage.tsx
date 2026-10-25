@@ -186,10 +186,22 @@ export default function RecordsPage() {
   };
 
   const goToFolder = (entry: DirectoryEntry) => {
-    if (entry.type === 'directory') {
-      setCurrentPath(entry.path);
-      setSearch('');
+    if (entry.type !== 'directory') return;
+    const folderName = entry.name.trim();
+    if (!currentPath && (/^BATCH\\s+\\d{4}$/i.test(folderName) || /^NON-GRADUATE$/i.test(folderName))) {
+      const batchNo = /^NON-GRADUATE$/i.test(folderName) ? 'NON-GRADUATE' : folderName.replace(/^BATCH\\s+/i, '');
+      navigate('/records/' + encodeURIComponent(batchNo));
+      return;
     }
+    const student = studentForFolder(folderName);
+    const batchFolder = currentPath.split('/')[0] ?? '';
+    if (student && (/^BATCH\\s+\\d{4}$/i.test(batchFolder) || /^NON-GRADUATE$/i.test(batchFolder))) {
+      const batchNo = /^NON-GRADUATE$/i.test(batchFolder) ? 'NON-GRADUATE' : batchFolder.replace(/^BATCH\\s+/i, '');
+      navigate('/records/' + encodeURIComponent(batchNo) + '/' + student.studentUuid);
+      return;
+    }
+    setCurrentPath(entry.path);
+    setSearch('');
   };
 
   const studentForFolder = (folderName: string) =>
