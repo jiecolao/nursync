@@ -10,12 +10,15 @@ import { useAuth } from "@/components/auth/ProtectedRoute";
 
 export const pageTitles: Record<string, string> = {
   "/dashboard": "Dashboard",
-  "/directory": "Directory",
   "/students": "Student Records",
-  "/students/profile/:studentUuid": "Student Profile",
-  "/student-archive": "Student Archive",
-  "/add-student": "Add Student Record",
+  
+  "/records/": "Students",
+  "/records/:batchNo": "Batch",
+  "/records/:batchNo/students": "Batch",
+  "/records/:batchNo/students/:studentUuid": "Student Profile",
+
   "/trash": "Trash",
+  "/student-archive": "Student Archive",
   "/system-users": "System Users",
   "/file-logs": "File History",
   "/activity-logs": "Activity Log",
@@ -78,16 +81,8 @@ export default function MainLayout() {
         { title: "Recent activity", text: "Review recent file changes here. Search the table or use the date filter to find a specific event.", selector: '[data-tour="table-search"]' },
         { title: "Explore the records", text: "The table shows recent activity and supports sorting, paging, and export tools.", selector: '[data-tour="table-results"]' },
       ],
-      "/directory": [
-        { title: "Directory navigation", text: "This is the Directory tab. Use it to return to the directory at any time.", selector: routeLink },
-        { title: "Browse directory entries", text: "Review the directory content here and use the available controls to locate an entry.", selector: 'main h2, main h1, main [data-tour="table-results"]' },
-        ...commonSteps.slice(1),
-      ],
-      "/students": [
-        { title: "Student Records tab", text: "This active tab opens the student records workspace.", selector: routeLink },
-        { title: "Search student records", text: "Search by student details to narrow the records displayed in the table.", selector: '[data-tour="table-search"]' },
-        { title: "Review student records", text: "Student IDs, names, and other available details are shown in this table. Select a row's arrow to open its profile.", selector: '[data-tour="table-results"]' },
-        { title: "Table tools", text: "Use the table tools to filter, adjust visible columns, and export records when those actions are available.", selector: '[data-tour="table-tools"]' },
+      "/records": [
+        // Update
       ],
       "/trash": [
         { title: "Trash tab", text: "Open Trash from this sidebar tab to review deleted records.", selector: routeLink },

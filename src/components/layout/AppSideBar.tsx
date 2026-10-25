@@ -13,7 +13,7 @@ import {
   Trash,
   ArchiveIcon,
 } from "lucide-react"
-import type { LucideIcon } from "lucide-react"
+import type { LucideIcon }  from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
   Collapsible,
@@ -61,8 +61,7 @@ type NavItem = {
 // current path becomes the cream "tab".
 const items1: NavItem[] = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Directory", url: "/directory", icon: Folder },
-  { title: "Students", url: "/students", icon: GraduationCap },
+  { title: "Students", url: "/records", icon: GraduationCap },
   { title: "Trash", url: "/trash", icon: Trash },
   { title: "Archive", url: "/student-archive", icon: ArchiveIcon },
   // {
@@ -97,25 +96,6 @@ const initials = (name: string) =>
     .join("")
     .toUpperCase()
 
-// Replace with your router hook (useLocation / usePathname).
-// To preview the tab before routing exists, return "/students/enrollment".
-// const getPathname = () =>
-//   typeof window === "undefined" ? "" : window.location.pathname
-
-
-
-/* -------------------------------------------------------------------------- */
-/*  The cream tab                                                              */
-/* -------------------------------------------------------------------------- */
-
-/**
- * The active page is drawn as a cream tab that runs to the sidebar's right
- * edge and flows into the cream page. Three decorative layers sit behind the
- * label (-z-10 inside the button's own stacking context):
- *   1. the bar, which extends 8px past the button (the group padding)
- *   2. + 3. two 12px fillets that curve the tab into the page edge
- * The page background must be the same cream (see sidebar-theme.css).
- */
 function ActiveTab() {
   return (
     <>
