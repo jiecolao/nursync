@@ -12,6 +12,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import StudentFileViewer from '@/components/student-documents/StudentFileViewer';
+import StudentImportDialog from './StudentImportDialog';
 import { useDirectoryLive } from '@/hooks/use-directory-live';
 import { useDirectoryStore, type DirectoryEntry } from '@/stores/directory-store';
 
@@ -77,6 +78,8 @@ export default function RecordsPage() {
   const [view, setView] = useState<ViewMode>('grid');
   const importInput = useRef<HTMLInputElement>(null);
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [isDocumentImportOpen, setIsDocumentImportOpen] = useState(false);
+  const [isStudentImportOpen, setIsStudentImportOpen] = useState(false);
   const [importFiles, setImportFiles] = useState<globalThis.File[]>([]);
   const [importPaths, setImportPaths] = useState<string[]>([]);
   const [importPreview, setImportPreview] = useState<ImportPreviewItem[]>([]);
@@ -177,7 +180,7 @@ export default function RecordsPage() {
 
   const closeImport = () => {
     if (importBusy) return;
-    setIsImportOpen(false);
+    setIsDocumentImportOpen(false);
     setImportFiles([]);
     setImportPaths([]);
     setImportPreview([]);
@@ -359,6 +362,25 @@ export default function RecordsPage() {
       </section>
 
       {isImportOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" role="presentation">
+          <section role="dialog" aria-modal="true" aria-labelledby="records-import-choice-title" className="w-full max-w-md rounded-xl bg-background p-6 shadow-xl">
+            <div className="flex items-start justify-between gap-3">
+              <div><h3 id="records-import-choice-title" className="text-xl font-semibold">Import Records</h3><p className="mt-2 text-sm text-muted-foreground">Choose what you want to import.</p></div>
+              <Button type="button" variant="ghost" size="icon" onClick={() => setIsImportOpen(false)} aria-label="Close import choices"><X className="size-4" /></Button>
+            </div>
+            <div className="mt-5 grid gap-3">
+              <Button type="button" variant="outline" className="h-auto justify-start p-4 text-left" onClick={() => { setIsImportOpen(false); setIsStudentImportOpen(true); }}>
+                <UserRound className="mr-3 size-5 shrink-0" /><span><span className="block font-semibold">Import Students</span><span className="mt-1 block text-xs font-normal text-muted-foreground">Create student records from a CSV or Excel file.</span></span>
+              </Button>
+              <Button type="button" variant="outline" className="h-auto justify-start p-4 text-left" onClick={() => { setIsImportOpen(false); setIsDocumentImportOpen(true); }}>
+                <FolderOpen className="mr-3 size-5 shrink-0" /><span><span className="block font-semibold">Import Student Documents</span><span className="mt-1 block text-xs font-normal text-muted-foreground">Import PDFs grouped by batch, student, and category.</span></span>
+              </Button>
+            </div>
+          </section>
+        </div>
+      )}
+      <StudentImportDialog open={isStudentImportOpen} onOpenChange={setIsStudentImportOpen} onComplete={() => { void fetch('/api/student', { credentials: 'include' }).then((response) => response.ok ? response.json() : []).then(setStudents).catch(() => undefined); }} />
+      {isDocumentImportOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="presentation">
           <section role="dialog" aria-modal="true" aria-labelledby="directory-import-title" className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-lg bg-background p-6 shadow-xl">
             <div className="flex items-start justify-between gap-4">
