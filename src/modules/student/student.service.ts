@@ -57,7 +57,25 @@ export class StudentService {
   }
 
   getAllProfiles() {
-    return this.prisma.student.findMany({ orderBy: { studentId: 'asc' } });
+    return this.prisma.student.findMany({ where: { status: true }, orderBy: { studentId: 'asc' } });
+  }
+
+  getArchivedProfiles() {
+    return this.prisma.student.findMany({ where: { status: false }, orderBy: { studentId: 'asc' } });
+  }
+
+  async setStudentStatus(studentUuid: string, status: boolean, actorUserId: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const actor = await this.auditLogs.resolveActorInTransaction(tx, actorUserId);
+      const existing = await tx.student.findUnique({ where: { studentUuid } });
+      if (!existing) throw new NotFoundException('Student not found');
+      const updated = await tx.student.update({ where: { studentUuid }, data: { status } });
+      await this.auditLogs.createActivityLogInTransaction(tx, {
+        userAccId: actor.userAccId, roleId: actor.roleId,
+        action: status ? 'student.reactivate' : 'student.archive',
+      }, actor.adminName, JSON.stringify({ studentUuid, previousStatus: existing.status, status }));
+      return updated;
+    });
   }
 
   async createProfile(body: CreateStudentDto, actorUserId: string) {
