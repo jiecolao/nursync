@@ -162,20 +162,27 @@ export default function RecordsPage() {
   };
 
   const runImport = async () => {
-    if (!importFiles.length || importPreview.some((item) => !item.valid)) return;
+    const validIndexes = importPreview.map((item, index) => item.valid ? index : -1).filter((index) => index >= 0);
+    const skipped = importPreview.length - validIndexes.length;
+    if (!validIndexes.length) return;
     setImportBusy(true); setImportMessage('');
     try {
       const body = new FormData();
-      importFiles.forEach((file) => body.append('files', file, file.name));
-      body.append('paths', JSON.stringify(importPaths));
+      validIndexes.forEach((index) => body.append('files', importFiles[index], importFiles[index].name));
+      body.append('paths', JSON.stringify(validIndexes.map((index) => importPaths[index])));
       const response = await fetch(API_URL + '/api/student-documents/import', { method: 'POST', credentials: 'include', body });
-      const data = await response.json();
-      if (!response.ok) throw new Error(typeof data.message === 'string' ? data.message : 'Bulk import failed.');
-      setImportMessage('Successfully imported ' + data.count + ' file(s).');
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const details = Array.isArray(data.invalid) ? data.invalid.map((item: { path?: string; reason?: string }) => `${item.path ?? 'File'}: ${item.reason ?? 'Invalid'}`).join(' | ') : '';
+        throw new Error((typeof data.message === 'string' ? data.message : 'Document import failed.') + (details ? ` ${details}` : ''));
+      }
+      const succeeded = Number(data.count ?? 0);
+      setImportMessage(`Processed ${importPreview.length} file(s): ${succeeded} succeeded, ${skipped} skipped, ${Math.max(0, validIndexes.length - succeeded)} failed.`);
       setImportFiles([]); setImportPaths([]); setImportPreview([]);
       if (importInput.current) importInput.current.value = '';
-    } catch (error) { setImportMessage(error instanceof Error ? error.message : 'Bulk import failed.'); }
-    finally { setImportBusy(false); }
+    } catch (error) {
+      setImportMessage(`Processed ${importPreview.length} file(s): 0 succeeded, ${skipped} skipped, ${validIndexes.length} failed. ${error instanceof Error ? error.message : 'Document import failed.'}`);
+    } finally { setImportBusy(false); }
   };
 
   const closeImport = () => {
@@ -385,8 +392,8 @@ export default function RecordsPage() {
           <section role="dialog" aria-modal="true" aria-labelledby="directory-import-title" className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-lg bg-background p-6 shadow-xl">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h3 id="directory-import-title" className="text-xl font-semibold">Import Student Folders</h3>
-                <p className="mt-2 text-sm text-muted-foreground">Choose a directory containing student folders. Every file must match an existing student and supported document category before it can be imported.</p>
+                <h3 id="directory-import-title" className="text-xl font-semibold">Import Student Documents</h3>
+                <p className="mt-2 text-sm text-muted-foreground">Choose an import directory containing BATCH [YEAR] or NON-GRADUATE / Student / Category / PDF files. Invalid files are skipped and summarized.</p>
               </div>
               <Button type="button" variant="ghost" size="icon" className="size-8 shrink-0" onClick={closeImport} disabled={importBusy} aria-label="Close import dialog">
                 <X className="size-4" />
@@ -397,8 +404,8 @@ export default function RecordsPage() {
               <input ref={importInput} type="file" multiple className="hidden" aria-label="Choose student folder for bulk import" {...({ webkitdirectory: '', directory: '' } as any)} onChange={(event) => void prepareImport(Array.from(event.target.files ?? []))} />
               <div className="flex flex-col items-center text-center">
                 <FolderOpen className="size-10 text-primary" />
-                <p className="mt-3 font-medium text-stone-800">Select the student folders directory</p>
-                <p className="mt-1 text-sm text-muted-foreground">The directory should contain one folder per student.</p>
+                <p className="mt-3 font-medium text-stone-800">Select the import directory</p>
+                <p className="mt-1 text-sm text-muted-foreground">Expected structure: BATCH [YEAR] / Student / Category / PDF.</p>
                 <Button type="button" variant="outline" className="mt-4" onClick={() => importInput.current?.click()} disabled={importBusy}>
                   <FolderOpen className="mr-2 size-4" />Choose Directory
                 </Button>
@@ -408,17 +415,17 @@ export default function RecordsPage() {
             <div className="rounded-xl bg-secondary/50 p-4 text-sm text-stone-600">
               <p className="font-medium text-stone-800">Folder structure and naming guide</p>
               <ol className="mt-2 list-decimal space-y-1 pl-5">
-                <li>Each student folder must be named <code>LAST NAME, First Name Middle Name</code>. Omit the middle name only when it is blank in the student record.</li>
-                <li>Inside each student folder, use category folders named <code>Academic Records</code>, <code>Personal Records</code>, <code>Completion Records</code>, or <code>Clinical Records</code>.</li>
-                <li>Put files directly inside the category folder. Preview verifies each student match and category before importing.</li>
-                <li>Correct every invalid row before importing. Existing files at the same destination are replaced and each file plus the bulk operation is audited.</li>
+                <li>Use <code>BATCH 2021</code> (graduation year) or <code>NON-GRADUATE</code> as the first folder.</li>
+                <li>Inside the batch folder, use student folders named <code>LAST NAME, First Name Middle Name</code>, then one of the five database category names.</li>
+                <li>Put PDF files directly inside the category folder. Student and batch must already exist and match the database.</li>
+                <li>Invalid rows are skipped. Existing files at the same destination are overwritten; successful imports create or update database rows and are audited.</li>
               </ol>
             </div>
 
             {importBusy && <p className="mt-3 text-sm text-stone-500">Validating or importing folder contents...</p>}
             {importMessage && <p role="status" className="mt-3 text-sm text-stone-700">{importMessage}</p>}
             {importPreview.length > 0 && <div className="mt-4">
-              <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-sm"><span className="font-medium text-stone-800">{importPreview.length} files · {importPreview.filter((item) => item.valid).length} valid · {importPreview.filter((item) => !item.valid).length} need attention</span><Button type="button" onClick={() => void runImport()} disabled={importBusy || importPreview.some((item) => !item.valid)}><Upload className="mr-2 size-4" />Import files</Button></div>
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-sm"><span className="font-medium text-stone-800">{importPreview.length} files · {importPreview.filter((item) => item.valid).length} valid · {importPreview.filter((item) => !item.valid).length} need attention</span><Button type="button" onClick={() => void runImport()} disabled={importBusy || !importPreview.some((item) => item.valid)}><Upload className="mr-2 size-4" />Import valid files</Button></div>
               <div className="max-h-72 overflow-auto rounded-lg border border-stone-200"><table className="w-full text-left text-sm">
                 <thead className="sticky top-0 bg-secondary text-xs uppercase text-stone-500"><tr><th className="px-3 py-2">File path</th><th className="px-3 py-2">Student / category</th><th className="px-3 py-2">Validation</th></tr></thead>
                 <tbody className="divide-y divide-stone-100">{importPreview.map((item, index) => <tr key={item.path + '-' + index}><td className="max-w-64 break-all px-3 py-2 text-stone-600">{item.path}</td><td className="px-3 py-2">{item.valid ? <>{item.studentName}<div className="text-xs text-stone-500">{item.category}</div></> : '—'}</td><td className="px-3 py-2">{item.valid ? <span className="inline-flex items-center gap-1 text-emerald-700"><CheckCircle2 className="size-4" />Valid</span> : <span className="inline-flex items-start gap-1 text-rose-700"><AlertCircle className="mt-0.5 size-4 shrink-0" />{item.reason}</span>}</td></tr>)}</tbody>
@@ -427,7 +434,7 @@ export default function RecordsPage() {
 
             <div className="mt-5 flex justify-end gap-2">
               <Button type="button" variant="outline" disabled={importBusy} onClick={closeImport}>Cancel</Button>
-              <Button type="button" disabled={importBusy || importPreview.length === 0 || importPreview.some((item) => !item.valid)} onClick={() => void runImport()}>
+              <Button type="button" disabled={importBusy || importPreview.length === 0 || !importPreview.some((item) => item.valid)} onClick={() => void runImport()}>
                 {importBusy ? "Importing..." : `Import ${importPreview.length || ""} Files`}
               </Button>
             </div>
