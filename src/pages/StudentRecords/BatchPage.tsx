@@ -334,34 +334,29 @@ export default function BatchPage(){
     setIsDeleting(true);
     try {
       const uuids = studentsToDelete.map((student) => student.student_uuid);
-      const response = await fetch(
-        uuids.length === 1 ? `/api/student/${uuids[0]}` : "/api/student",
-        {
-          method: "DELETE",
-          credentials: "include",
-          headers: uuids.length > 1 ? { "Content-Type": "application/json" } : undefined,
-          body: uuids.length > 1 ? JSON.stringify({ studentUuids: uuids }) : undefined,
-        },
-      );
-
-      if (!response.ok) {
-        const body = await response.json().catch(() => null);
-        const message = Array.isArray(body?.message)
-          ? body.message.join(", ")
-          : body?.message;
-        throw new Error(message || "Unable to delete the selected student records.");
-      }
+      await Promise.all(uuids.map(async (uuid) => {
+        const response = await fetch(`/api/student/${encodeURIComponent(uuid)}/status`, {
+          method: "PUT", credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: false }),
+        });
+        if (!response.ok) {
+          const body = await response.json().catch(() => null);
+          const message = Array.isArray(body?.message) ? body.message.join(", ") : body?.message;
+          throw new Error(message || "Unable to archive the selected student records.");
+        }
+      }));
 
       setStudents((current) =>
         current.filter((student) => !uuids.includes(student.student_uuid)),
       );
       setStudentsToDelete([]);
       notify.success(
-        uuids.length === 1 ? "Student deleted" : "Students deleted",
-        { description: `${uuids.length} student record${uuids.length === 1 ? "" : "s"} deleted.` },
+        uuids.length === 1 ? "Student archived" : "Students archived",
+        { description: `${uuids.length} student record${uuids.length === 1 ? "" : "s"} moved to the archive.` },
       );
     } catch (requestError) {
-      notify.error("Unable to delete students", {
+      notify.error("Unable to archive students", {
         description: requestError instanceof Error
           ? requestError.message
           : "Please try again.",
