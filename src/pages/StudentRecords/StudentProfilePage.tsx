@@ -325,7 +325,7 @@ export default function StudentProfilePage() {
 
   const setStatus = async (status: Status) => {
     try {
-      const response = await fetch(`/api/student/${saved.student_uuid}`, {
+      const response = await fetch(`/api/student/${encodeURIComponent(saved.student_uuid)}/status`, {
         method: "PUT",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
