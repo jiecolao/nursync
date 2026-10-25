@@ -1,5 +1,5 @@
 import {
-  Controller, Get, Param, Post, HttpCode, HttpStatus, Body, Put, Delete, UseGuards, Req,
+  Controller, Get, Param, Post, HttpCode, HttpStatus, Body, Put, Delete, UseGuards, Req, BadRequestException,
 } from "@nestjs/common";
 import type { Request } from 'express';
 import { StudentService } from "./student.service";
@@ -20,6 +20,19 @@ export class StudentController {
   @Get()
   @RequirePermissions("students_read")
   getAllProfiles() { return this.studentService.getAllProfiles(); }
+
+  @Get('archived')
+  @RequirePermissions("students_read")
+  getArchivedProfiles() { return this.studentService.getArchivedProfiles(); }
+
+  @Put(':id/status')
+  @RequirePermissions("students_write")
+  setStudentStatus(@Param('id') id: string, @Body() body: { status: boolean }, @Req() req: AuthenticatedRequest) {
+    if (typeof body?.status !== 'boolean') {
+      throw new BadRequestException('Status must be a boolean.');
+    }
+    return this.studentService.setStudentStatus(id, body.status, req.user.sub);
+  }
 
   @Get(':id')
   @RequirePermissions("students_read")
