@@ -22,7 +22,10 @@ export class DashboardService {
       this.prisma.student.groupBy({
         by: ['yrGraduated'],
         _count: { _all: true },
-        where: { NOT: { yrGraduated: null } },
+        where: {
+          isNonGraduate: false,
+          NOT: { yrGraduated: null },
+        },
         orderBy: { yrGraduated: 'asc' },
       }),
       this.prisma.studentDocument.count(),
