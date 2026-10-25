@@ -3,6 +3,7 @@ import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/s
 import AppSidebar from "../components/layout/AppSideBar";
 import { Undo2 } from "lucide-react";
 import { DialogBox } from "@/components/layout/DialogBox";
+import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import Shepherd from "shepherd.js";
 import "shepherd.js/dist/css/shepherd.css";
@@ -14,8 +15,9 @@ export const pageTitles: Record<string, string> = {
   
   "/records/": "Students",
   "/records/:batchNo": "Batch",
-  "/records/:batchNo/students": "Batch",
-  "/records/:batchNo/students/:studentUuid": "Student Profile",
+  "/records/NON-GRADUATE": "Batch",
+  "/records/:batchNo/:studentUuid": "Student Profile",
+  "/records/NON-GRADUATE/:studentUuid": "Student Profile",
 
   "/trash": "Trash",
   "/student-archive": "Student Archive",
@@ -151,6 +153,20 @@ export default function MainLayout() {
 
   // Resolve page title dynamically
   const pageTitle = getPageTitle(pathname);
+  const studentProfileMatch = matchPath(
+    { path: "/records/:batchNo/:studentUuid", end: true },
+    pathname
+  );
+  const batchMatch = matchPath(
+    { path: "/records/:batchNo", end: true },
+    pathname
+  );
+  const isStudentProfilePath = Boolean(studentProfileMatch);
+  const isBatchPath = Boolean(batchMatch);
+  const hasUndoAction = isStudentProfilePath || isBatchPath;
+  const profileBackPath = studentProfileMatch?.params.batchNo
+    ? `/records/${encodeURIComponent(studentProfileMatch.params.batchNo)}`
+    : "/records";
 
   return (
     <SidebarProvider>
@@ -160,19 +176,31 @@ export default function MainLayout() {
           <SidebarTrigger className="cursor-pointer text-muted-foreground transition-all duration-200 hover:scale-110 hover:text-primary hover:drop-shadow-sm hover:bg-transparent" />
           <div className="font-bold text-sm text-primary">{pageTitle}</div>
 
-          {pageTitle === "Student Profile" && (
-            <Undo2
-              className="size-5 ml-auto cursor-pointer text-muted-foreground transition-all duration-200 hover:scale-110 hover:text-primary hover:drop-shadow-sm"
-              onClick={() => setIsOpen(true)}
-            />
+          {hasUndoAction && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="ml-auto text-muted-foreground transition-all duration-200 hover:scale-110 hover:text-primary hover:drop-shadow-sm"
+              aria-label="Leave student profile"
+              onClick={() => {
+                if (isStudentProfilePath) {
+                  setIsOpen(true);
+                } else {
+                  navigate("/records");
+                }
+              }}
+            >
+              <Undo2 className="size-5" />
+            </Button>
           )}
 
-          {pathname.startsWith("/students/profile") && (
+          {isStudentProfilePath && (
             <DialogBox
               title="Proceed?"
               open={isOpen}
               onOpenChange={setIsOpen}
-              onClick={() => navigate("/students")}
+              onClick={() => navigate(profileBackPath)}
               yesBtnName="Discard"
               yesBtnStyle="bg-red-700 hover:bg-red-600"
             >
