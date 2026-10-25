@@ -81,6 +81,10 @@ async function getImportRequestError(response: Response): Promise<string> {
   return `Request failed with status ${response.status}.`;
 }
 
+function normalizeStudentId(value: unknown) {
+  return String(value ?? "").trim().toLocaleLowerCase();
+}
+
 export default function BatchPage(){
   const { batchNo = "" } = useParams<{ batchNo: string }>();
   const [isOpen, setIsOpen] = useState(false);
@@ -248,9 +252,32 @@ export default function BatchPage(){
         };
         return { row: index + 2, payload, errors };
       });
-      setImportPreview(records);
-      const invalid = records.filter((record) => record.errors.length).length;
-      setImportMessage(`Loaded ${records.length} row(s). ${invalid ? `${invalid} need correction.` : "All rows passed validation."}`);
+      const response = await fetch("/api/student", { credentials: "include" });
+      if (!response.ok) throw new Error(`Unable to validate duplicate student IDs (${response.status}).`);
+      const existingStudents = await response.json() as Array<{ studentId?: string | null }>;
+      const existingIds = new Set(
+        existingStudents.map((student) => normalizeStudentId(student.studentId)).filter(Boolean),
+      );
+      const importedIdRows = new Map<string, number[]>();
+      for (const record of records) {
+        const studentId = normalizeStudentId(record.payload.studentId);
+        if (!studentId) continue;
+        importedIdRows.set(studentId, [...(importedIdRows.get(studentId) ?? []), record.row]);
+      }
+      const validatedRecords = records.map((record) => {
+        const studentId = normalizeStudentId(record.payload.studentId);
+        const duplicateRows = studentId ? importedIdRows.get(studentId) ?? [] : [];
+        const errors = [...record.errors];
+        if (studentId && existingIds.has(studentId)) {
+          errors.push("Student ID already exists.");
+        } else if (duplicateRows.length > 1) {
+          errors.push(`Student ID is duplicated in rows ${duplicateRows.join(", ")}.`);
+        }
+        return { ...record, errors };
+      });
+      setImportPreview(validatedRecords);
+      const invalid = validatedRecords.filter((record) => record.errors.length).length;
+      setImportMessage(`Loaded ${validatedRecords.length} row(s). ${invalid ? `${invalid} need correction.` : "All rows passed validation."}`);
     } catch (cause) {
       setImportMessage(cause instanceof Error ? cause.message : "Unable to read this file.");
     }

@@ -5,6 +5,10 @@ import { Download, FileSpreadsheet, Upload, X } from "lucide-react";
 
 type PreviewRow = { row: number; payload: Record<string, unknown>; errors: string[] };
 
+function normalizeStudentId(value: unknown) {
+  return String(value ?? "").trim().toLocaleLowerCase();
+}
+
 export default function StudentImportDialog({ open, onOpenChange, onComplete }: {
   open: boolean; onOpenChange: (open: boolean) => void; onComplete?: () => void;
 }) {
@@ -64,8 +68,31 @@ export default function StudentImportDialog({ open, onOpenChange, onComplete }: 
         if (isNonGraduate !== undefined && isNonGraduate !== null) payload.isNonGraduate = isNonGraduate;
         return { row: index + 2, payload, errors };
       });
-      setRows(parsed);
-      setMessage(`Loaded ${parsed.length} row(s); ${parsed.filter((r) => r.errors.length).length} need attention.`);
+      const response = await fetch("/api/student", { credentials: "include" });
+      if (!response.ok) throw new Error(`Unable to validate duplicate student IDs (${response.status}).`);
+      const existingStudents = await response.json() as Array<{ studentId?: string | null }>;
+      const existingIds = new Set(
+        existingStudents.map((student) => normalizeStudentId(student.studentId)).filter(Boolean),
+      );
+      const importedIdRows = new Map<string, number[]>();
+      for (const row of parsed) {
+        const studentId = normalizeStudentId(row.payload.studentId);
+        if (!studentId) continue;
+        importedIdRows.set(studentId, [...(importedIdRows.get(studentId) ?? []), row.row]);
+      }
+      const validated = parsed.map((row) => {
+        const studentId = normalizeStudentId(row.payload.studentId);
+        const duplicateRows = studentId ? importedIdRows.get(studentId) ?? [] : [];
+        const errors = [...row.errors];
+        if (studentId && existingIds.has(studentId)) {
+          errors.push("Student ID already exists.");
+        } else if (duplicateRows.length > 1) {
+          errors.push(`Student ID is duplicated in rows ${duplicateRows.join(", ")}.`);
+        }
+        return { ...row, errors };
+      });
+      setRows(validated);
+      setMessage(`Loaded ${validated.length} row(s); ${validated.filter((r) => r.errors.length).length} need attention.`);
     } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to read the file."); }
   };
   const downloadTemplate = () => {
