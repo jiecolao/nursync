@@ -278,7 +278,36 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  private async purgeExpiredTrash() {
+    const retentionCutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const trashedStatus = await this.prisma.documentStatus.findFirst({ where: { docuStatusName: 'Trashed' } });
+    if (!trashedStatus) return;
+
+    const expired = await this.prisma.studentDocument.findMany({
+      where: { docuStatusId: trashedStatus.docuStatusId, updatedAt: { lte: retentionCutoff } },
+    });
+    const trashRoot = path.resolve(process.cwd(), 'Database/Trash');
+
+    for (const record of expired) {
+      try {
+        if (record.filepath) {
+          const absolute = path.resolve(process.cwd(), record.filepath);
+          if (!absolute.startsWith(trashRoot + path.sep)) {
+            this.logger.warn(`Skipping expired trash record with unsafe path: ${record.studentDocId}`);
+            continue;
+          }
+          await fs.rm(absolute, { force: true });
+        }
+        await this.prisma.studentDocument.delete({ where: { studentDocId: record.studentDocId } });
+        this.logger.log(`Permanently deleted expired trash document ${record.studentDocId}`);
+      } catch (error) {
+        this.logger.error(`Could not purge expired trash document ${record.studentDocId}: ${String(error)}`);
+      }
+    }
+  }
+
   async listTrash() {
+    await this.purgeExpiredTrash();
     const trashedStatus = await this.prisma.documentStatus.findFirst({ where: { docuStatusName: 'Trashed' } });
     if (!trashedStatus) throw new BadRequestException('The "Trashed" document status is not configured.');
     return this.prisma.studentDocument.findMany({
