@@ -35,7 +35,7 @@ const IMPORT_CATEGORY_MAP: Record<string, string> = {
   others: 'Others',
   ...Object.fromEntries(CATEGORIES.map((name) => [name.toLocaleLowerCase(), name])),
 };
-const normalizeName = (value: string) => value.trim().toLocaleLowerCase().replace(/\\s+/g, ' ');
+const normalizeName = (value: string) => value.trim().toLocaleLowerCase().replace(/\s+/g, ' ');
 
 function capitalizeLastName(lastName: string) {
   const trimmed = lastName.trim();
@@ -69,11 +69,67 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
       include: { documentCategories: true, documentStatus: true },
       orderBy: [{ docuId: 'asc' }, { filename: 'asc' }],
     });
+    // The database is the metadata source; also discover PDFs that exist on disk
+    // but have not yet been indexed in Student_Documents.
+    const normalize = (value: string) => value.normalize('NFKC').trim().toLocaleLowerCase().replace(/\s+/g, ' ');
+    const aliases = (value: string) => normalize(value).replace(/[^\p{L}\p{N}]+/gu, '');
+    const studentFolderCandidates = [
+      `${student.lastName}, ${student.firstName} ${student.middleName ?? ''}`,
+      `${student.lastName}, ${student.firstName}`,
+    ].map(normalize);
+    const directoryDocuments: Array<Record<string, unknown>> = [];
+    try {
+      const roots = await fs.readdir(this.root, { withFileTypes: true });
+      for (const batch of roots.filter((entry) => entry.isDirectory() && (/^batch\s+\d{4}$/i.test(entry.name) || /^non-graduate$/i.test(entry.name)))) {
+        let studentDirs: import('node:fs').Dirent[];
+        try { studentDirs = await fs.readdir(path.join(this.root, batch.name), { withFileTypes: true }); }
+        catch (error) {
+          if ((error as NodeJS.ErrnoException).code === 'ENOENT') continue;
+          throw error;
+        }
+        const matching = studentDirs.filter((entry) => entry.isDirectory() && studentFolderCandidates.some((candidate) => aliases(candidate) === aliases(entry.name)));
+        for (const studentDir of matching) {
+          const studentPath = path.join(this.root, batch.name, studentDir.name);
+          let categoryDirs: import('node:fs').Dirent[];
+          try { categoryDirs = await fs.readdir(studentPath, { withFileTypes: true }); }
+          catch (error) {
+            if ((error as NodeJS.ErrnoException).code === 'ENOENT') continue;
+            throw error;
+          }
+          for (const categoryDir of categoryDirs.filter((entry) => entry.isDirectory())) {
+            const category = CATEGORIES.find((name) => aliases(name) === aliases(categoryDir.name));
+            if (!category) continue;
+            let files: import('node:fs').Dirent[];
+            try { files = await fs.readdir(path.join(studentPath, categoryDir.name), { withFileTypes: true }); }
+            catch (error) {
+              if ((error as NodeJS.ErrnoException).code === 'ENOENT') continue;
+              throw error;
+            }
+            for (const file of files.filter((entry) => entry.isFile() && /\.pdf$/i.test(entry.name))) {
+              const filepath = path.relative(process.cwd(), path.join(studentPath, categoryDir.name, file.name)).split(path.sep).join('/');
+              if (documents.some((doc) => doc.filepath && normalize(doc.filepath) === normalize(filepath))) continue;
+              directoryDocuments.push({
+                studentDocId: `disk:${filepath}`, studentUuid: uuid,
+                docuId: CATEGORIES.indexOf(category) + 1, filename: file.name, filepath,
+                submittedAt: null, documentStatus: { docuStatusName: 'Available' },
+                documentCategories: { docuName: category }, source: 'filesystem',
+              });
+            }
+          }
+        }
+      }
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+        this.logger.warn(`Could not scan student document folders: ${String(error)}`);
+      }
+    }
     const categories = CATEGORIES.map((name) => {
-      const category = documents.filter((doc) => doc.documentCategories.docuName === name);
-      return { name, count: category.length, documents: category };
+      const databaseDocuments = documents.filter((doc) => doc.documentCategories.docuName === name);
+      const diskDocuments = directoryDocuments.filter((doc) => (doc.documentCategories as { docuName: string }).docuName === name);
+      const merged = [...databaseDocuments, ...diskDocuments];
+      return { name, count: merged.length, documents: merged };
     });
-    return { studentUuid: uuid, categories, total: documents.length };
+    return { studentUuid: uuid, categories, total: documents.length + directoryDocuments.length };
   }
 
   async upload(uuid: string, files: Express.Multer.File[], requestedCategory: string, actorUserId: string) {

@@ -186,10 +186,22 @@ export default function RecordsPage() {
   };
 
   const goToFolder = (entry: DirectoryEntry) => {
-    if (entry.type === 'directory') {
-      setCurrentPath(entry.path);
-      setSearch('');
+    if (entry.type !== 'directory') return;
+    const folderName = entry.name.trim();
+    if (!currentPath && (/^BATCH\s+\d{4}$/i.test(folderName) || /^NON-GRADUATE$/i.test(folderName))) {
+      const batchNo = /^NON-GRADUATE$/i.test(folderName) ? 'NON-GRADUATE' : folderName.replace(/^BATCH\s+/i, '');
+      navigate('/records/' + encodeURIComponent(batchNo));
+      return;
     }
+    const student = studentForFolder(folderName);
+    const batchFolder = currentPath.split('/')[0] ?? '';
+    if (student && (/^BATCH\s+\d{4}$/i.test(batchFolder) || /^NON-GRADUATE$/i.test(batchFolder))) {
+      const batchNo = /^NON-GRADUATE$/i.test(batchFolder) ? 'NON-GRADUATE' : batchFolder.replace(/^BATCH\s+/i, '');
+      navigate('/records/' + encodeURIComponent(batchNo) + '/' + student.studentUuid);
+      return;
+    }
+    setCurrentPath(entry.path);
+    setSearch('');
   };
 
   const studentForFolder = (folderName: string) =>
@@ -297,7 +309,7 @@ export default function RecordsPage() {
                   <DropdownMenu>
                     <DropdownMenuTrigger render={<Button type="button" variant="ghost" size="icon" className="size-8 shrink-0" aria-label={`Actions for ${entry.name}`} onClick={(event) => event.stopPropagation()} />}><MoreHorizontal className="size-4" /></DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => navigate(`/students/profile/${studentForFolder(entry.name)?.studentUuid}`)}><UserRound className="size-4" />See Student</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate('/records/' + encodeURIComponent(/^NON-GRADUATE$/i.test(currentPath.split('/')[0] ?? '') ? 'NON-GRADUATE' : (currentPath.split('/')[0] ?? '').replace(/^BATCH\s+/i, '')) + '/' + (studentForFolder(entry.name)?.studentUuid ?? ''))}><UserRound className="size-4" />See Student</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 ) : entry.type === 'directory' ? <ChevronRight className="mt-1 size-4 shrink-0 text-stone-300 group-hover:text-primary" /> : null}

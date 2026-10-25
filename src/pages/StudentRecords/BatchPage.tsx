@@ -12,7 +12,7 @@ import { MoreHorizontal } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DialogBox } from "@/components/layout/DialogBox";
 import { AddStudentPanel } from "./AddStudentPanel";
-import { useNavigate, type NavigateFunction } from "react-router-dom";
+import { useNavigate, useParams, type NavigateFunction } from "react-router-dom";
 import { notify } from "@/components/layout/Toasty";
 import { parseSafeDate } from "@/lib/utils";
 
@@ -59,7 +59,7 @@ function createColumns(navigate: NavigateFunction): ColumnDef<StudentTableType>[
         <div>
           <Button variant="ghost" size="icon"
             onClick={() => {
-            navigate(`/students/profile/${row.original.student_uuid}`)
+            navigate(`/records/${encodeURIComponent(batchNo)}/${row.original.student_uuid}`)
             }}>
             <ChevronRight className="size-4 p-0 m-0"/>
           </Button>
@@ -82,6 +82,7 @@ async function getImportRequestError(response: Response): Promise<string> {
 }
 
 export default function BatchPage(){
+  const { batchNo = "" } = useParams<{ batchNo: string }>();
   const [isOpen, setIsOpen] = useState(false);
   const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -357,7 +358,9 @@ export default function BatchPage(){
         }
 
         const records: StudentApiRecord[] = await response.json();
-        setStudents(records.map(toStudentTableRecord));
+        const normalizedBatch = decodeURIComponent(batchNo).trim().toLocaleUpperCase();
+        const batchRecords = normalizedBatch === "NON-GRADUATE" ? records.filter((student) => student.isNonGraduate) : records.filter((student) => !student.isNonGraduate && String(student.yrGraduated ?? "").trim() === normalizedBatch);
+        setStudents(batchRecords.map(toStudentTableRecord));
       } catch (requestError) {
         if (requestError instanceof DOMException && requestError.name === "AbortError") {
           return;
@@ -373,12 +376,12 @@ export default function BatchPage(){
 
     void fetchStudents();
     return () => controller.abort();
-  }, []);
+  }, [batchNo]);
 
   return (
       <>
           <div className="flex flex-col">
-              <h2 className="text-3xl font-bold text-primary mb-2">Student Record</h2>
+              <h2 className="text-3xl font-bold text-primary mb-2">{decodeURIComponent(batchNo).toLocaleUpperCase() === "NON-GRADUATE" ? "Non-Graduate Students" : `Batch ${decodeURIComponent(batchNo)}`}</h2>
               <p className="mt-1 mb-8 text-[.95rem] text-stone-600">Manage, organize, and track student profiles.</p>
               {isLoading && <p>Loading student records...</p>}
               {error && <p className="text-red-600">{error}</p>}
