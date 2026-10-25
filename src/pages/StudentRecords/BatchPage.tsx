@@ -40,7 +40,7 @@ function toStudentTableRecord(student: StudentApiRecord): StudentTableType {
   };
 }
 
-function createColumns(navigate: NavigateFunction): ColumnDef<StudentTableType>[] {
+function createColumns(navigate: NavigateFunction, batchNo: string): ColumnDef<StudentTableType>[] {
   return [
   { accessorKey: "student_id", header: "Student ID" },
   {
@@ -98,7 +98,7 @@ export default function BatchPage(){
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-  const columns = createColumns(navigate);
+  const columns = createColumns(navigate, batchNo);
 
   const actions: DataTableAction<StudentTableType>[] = [
     {
