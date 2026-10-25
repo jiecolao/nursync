@@ -309,7 +309,7 @@ export default function RecordsPage() {
                   <DropdownMenu>
                     <DropdownMenuTrigger render={<Button type="button" variant="ghost" size="icon" className="size-8 shrink-0" aria-label={`Actions for ${entry.name}`} onClick={(event) => event.stopPropagation()} />}><MoreHorizontal className="size-4" /></DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => navigate(`/students/profile/${studentForFolder(entry.name)?.studentUuid}`)}><UserRound className="size-4" />See Student</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate('/records/' + encodeURIComponent(/^NON-GRADUATE$/i.test(currentPath.split('/')[0] ?? '') ? 'NON-GRADUATE' : (currentPath.split('/')[0] ?? '').replace(/^BATCH\s+/i, '')) + '/' + (studentForFolder(entry.name)?.studentUuid ?? ''))}><UserRound className="size-4" />See Student</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 ) : entry.type === 'directory' ? <ChevronRight className="mt-1 size-4 shrink-0 text-stone-300 group-hover:text-primary" /> : null}
