@@ -61,9 +61,6 @@ export default function HelpPage() {
   );
   const filteredFaqs = faqs.filter((item) => `${item.q} ${item.a}`.toLowerCase().includes(normalizedQuery));
 
-  const startTour = (topic: HelpTopic) => {
-    navigate(`${topic.route}?tour=1`);
-  };
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
