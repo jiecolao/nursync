@@ -50,6 +50,8 @@ export class StudentBulkImportService {
         lastName: true,
         firstName: true,
         middleName: true,
+        yrGraduated: true,
+        isNonGraduate: true,
       },
     });
     const items = paths.map((raw) => {
