@@ -60,33 +60,9 @@ export default function App() {
             >
               <Route path="dashboard" element={<DashboardPage />} />
               <Route path="records">
-                <Route index element={
-                  <CanAccess
-                      permissions={['students_read']}
-                      fallback={
-                        <p className="p-8">
-                          You do not have permission to view student records.
-                        </p>
-                      }
-                    >
-                      <RecordsPage />
-                    </CanAccess>
-                  }
-                />
-                <Route path="records/:batchNo"
-                  element={
-                    <CanAccess
-                      permissions={['students_read']}
-                      fallback={
-                        <p className="p-8">
-                          You do not have permission to view student records.
-                        </p>
-                      }
-                    >
-                      <StudentProfilePage />
-                    </CanAccess>
-                  }
-                />
+                <Route index element={<CanAccess permissions={['students_read']} fallback={<p className="p-8">You do not have permission to view student records.</p>}><RecordsPage /></CanAccess>} />
+                <Route path=":batchNo" element={<CanAccess permissions={['students_read']} fallback={<p className="p-8">You do not have permission to view student records.</p>}><BatchPage /></CanAccess>} />
+                <Route path=":batchNo/:studentUuid" element={<CanAccess permissions={['students_read']} fallback={<p className="p-8">You do not have permission to view student records.</p>}><StudentProfilePage /></CanAccess>} />
               </Route>
               <Route
                 path="student-archive"
