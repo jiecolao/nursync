@@ -59,6 +59,7 @@ type UserRow = {
   date_modified: string;
   raw: UserRecord;
 };
+const SUPERADMIN_USER_ID = 'superadmin-001';
 const getColumns = (onDelete: (user: UserRecord) => void): ColumnDef<UserRow>[] => [
   { accessorKey: 'user_id', header: 'User ID' },
   { accessorKey: 'name', header: 'Name' },
@@ -88,9 +89,12 @@ const getColumns = (onDelete: (user: UserRecord) => void): ColumnDef<UserRow>[] 
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className="text-destructive"
+            disabled={row.original.raw.userId === SUPERADMIN_USER_ID}
             onClick={() => onDelete(row.original.raw)}
           >
-            Delete
+            {row.original.raw.userId === SUPERADMIN_USER_ID
+              ? 'Delete (Protected)'
+              : 'Delete'}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -19,6 +20,7 @@ const defaultPermissions: PermissionFlags = {
   students_read: true, students_write: false, user_read: false,
   user_write: false, logs_read: false, logs_write: false,
 };
+const SUPERADMIN_USER_ID = 'superadmin-001';
 function normalizePermissions(input?: Record<string, boolean>): PermissionFlags {
   if (!input) return { ...defaultPermissions };
   return Object.fromEntries(
@@ -208,6 +210,10 @@ export class AdminService {
   }
 
   async deleteAdmin(userId: string, actorUserId: string) {
+    if (userId === SUPERADMIN_USER_ID) {
+      throw new ForbiddenException('The superadmin account cannot be deleted');
+    }
+
     return this.prisma.$transaction(async (tx) => {
       const actor = await this.LogsService.resolveActorInTransaction(tx, actorUserId);
       const oldState = await tx.user.findFirst({ where: { userId, account: { isNot: null } }, select: adminSelect });
