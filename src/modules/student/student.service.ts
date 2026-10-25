@@ -12,10 +12,19 @@ const STUDENT_DOCUMENTS_ROOT = path.resolve(
 );
 
 function batchFolderFor(student: {
-  yrAdmitted: number;
+  yrGraduated: number | null;
   isNonGraduate?: boolean | null;
 }) {
-  return student.isNonGraduate ? "NON-GRADUATE" : `BATCH ${student.yrAdmitted}`;
+  if (student.isNonGraduate) {
+    return "NON-GRADUATE";
+  }
+
+  if (student.yrGraduated) {
+    return `BATCH ${student.yrGraduated}`;
+  }
+
+  // TODO: Any non-graduates and no yr graduates automatically falls in this. 
+  return "NON-GRADUATE";
 }
 
 function studentFolderFor(student: {
