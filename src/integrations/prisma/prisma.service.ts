@@ -18,13 +18,22 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   }
 
   async onModuleInit() {
-    try {
-      await this.$connect();
-      this.logger.log('Prisma connected to MariaDB');
-    } catch (error) {
-      this.logger.error(
-        `Prisma connection unavailable: ${error instanceof Error ? error.message : String(error)}`,
-      );
+    await this.connectWithRetry()
+  }
+
+  private async connectWithRetry(retries = 5, delayMs = 3000): Promise<void> {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        await this.$connect();
+        // Warm up the pool with a lightweight query
+        await this.$queryRaw`SELECT 1`;
+        this.logger.log('Database connection successfully established and warmed up.');
+        return;
+      } catch (error) {
+        this.logger.warn(`Database connection attempt ${attempt}/${retries} failed. Retrying in ${delayMs / 1000}s...`);
+        if (attempt === retries) throw error;
+        await new Promise((res) => setTimeout(res, delayMs));
+      }
     }
   }
 
