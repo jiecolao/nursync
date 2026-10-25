@@ -57,6 +57,13 @@ function studentFolderNames(student: StudentSummary) {
   ].filter(Boolean).map(normalizeName);
 }
 
+function flattenEntries(items: DirectoryEntry[]): DirectoryEntry[] {
+  return items.flatMap((item) => [
+    item,
+    ...(item.type === 'directory' ? flattenEntries(item.children ?? []) : []),
+  ]);
+}
+
 function FileGlyph({ entry }: { entry: DirectoryEntry }) {
   if (entry.type === 'directory') return <Folder className="size-6 fill-emerald-100 text-primary" strokeWidth={1.6} />;
   if (['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'].includes(entry.extension)) return <FileImage className="size-6 text-violet-600" strokeWidth={1.6} />;
@@ -125,7 +132,8 @@ export default function RecordsPage() {
 
   const visibleEntries = useMemo(() => {
     const term = search.trim().toLocaleLowerCase();
-    return currentEntries
+    const entries = term ? flattenEntries(currentEntries) : currentEntries;
+    return entries
       .filter((entry) => !term || entry.name.toLocaleLowerCase().includes(term) || entry.extension.includes(term))
       .sort((a, b) => a.type === b.type ? a.name.localeCompare(b.name) : a.type === 'directory' ? -1 : 1);
   }, [currentEntries, search]);
@@ -307,7 +315,7 @@ export default function RecordsPage() {
             </nav>
             <div className="relative w-full md:max-w-xs">
               <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-stone-400" />
-              <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search this folder…" className="pl-9" aria-label="Search files and folders" />
+              <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search files and folders…" className="pl-9" aria-label="Search files and folders" />
             </div>
           </div>
         </div>
