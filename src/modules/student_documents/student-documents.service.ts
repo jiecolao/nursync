@@ -453,28 +453,60 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
   private async syncFile(file: string) {
     try {
       const relative = path.relative(this.root, file);
-      const parts = relative.split(path.sep);
-      if (parts.length !== 3) return;
-      const [folder, categoryFolder, filename] = parts;
-      const category = IMPORT_CATEGORY_MAP[normalizeName(categoryFolder)];
-      if (!category || filename.startsWith('.upload-') || filename.startsWith('.bulk-import-')) return;
+      const parts = relative.split(path.sep).filter(Boolean);
+      // Supported layouts:
+      // BATCH 2021/Last, First Middle/Category/file.pdf
+      // NON-GRADUATE/Last, First Middle/Category/file.pdf
+      // Legacy: Last, First Middle/Category/file.pdf
+      const hasBatchFolder = parts.length === 4
+        && (/^batch\s+\d{4}$/i.test(parts[0]) || /^non-graduate$/i.test(parts[0]));
+      if (parts.length !== (hasBatchFolder ? 4 : 3)) return;
+      const [folder, categoryFolder, filename] = hasBatchFolder
+        ? [parts[1], parts[2], parts[3]]
+        : [parts[0], parts[1], parts[2]];
+      if (!/\.pdf$/i.test(filename) || filename.startsWith('.upload-') || filename.startsWith('.bulk-import-')) return;
+
+      const categoryKey = normalizeName(categoryFolder);
+      const category = IMPORT_CATEGORY_MAP[categoryKey]
+        ?? CATEGORIES.find((name) => normalizeName(name) === categoryKey);
+      if (!category) return;
+
+      const normalizeComparable = (value: string) =>
+        value.normalize('NFKC').toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
       const nameParts = folder.split(',').map((part) => part.trim());
       if (nameParts.length !== 2 || nameParts.some((part) => !part)) return;
       const [lastName, givenNames] = nameParts;
-      const candidates = await this.prisma.student.findMany({ select: { studentUuid: true, lastName: true, firstName: true, middleName: true } });
-      const matches = candidates.filter((student) => normalizeName(student.lastName) === normalizeName(lastName)
-        && normalizeName([student.firstName, student.middleName].filter(Boolean).join(' ')) === normalizeName(givenNames));
+      const candidates = await this.prisma.student.findMany({
+        select: { studentUuid: true, lastName: true, firstName: true, middleName: true },
+      });
+      const matches = candidates.filter((student) => {
+        if (normalizeComparable(student.lastName) !== normalizeComparable(lastName)) return false;
+        const first = normalizeComparable(student.firstName);
+        const middle = normalizeComparable(student.middleName ?? '');
+        const supplied = normalizeComparable(givenNames);
+        const full = first + middle;
+        // Accommodate folder names with or without the middle name and common middle initials.
+        const middleInitial = middle.charAt(0);
+        return supplied === first || supplied === full || (!!middleInitial && supplied === first + middleInitial);
+      });
       if (matches.length !== 1) {
         this.logger.warn(`Skipping watched file with ${matches.length ? 'ambiguous' : 'unmatched'} student folder "${folder}": ${file}`);
         return;
       }
+
       const student = matches[0];
       const categoryRecord = await this.prisma.documentCategories.findFirst({ where: { docuName: category } });
       const status = await this.prisma.documentStatus.findFirst({ where: { docuStatusId: DEFAULT_STATUS_ID } })
         ?? await this.prisma.documentStatus.findFirst();
-      if (!student || !categoryRecord || !status) return;
+      if (!categoryRecord || !status) {
+        this.logger.warn(`Skipping watched file because category or document status is missing: ${file}`);
+        return;
+      }
+
       const filepath = path.relative(process.cwd(), file).split(path.sep).join('/');
-      const existing = await this.prisma.studentDocument.findFirst({ where: { studentUuid: student.studentUuid, filepath } });
+      const existing = await this.prisma.studentDocument.findFirst({
+        where: { studentUuid: student.studentUuid, filepath },
+      });
       if (existing) {
         await this.prisma.studentDocument.update({
           where: { studentDocId: existing.studentDocId },
@@ -482,7 +514,15 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
         });
       } else {
         await this.prisma.studentDocument.create({
-          data: { studentDocId: randomUUID(), studentUuid: student.studentUuid, docuId: categoryRecord.docuId, filename, filepath, submittedAt: new Date(), docuStatusId: status.docuStatusId },
+          data: {
+            studentDocId: randomUUID(),
+            studentUuid: student.studentUuid,
+            docuId: categoryRecord.docuId,
+            filename,
+            filepath,
+            submittedAt: new Date(),
+            docuStatusId: status.docuStatusId,
+          },
         });
       }
     } catch (error) {
