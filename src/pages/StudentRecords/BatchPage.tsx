@@ -99,6 +99,7 @@ export default function BatchPage(){
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const columns = createColumns(navigate, batchNo);
+  const validImportCount = importPreview.filter((record) => record.errors.length === 0).length;
 
   const actions: DataTableAction<StudentTableType>[] = [
     {
@@ -475,7 +476,7 @@ export default function BatchPage(){
                     )}
                     <div className="flex justify-end gap-2">
                       <Button type="button" variant="outline" disabled={importing} onClick={() => { setIsImportOpen(false); clearImportFile(); }}>Cancel</Button>
-                      <Button type="button" disabled={importing || importPreview.length === 0 || importPreview.some((record) => record.errors.length > 0)} onClick={() => void submitImport()}>{importing ? "Importing..." : `Import ${importPreview.length || ""} Students`}</Button>
+                      <Button type="button" disabled={importing || importPreview.length === 0 || importPreview.some((record) => record.errors.length > 0)} onClick={() => void submitImport()}>{importing ? "Importing..." : `Import ${validImportCount || ""} Students`}</Button>
                     </div>
                   </section>
                 </div>
