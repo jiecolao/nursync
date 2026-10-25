@@ -302,7 +302,7 @@ export default function RecordsPage() {
                 <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-secondary transition group-hover:bg-emerald-100"><FileGlyph entry={entry} /></div>
                 <button type="button" onClick={() => entry.type === 'directory' ? goToFolder(entry) : previewEntry(entry)} disabled={entry.type !== 'directory' && !['pdf', 'txt'].includes(entry.extension)} className="min-w-0 flex-1 text-left disabled:cursor-default">
                   <div className="truncate text-sm font-medium text-stone-800" title={entry.name}>{entry.name}</div>
-                  <div className="mt-1 text-xs text-stone-500">{entry.type === 'directory' ? `${entry.children?.length ?? 0} items` : formatBytes(entry.size)}</div>
+                  {/* <div className="mt-1 text-xs text-stone-500">{entry.type === 'directory' ? `${entry.children?.length ?? 0} items` : formatBytes(entry.size)}</div> */}
                   <div className="mt-2 truncate text-[11px] text-stone-400">{formatDate(entry.modifiedAt)}</div>
                 </button>
                 {entry.type === 'directory' && studentForFolder(entry.name) ? (
