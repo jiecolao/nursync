@@ -267,7 +267,7 @@ export default function RecordsPage() {
         <div className="flex flex-col gap-4 border-b border-stone-100 p-4 sm:p-5">
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
             <div className="min-w-0">
-              <h3 className="font-semibold text-stone-900">All files</h3>
+              <h3 className="font-semibold text-stone-900">Student Records</h3>
               <p className="mt-1 text-xs text-stone-500">{root || 'Loading watched directory…'}</p>
             </div>
               <Button type="button" onClick={() => setIsImportOpen(true)} disabled={importBusy} className="ml-auto shrink-0"><Upload className="mr-2 size-4" />Import</Button>
@@ -312,7 +312,16 @@ export default function RecordsPage() {
                       <DropdownMenuItem onClick={() => navigate('/records/' + encodeURIComponent(/^NON-GRADUATE$/i.test(currentPath.split('/')[0] ?? '') ? 'NON-GRADUATE' : (currentPath.split('/')[0] ?? '').replace(/^BATCH\s+/i, '')) + '/' + (studentForFolder(entry.name)?.studentUuid ?? ''))}><UserRound className="size-4" />See Student</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                ) : entry.type === 'directory' ? <ChevronRight className="mt-1 size-4 shrink-0 text-stone-300 group-hover:text-primary" /> : null}
+                ) : entry.type === 'directory' ? (
+                  <button
+                    type="button"
+                    onClick={() => goToFolder(entry)}
+                    className="mt-1 shrink-0 rounded text-stone-300 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                    aria-label={`Open ${entry.name}`}
+                  >
+                    <ChevronRight className="size-4" />
+                  </button>
+                ) : null}
               </div>
             ))}
           </div>
