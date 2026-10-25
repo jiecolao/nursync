@@ -54,61 +54,42 @@ export class StudentBulkImportService {
     });
     const items = paths.map((raw) => {
       const parts = raw.replace(/\\/g, '/').split('/').filter(Boolean);
-      if (
-        parts.length !== 3 ||
-        parts.some((part) => part === '.' || part === '..')
-      ) {
-        return {
-          path: raw,
-          valid: false,
-          reason: 'Expected Student Folder / Category / File.',
-        };
+      if (parts.some((part) => part === '.' || part === '..')) {
+        return { path: raw, valid: false, reason: 'Path traversal segments are not allowed.' };
       }
-      const [studentFolder, categoryFolder, ...rest] = parts;
-      const filename = rest[rest.length - 1];
+      if (parts.length !== 4) {
+        return { path: raw, valid: false, reason: 'Expected BATCH [YEAR] or NON-GRADUATE / Student / Category / File.' };
+      }
+      const [batchFolder, studentFolder, categoryFolder, filename] = parts;
+      if (!(/^BATCH\s+\d{4}$/i.test(batchFolder) || /^NON-GRADUATE$/i.test(batchFolder))) {
+        return { path: raw, valid: false, reason: 'First folder must be BATCH [YEAR] or NON-GRADUATE.' };
+      }
+      if (!/\.pdf$/i.test(filename)) return { path: raw, valid: false, reason: 'Only PDF files are supported.' };
       const category = categoryFor(categoryFolder);
+      if (!category) return { path: raw, valid: false, reason: `Unknown category folder "${categoryFolder}".` };
       const nameParts = studentFolder.split(',').map((part) => part.trim());
-      if (
-        nameParts.length !== 2 ||
-        nameParts.some((part) => !part)
-      )
-        return {
-          path: raw,
-          valid: false,
-          reason: 'Student folder must be LAST NAME, First Name Middle Name.',
-        };
-      if (!category)
-        return {
-          path: raw,
-          valid: false,
-          reason: `Unknown category folder "${categoryFolder}". Use Academic Records, Personal Records, Completion Records, or RLE/Clinical Records.`,
-        };
+      if (nameParts.length !== 2 || nameParts.some((part) => !part)) {
+        return { path: raw, valid: false, reason: 'Student folder must be LAST NAME, First Name Middle Name.' };
+      }
       const [lastName, givenNames] = nameParts;
-      const matches = students.filter(
-        (s) =>
-          norm(s.lastName) === norm(lastName) &&
-          norm([s.firstName, s.middleName].filter(Boolean).join(' ')) ===
-            norm(givenNames),
-      );
-      if (matches.length !== 1)
-        return {
-          path: raw,
-          valid: false,
-          reason: matches.length
-            ? 'Student name is ambiguous; include the exact middle name.'
-            : 'No matching student found in the student database.',
-        };
+      const comparable = (value: string) => norm(value).replace(/[^\p{L}\p{N}]/gu, '');
+      const supplied = comparable(givenNames);
+      const matches = students.filter((student) => {
+        if (comparable(student.lastName) !== comparable(lastName)) return false;
+        const first = comparable(student.firstName);
+        const middle = comparable(student.middleName ?? '');
+        return supplied === first + middle || supplied === first || (!!middle && supplied === first + middle.charAt(0));
+      });
+      if (matches.length !== 1) {
+        return { path: raw, valid: false, reason: matches.length
+          ? 'Student name is ambiguous; refine the folder name.'
+          : 'No matching student found. Create the student record before importing documents.' };
+      }
       return {
-        path: raw,
-        studentFolder,
-        categoryFolder,
-        valid: true,
+        path: raw, batchFolder, studentFolder, categoryFolder, valid: true,
         studentUuid: matches[0].studentUuid,
-        studentName: `${matches[0].lastName}, ${matches[0].firstName}${
-          matches[0].middleName ? ` ${matches[0].middleName}` : ''
-        }`,
-        category,
-        filename,
+        studentName: `${matches[0].lastName}, ${matches[0].firstName}${matches[0].middleName ? ` ${matches[0].middleName}` : ''}`,
+        category, filename,
       };
     });
     return {
@@ -144,6 +125,7 @@ export class StudentBulkImportService {
       });
     const resolved = preview.items as Array<{
       path: string;
+      batchFolder: string;
       studentFolder: string;
       categoryFolder: string;
       valid: true;
@@ -182,6 +164,7 @@ export class StudentBulkImportService {
           );
         const directory = path.resolve(
           ROOT,
+          item.batchFolder,
           item.studentFolder,
           item.categoryFolder,
         );
