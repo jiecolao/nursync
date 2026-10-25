@@ -85,6 +85,14 @@ export class StudentBulkImportService {
           ? 'Student name is ambiguous; refine the folder name.'
           : 'No matching student found. Create the student record before importing documents.' };
       }
+      const matchedStudent = matches[0];
+      const isNonGraduateBatch = /^NON-GRADUATE$/i.test(batchFolder);
+      if (isNonGraduateBatch && !matchedStudent.isNonGraduate) {
+        return { path: raw, valid: false, reason: 'Student is not marked as a non-graduate in the database.' };
+      }
+      if (!isNonGraduateBatch && (matchedStudent.isNonGraduate || Number(matchedStudent.yrGraduated) !== Number(batchFolder.replace(/^BATCH\\s+/i, '')))) {
+        return { path: raw, valid: false, reason: 'Batch year does not match the student graduation year in the database.' };
+      }
       return {
         path: raw, batchFolder, studentFolder, categoryFolder, valid: true,
         studentUuid: matches[0].studentUuid,
