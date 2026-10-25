@@ -17,7 +17,7 @@ import { useDirectoryLive } from '@/hooks/use-directory-live';
 import { useDirectoryStore, type DirectoryEntry } from '@/stores/directory-store';
 
 type ViewMode = 'grid' | 'list';
-type ImportPreviewItem = { path: string; valid: boolean; reason?: string; studentName?: string; category?: string };
+type ImportPreviewItem = { path: string; valid: boolean; reason?: string; warning?: string; studentName?: string; category?: string };
 type StudentSummary = {
   studentUuid: string;
   firstName: string;
@@ -425,10 +425,10 @@ export default function RecordsPage() {
             {importBusy && <p className="mt-3 text-sm text-stone-500">Validating or importing folder contents...</p>}
             {importMessage && <p role="status" className="mt-3 text-sm text-stone-700">{importMessage}</p>}
             {importPreview.length > 0 && <div className="mt-4">
-              <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-sm"><span className="font-medium text-stone-800">{importPreview.length} files · {importPreview.filter((item) => item.valid).length} valid · {importPreview.filter((item) => !item.valid).length} need attention</span><Button type="button" onClick={() => void runImport()} disabled={importBusy || !importPreview.some((item) => item.valid)}><Upload className="mr-2 size-4" />Import valid files</Button></div>
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-sm"><span className="font-medium text-stone-800">{importPreview.length} files · {importPreview.filter((item) => item.valid).length} valid · {importPreview.filter((item) => item.warning).length} warnings · {importPreview.filter((item) => !item.valid).length} need attention</span><Button type="button" onClick={() => void runImport()} disabled={importBusy || !importPreview.some((item) => item.valid)}><Upload className="mr-2 size-4" />Import valid files</Button></div>
               <div className="max-h-72 overflow-auto rounded-lg border border-stone-200"><table className="w-full text-left text-sm">
                 <thead className="sticky top-0 bg-secondary text-xs uppercase text-stone-500"><tr><th className="px-3 py-2">File path</th><th className="px-3 py-2">Student / category</th><th className="px-3 py-2">Validation</th></tr></thead>
-                <tbody className="divide-y divide-stone-100">{importPreview.map((item, index) => <tr key={item.path + '-' + index}><td className="max-w-64 break-all px-3 py-2 text-stone-600">{item.path}</td><td className="px-3 py-2">{item.valid ? <>{item.studentName}<div className="text-xs text-stone-500">{item.category}</div></> : '—'}</td><td className="px-3 py-2">{item.valid ? <span className="inline-flex items-center gap-1 text-emerald-700"><CheckCircle2 className="size-4" />Valid</span> : <span className="inline-flex items-start gap-1 text-rose-700"><AlertCircle className="mt-0.5 size-4 shrink-0" />{item.reason}</span>}</td></tr>)}</tbody>
+                <tbody className="divide-y divide-stone-100">{importPreview.map((item, index) => <tr key={item.path + '-' + index}><td className="max-w-64 break-all px-3 py-2 text-stone-600">{item.path}</td><td className="px-3 py-2">{item.valid ? <>{item.studentName}<div className="text-xs text-stone-500">{item.category}</div></> : '—'}</td><td className="px-3 py-2">{item.valid ? item.warning ? <span className="inline-flex items-start gap-1 text-amber-700"><AlertCircle className="mt-0.5 size-4 shrink-0" />{item.warning}</span> : <span className="inline-flex items-center gap-1 text-emerald-700"><CheckCircle2 className="size-4" />Valid</span> : <span className="inline-flex items-start gap-1 text-rose-700"><AlertCircle className="mt-0.5 size-4 shrink-0" />{item.reason}</span>}</td></tr>)}</tbody>
               </table></div>
             </div>}
 

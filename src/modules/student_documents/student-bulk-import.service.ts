@@ -54,7 +54,7 @@ export class StudentBulkImportService {
         isNonGraduate: true,
       },
     });
-    const items = paths.map((raw) => {
+    const items = await Promise.all(paths.map(async (raw) => {
       const parts = raw.replace(/\\/g, '/').split('/').filter(Boolean);
       if (parts.some((part) => part === '.' || part === '..')) {
         return { path: raw, valid: false, reason: 'Path traversal segments are not allowed.' };
@@ -85,7 +85,7 @@ export class StudentBulkImportService {
       if (matches.length !== 1) {
         return { path: raw, valid: false, reason: matches.length
           ? 'Student name is ambiguous; refine the folder name.'
-          : 'No matching student found. Create the student record before importing documents.' };
+          : 'No matching student found. Create the student record before importing their documents.' };
       }
       const matchedStudent = matches[0];
       const isNonGraduateBatch = /^NON-GRADUATE$/i.test(batchFolder);
@@ -95,13 +95,29 @@ export class StudentBulkImportService {
       if (!isNonGraduateBatch && (matchedStudent.isNonGraduate || Number(matchedStudent.yrGraduated) !== Number(batchFolder.replace(/^BATCH\s+/i, '')))) {
         return { path: raw, valid: false, reason: 'Batch year does not match the student graduation year in the database.' };
       }
+      const name = sanitize(path.basename(filename));
+      if (!name) return { path: raw, valid: false, reason: 'Invalid filename.' };
+      const destination = path.resolve(
+        ROOT,
+        batchFolder,
+        studentFolder,
+        categoryFolder,
+        name,
+      );
+      let warning: string | undefined;
+      try {
+        await fs.access(destination);
+        warning = 'A file already exists at this destination and will be overwritten.';
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+      }
       return {
         path: raw, batchFolder, studentFolder, categoryFolder, valid: true,
         studentUuid: matches[0].studentUuid,
         studentName: `${matches[0].lastName}, ${matches[0].firstName}${matches[0].middleName ? ` ${matches[0].middleName}` : ''}`,
-        category, filename,
+        category, filename, warning,
       };
-    });
+    }));
     return {
       total: items.length,
       valid: items.filter((i) => i.valid).length,
