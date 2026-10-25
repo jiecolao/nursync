@@ -48,11 +48,17 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
   private watcher?: FSWatcher;
   private readonly root = path.resolve(process.env.STUDENT_DOCUMENTS_ROOT || './Database/Students');
   private readonly debounce = new Map<string, ReturnType<typeof setTimeout>>();
+  private purgeTimer?: ReturnType<typeof setInterval>;
 
   constructor(private readonly prisma: PrismaService, private readonly auditLogs: AuditLogsService) {}
 
-  onModuleInit() { void this.startWatcher(); }
+  onModuleInit() {
+    void this.startWatcher();
+    void this.purgeExpiredTrash();
+    this.purgeTimer = setInterval(() => { void this.purgeExpiredTrash(); }, 60 * 60 * 1000);
+  }
   async onModuleDestroy() {
+    if (this.purgeTimer) clearInterval(this.purgeTimer);
     await this.watcher?.close();
     for (const timer of this.debounce.values()) clearTimeout(timer);
   }
