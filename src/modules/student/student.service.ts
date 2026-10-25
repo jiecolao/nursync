@@ -3,6 +3,36 @@ import { PrismaService } from "../../integrations/prisma/prisma.service";
 import { UpdateStudentDto } from "./dto/update-student.dto";
 import { CreateStudentDto } from "./dto/create-student.dto";
 import { AuditLogsService } from "../audit_logs/audit_logs.service";
+import { promises as fs } from "node:fs";
+import path from "node:path";
+import sanitize from "sanitize-filename";
+
+const STUDENT_DOCUMENTS_ROOT = path.resolve(
+  process.env.STUDENT_DOCUMENTS_ROOT || "./Database/Students",
+);
+
+function batchFolderFor(student: {
+  yrAdmitted: number;
+  isNonGraduate?: boolean | null;
+}) {
+  return student.isNonGraduate ? "NON-GRADUATE" : `BATCH ${student.yrAdmitted}`;
+}
+
+function studentFolderFor(student: {
+  firstName: string;
+  middleName?: string | null;
+  lastName: string;
+}) {
+  const givenNames = [student.firstName, student.middleName]
+    .map((part) => part?.trim())
+    .filter(Boolean)
+    .join(" ");
+  const folder = sanitize(`${student.lastName.trim().toUpperCase()}, ${givenNames}`);
+  if (!folder || folder === "." || folder === "..") {
+    throw new Error("Unable to create a safe student folder name.");
+  }
+  return folder;
+}
 
 @Injectable()
 export class StudentService {
@@ -22,9 +52,9 @@ export class StudentService {
   }
 
   async createProfile(body: CreateStudentDto, actorUserId: string) {
-    return this.prisma.$transaction(async (tx) => {
+    const student = await this.prisma.$transaction(async (tx) => {
       const actor = await this.auditLogs.resolveActorInTransaction(tx, actorUserId);
-      const student = await tx.student.create({ data: {
+      const created = await tx.student.create({ data: {
         studentId: body.studentId, firstName: body.firstName, lastName: body.lastName.toUpperCase(),
         middleName: body.middleName,
         gender: body.genderId ? { connect: { genderId: body.genderId } } : undefined,
@@ -35,9 +65,21 @@ export class StudentService {
       }});
       await this.auditLogs.createActivityLogInTransaction(tx, {
         userAccId: actor.userAccId, roleId: actor.roleId, action: 'student.create',
-      }, actor.adminName, JSON.stringify({ studentUuid: student.studentUuid }));
-      return student;
+      }, actor.adminName, JSON.stringify({ studentUuid: created.studentUuid }));
+      return created;
     });
+
+    // Keep the on-disk directory tree discoverable even on a brand-new install.
+    // DirectoryService watches this root and publishes addDir events to connected
+    // clients, so the Records/Directory view updates without a manual refresh.
+    const batchPath = path.resolve(STUDENT_DOCUMENTS_ROOT, batchFolderFor(student));
+    const studentPath = path.resolve(batchPath, studentFolderFor(student));
+    if (!batchPath.startsWith(STUDENT_DOCUMENTS_ROOT + path.sep)
+      || !studentPath.startsWith(batchPath + path.sep)) {
+      throw new Error("Invalid student directory path.");
+    }
+    await fs.mkdir(studentPath, { recursive: true });
+    return student;
   }
 
   async updateProfile(studUuid: string, body: UpdateStudentDto, actorUserId: string) {
@@ -86,20 +128,19 @@ export class StudentService {
       const documents = await tx.studentDocument.deleteMany({
         where: { studentUuid: { in: studentUuids } },
       });
-      const deleted = await tx.student.deleteMany({ 
-        where: { studentUuid: { in: studentUuids } } 
+      const deleted = await tx.student.deleteMany({
+        where: { studentUuid: { in: studentUuids } }
       });
       await this.auditLogs.createActivityLogInTransaction(tx, {
-        userAccId: actor.userAccId, 
-        roleId: actor.roleId, 
-        action: 'student.bulk_delete', // Updated action name
-      }, actor.adminName, JSON.stringify({ 
-        studentUuids, 
+        userAccId: actor.userAccId,
+        roleId: actor.roleId,
+        action: 'student.bulk_delete',
+      }, actor.adminName, JSON.stringify({
+        studentUuids,
         deletedCount: deleted.count,
         deletedDocumentCount: documents.count,
-        oldState 
+        oldState
       }));
-      
       return deleted;
     });
   }
