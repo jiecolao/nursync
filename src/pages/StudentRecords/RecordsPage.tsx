@@ -228,6 +228,14 @@ export default function RecordsPage() {
     if (student) setPreviewFile({ entry, studentUuid: student.studentUuid });
   };
 
+  const activateEntry = (entry: DirectoryEntry) => {
+    if (entry.type === 'directory') {
+      goToFolder(entry);
+    } else {
+      previewEntry(entry);
+    }
+  };
+
   const fileUrl = previewFile
     ? `/api/students/${encodeURIComponent(previewFile.studentUuid)}/documents/file?path=${encodeURIComponent(`Database/Students/${previewFile.entry.path}`)}`
     : '';
@@ -308,9 +316,9 @@ export default function RecordsPage() {
         {visibleEntries.length ? view === 'grid' ? (
           <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 sm:p-5">
             {visibleEntries.map((entry) => (
-              <div key={entry.path} className={`group flex min-w-0 items-start gap-3 rounded-xl border border-stone-200/80 p-4 text-left transition hover:border-primary/30 hover:bg-secondary/50 ${entry.type === 'directory' || ['pdf', 'txt'].includes(entry.extension) ? 'cursor-pointer' : 'cursor-default'}`}>
+              <div key={entry.path} onClick={() => activateEntry(entry)} className={`group flex min-w-0 items-start gap-3 rounded-xl border border-stone-200/80 p-4 text-left transition hover:border-primary/30 hover:bg-secondary/50 ${entry.type === 'directory' || ['pdf', 'txt'].includes(entry.extension) ? 'cursor-pointer' : 'cursor-default'}`}>
                 <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-secondary transition group-hover:bg-emerald-100"><FileGlyph entry={entry} /></div>
-                <button type="button" onClick={() => entry.type === 'directory' ? goToFolder(entry) : previewEntry(entry)} disabled={entry.type !== 'directory' && !['pdf', 'txt'].includes(entry.extension)} className="min-w-0 flex-1 text-left disabled:cursor-default">
+                <button type="button" onClick={(event) => { event.stopPropagation(); activateEntry(entry); }} disabled={entry.type !== 'directory' && !['pdf', 'txt'].includes(entry.extension)} className="min-w-0 flex-1 text-left disabled:cursor-default">
                   <div className="truncate text-sm font-medium text-stone-800" title={entry.name}>{entry.name}</div>
                   {/* <div className="mt-1 text-xs text-stone-500">{entry.type === 'directory' ? `${entry.children?.length ?? 0} items` : formatBytes(entry.size)}</div> */}
                   <div className="mt-2 truncate text-[11px] text-stone-400">{formatDate(entry.modifiedAt)}</div>
@@ -325,7 +333,7 @@ export default function RecordsPage() {
                 ) : entry.type === 'directory' ? (
                   <button
                     type="button"
-                    onClick={() => goToFolder(entry)}
+                    onClick={(event) => { event.stopPropagation(); goToFolder(entry); }}
                     className="mt-1 shrink-0 rounded text-stone-300 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
                     aria-label={`Open ${entry.name}`}
                   >
