@@ -403,6 +403,32 @@ export default function BatchPage(){
                   <section role="dialog" aria-modal="true" aria-labelledby="student-import-title" className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-background p-6 shadow-xl">
                     <h3 id="student-import-title" className="text-xl font-semibold">Import Student Records</h3>
                     <p className="mt-2 text-sm text-muted-foreground">Upload CSV or Excel using the CreateStudentDto fields. First Name, Last Name, Year Admitted, and Year of Residency are required. Student IDs must follow the existing format, e.g. 2026-12345.</p>
+                    <div className="mt-4 rounded-xl bg-secondary/50 p-4 text-sm text-stone-600">
+                      <p className="font-medium text-stone-800">Column guidelines</p>
+                      <p className="mt-1">Use the column names below (spaces, underscores, and capitalization are accepted). Fields marked optional may be left blank.</p>
+                      <div className="mt-3 overflow-x-auto rounded-lg border border-stone-200 bg-background">
+                        <table className="w-full min-w-[42rem] text-left text-xs">
+                          <thead className="bg-secondary text-stone-500">
+                            <tr><th className="px-3 py-2">Column</th><th className="px-3 py-2">Acceptable value</th><th className="px-3 py-2">Example</th></tr>
+                          </thead>
+                          <tbody className="divide-y divide-stone-100">
+                            <tr><td className="px-3 py-2 font-medium">studentID</td><td className="px-3 py-2">Optional; 4+ letters/numbers, a hyphen, then 5+ letters/numbers; max 20 characters</td><td className="px-3 py-2"><code>2026-12345</code></td></tr>
+                            <tr><td className="px-3 py-2 font-medium">lastName, firstName</td><td className="px-3 py-2">Required text; max 255 characters</td><td className="px-3 py-2"><code>Santos, Jamie</code></td></tr>
+                            <tr><td className="px-3 py-2 font-medium">middleName</td><td className="px-3 py-2">Optional text; max 255 characters</td><td className="px-3 py-2"><code>Reyes</code></td></tr>
+                            <tr><td className="px-3 py-2 font-medium">genderId</td><td className="px-3 py-2">Optional whole-number gender ID (1: Male, 2: Female)</td><td className="px-3 py-2"><code>1</code></td></tr>
+                            <tr><td className="px-3 py-2 font-medium">dob</td><td className="px-3 py-2">Optional valid date, format: <code>YYYY-MM-DD</code></td><td className="px-3 py-2"><code>2000-01-15</code></td></tr>
+                            <tr><td className="px-3 py-2 font-medium">contactNo</td><td className="px-3 py-2">Optional; contact number max 50 characters</td><td className="px-3 py-2"><code>09171234567</code></td></tr>
+                            <tr><td className="px-3 py-2 font-medium">email</td><td className="px-3 py-2">Optional; email must be valid</td><td className="px-3 py-2"><code>jamie@example.com</code></td></tr>
+                            <tr><td className="px-3 py-2 font-medium">provincialAddr, cityAddr</td><td className="px-3 py-2">Optional text addresses</td><td className="px-3 py-2"><code>Manila</code>, <code>Cebu City</code></td></tr>
+                            <tr><td className="px-3 py-2 font-medium">yrAdmitted</td><td className="px-3 py-2">Required whole year</td><td className="px-3 py-2"><code>2026</code></td></tr>
+                            <tr><td className="px-3 py-2 font-medium">yrResidency</td><td className="px-3 py-2">Required whole number</td><td className="px-3 py-2"><code>1</code></td></tr>
+                            <tr><td className="px-3 py-2 font-medium">yrGraduated</td><td className="px-3 py-2">Optional whole-number year</td><td className="px-3 py-2"><code>2026</code></td></tr>
+                            <tr><td className="px-3 py-2 font-medium">isNonGraduate</td><td className="px-3 py-2">Optional; <code>true/false</code>, <code>yes/no</code>, or <code>1/0</code></td><td className="px-3 py-2"><code>false</code></td></tr>
+                          </tbody>
+                        </table>
+                      </div>
+                      <p className="mt-3">A sample row is available from <strong>Download CSV Template</strong>. Header aliases such as <code>studentNo</code>, <code>surname</code>, <code>givenName</code>, and <code>yearAdmitted</code> are also recognized.</p>
+                    </div>
                     <div className="my-5 flex flex-col gap-3">
                       <div
                         role="button"

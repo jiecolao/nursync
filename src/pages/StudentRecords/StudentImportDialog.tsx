@@ -92,7 +92,32 @@ export default function StudentImportDialog({ open, onOpenChange, onComplete }: 
   return <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4" role="presentation">
     <section role="dialog" aria-modal="true" aria-labelledby="import-students-title" className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-background p-6 shadow-xl">
       <div className="flex items-start justify-between gap-3"><div><h3 id="import-students-title" className="text-xl font-semibold">Import Students</h3><p className="mt-2 text-sm text-muted-foreground">Upload CSV or Excel. First Name, Last Name, Year Admitted, and Year of Residency are required.</p></div><Button variant="ghost" size="icon" onClick={() => { reset(); onOpenChange(false); }} disabled={busy} aria-label="Close"><X className="size-4" /></Button></div>
-      <div className="my-5 rounded-xl border border-dashed p-6 text-center"><input ref={inputRef} type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={(e) => void parse(e.target.files?.[0])}/><FileSpreadsheet className="mx-auto size-9 text-primary"/><p className="mt-2 text-sm">{file?.name ?? "Choose a CSV or Excel file"}</p><Button className="mt-3" variant="outline" onClick={() => inputRef.current?.click()} disabled={busy}><Upload className="mr-2 size-4"/>Choose File</Button></div>
+      <div className="mt-4 rounded-xl bg-secondary/50 p-4 text-sm text-stone-600">
+        <p className="font-medium text-stone-800">Column guidelines</p>
+        <p className="mt-1">Use the column names below (spaces, underscores, and capitalization are accepted). Fields marked optional may be left blank.</p>
+        <div className="mt-3 overflow-x-auto rounded-lg border border-stone-200 bg-background">
+          <table className="w-full min-w-[42rem] text-left text-xs">
+            <thead className="bg-secondary text-stone-500">
+              <tr><th className="px-3 py-2">Column</th><th className="px-3 py-2">Acceptable value</th><th className="px-3 py-2">Example</th></tr>
+            </thead>
+            <tbody className="divide-y divide-stone-100">
+              <tr><td className="px-3 py-2 font-medium">studentID</td><td className="px-3 py-2">Optional; 4+ letters/numbers, a hyphen, then 5+ letters/numbers; max 20 characters</td><td className="px-3 py-2"><code>2026-12345</code></td></tr>
+              <tr><td className="px-3 py-2 font-medium">lastName, firstName</td><td className="px-3 py-2">Required text; max 255 characters</td><td className="px-3 py-2"><code>Santos, Jamie</code></td></tr>
+              <tr><td className="px-3 py-2 font-medium">middleName</td><td className="px-3 py-2">Optional text; max 255 characters</td><td className="px-3 py-2"><code>Reyes</code></td></tr>
+              <tr><td className="px-3 py-2 font-medium">genderId</td><td className="px-3 py-2">Optional whole-number gender ID</td><td className="px-3 py-2"><code>1</code></td></tr>
+              <tr><td className="px-3 py-2 font-medium">dob</td><td className="px-3 py-2">Optional valid date, preferably <code>YYYY-MM-DD</code></td><td className="px-3 py-2"><code>2000-01-15</code></td></tr>
+              <tr><td className="px-3 py-2 font-medium">contactNo, email</td><td className="px-3 py-2">Optional; contact number max 50 characters, email must be valid</td><td className="px-3 py-2"><code>09171234567</code>, <code>jamie@example.com</code></td></tr>
+              <tr><td className="px-3 py-2 font-medium">provincialAddr, cityAddr</td><td className="px-3 py-2">Optional text addresses</td><td className="px-3 py-2"><code>Manila</code>, <code>Cebu City</code></td></tr>
+              <tr><td className="px-3 py-2 font-medium">yrAdmitted</td><td className="px-3 py-2">Required whole year from 1900 to 2100</td><td className="px-3 py-2"><code>2026</code></td></tr>
+              <tr><td className="px-3 py-2 font-medium">yrResidency</td><td className="px-3 py-2">Required whole number</td><td className="px-3 py-2"><code>1</code></td></tr>
+              <tr><td className="px-3 py-2 font-medium">yrGraduated</td><td className="px-3 py-2">Optional whole-number year</td><td className="px-3 py-2"><code>2026</code></td></tr>
+              <tr><td className="px-3 py-2 font-medium">isNonGraduate</td><td className="px-3 py-2">Optional boolean: <code>true/false</code>, <code>yes/no</code>, or <code>1/0</code></td><td className="px-3 py-2"><code>false</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-3">A sample row is available from <strong>Download CSV Template</strong>. Header aliases such as <code>studentNo</code>, <code>surname</code>, <code>givenName</code>, and <code>yearAdmitted</code> are also recognized.</p>
+      </div>
+      <div className="my-5 rounded-xl border border-dashed p-6 text-center"><input ref={inputRef} type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={(e) => void parse(e.target.files?.[0])}/><FileSpreadsheet className="mx-auto size-9 text-primary"/><p className="mt-2 text-sm">{file?.name ?? "Choose a CSV or Excel file"}</p><Button className="mt-3" variant="outline" onClick={() => inputRef.current?.click()} disabled={busy}><Upload className="mr-2 size-4" />Choose File</Button></div>
       <Button variant="outline" size="sm" onClick={downloadTemplate}><Download className="mr-2 size-4"/>Download CSV Template</Button>
       {message && <p role="status" className="my-3 text-sm">{message}</p>}
       {!!rows.length && <div className="mt-4 max-h-56 overflow-auto rounded border p-3 text-sm"><p className="mb-2 font-medium">{rows.length} row(s)</p>{rows.map((r) => <p key={r.row} className={r.errors.length ? "text-red-600" : "text-green-700"}>Row {r.row}: {String(r.payload.firstName)} {String(r.payload.lastName)}{r.errors.length ? " — " + r.errors.join(" ") : " — Valid"}</p>)}</div>}
