@@ -230,6 +230,19 @@ export default function RecordsPage() {
     return studentForFolder(folderName);
   };
 
+  const navigateToStudent = (entry: DirectoryEntry) => {
+    const student = studentForFolder(entry.name);
+    if (!student) return;
+
+    const batchFolder = entry.path.split('/')[0] || currentPath.split('/')[0] || '';
+    const batchNo = /^NON-GRADUATE$/i.test(batchFolder)
+      ? 'NON-GRADUATE'
+      : batchFolder.replace(/^BATCH\s+/i, '');
+    if (!batchNo) return;
+
+    navigate(`/records/${encodeURIComponent(batchNo)}/${encodeURIComponent(student.studentUuid)}`);
+  };
+
   const previewEntry = (entry: DirectoryEntry) => {
     if (entry.type === 'directory' || !['pdf', 'txt'].includes(entry.extension)) return;
     const student = studentForEntry(entry);
@@ -335,7 +348,7 @@ export default function RecordsPage() {
                   <DropdownMenu>
                     <DropdownMenuTrigger render={<Button type="button" variant="ghost" size="icon" className="size-8 shrink-0" aria-label={`Actions for ${entry.name}`} onClick={(event) => event.stopPropagation()} />}><MoreHorizontal className="size-4" /></DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => navigate('/records/' + encodeURIComponent(/^NON-GRADUATE$/i.test(currentPath.split('/')[0] ?? '') ? 'NON-GRADUATE' : (currentPath.split('/')[0] ?? '').replace(/^BATCH\s+/i, '')) + '/' + (studentForFolder(entry.name)?.studentUuid ?? ''))}><UserRound className="size-4" />See Student</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigateToStudent(entry)}><UserRound className="size-4" />See Student</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 ) : entry.type === 'directory' ? (
@@ -363,7 +376,7 @@ export default function RecordsPage() {
                     <td className="px-5 py-3"><button type="button" disabled={entry.type !== 'directory' && !['pdf', 'txt'].includes(entry.extension)} onClick={() => entry.type === 'directory' ? goToFolder(entry) : previewEntry(entry)} className="flex max-w-sm items-center gap-3 text-left disabled:cursor-default"><FileGlyph entry={entry} /><span className="truncate font-medium text-stone-800">{entry.name}</span></button></td>
                     <td className="px-5 py-3 text-stone-500">{entry.type === 'directory' ? 'Folder' : entry.extension ? `.${entry.extension}` : 'File'}</td>
                     <td className="px-5 py-3 text-right tabular-nums text-stone-600">{entry.type === 'directory' ? '—' : formatBytes(entry.size)}</td>
-                    <td className="px-5 py-3 text-stone-500"><div className="flex items-center justify-between gap-3">{formatDate(entry.modifiedAt)}{entry.type === 'directory' && studentForFolder(entry.name) && <DropdownMenu><DropdownMenuTrigger render={<Button type="button" variant="ghost" size="icon" className="size-8" aria-label={`Actions for ${entry.name}`} />}><MoreHorizontal className="size-4" /></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => navigate(`/students/profile/${studentForFolder(entry.name)?.studentUuid}`)}><UserRound className="size-4" />See Student</DropdownMenuItem></DropdownMenuContent></DropdownMenu>}</div></td>
+                    <td className="px-5 py-3 text-stone-500"><div className="flex items-center justify-between gap-3">{formatDate(entry.modifiedAt)}{entry.type === 'directory' && studentForFolder(entry.name) && <DropdownMenu><DropdownMenuTrigger render={<Button type="button" variant="ghost" size="icon" className="size-8" aria-label={`Actions for ${entry.name}`} />}><MoreHorizontal className="size-4" /></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => navigateToStudent(entry)}><UserRound className="size-4" />See Student</DropdownMenuItem></DropdownMenuContent></DropdownMenu>}</div></td>
                   </tr>
                 ))}
               </tbody>
