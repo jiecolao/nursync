@@ -347,19 +347,20 @@ export default function StudentProfilePage() {
     if (!saved.student_uuid || deleting) return;
     setDeleting(true);
     try {
-      const response = await fetch(`/api/student/${encodeURIComponent(saved.student_uuid)}`, {
-        method: "DELETE",
-        credentials: "include",
+      const response = await fetch(`/api/student/${encodeURIComponent(saved.student_uuid)}/status`, {
+        method: "PUT", credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: false }),
       });
       if (!response.ok) {
         const body = await response.json().catch(() => null);
-        throw new Error(getApiError(body, "Unable to delete student profile."));
+        throw new Error(getApiError(body, "Unable to archive student profile."));
       }
       setConfirmOpen(false);
-      notify.success("Student deleted");
+      notify.success("Student archived");
       navigate(`/records/${encodeURIComponent(batchNo)}`);
     } catch (cause) {
-      notify.error("Unable to delete student", {
+      notify.error("Unable to archive student", {
         description: cause instanceof Error ? cause.message : "Please try again.",
       });
     } finally {
@@ -706,10 +707,9 @@ export default function StudentProfilePage() {
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete student record?</AlertDialogTitle>
+            <AlertDialogTitle>Archive student record?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete {saved.last_name}, {saved.first_name}'s record 
-              including their documents. This action cannot be undone.
+              This will move {saved.last_name}, {saved.first_name} to the student archive. Their record and documents will be retained.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -719,7 +719,7 @@ export default function StudentProfilePage() {
               disabled={deleting}
               className="bg-red-600 text-white hover:bg-red-700"
             >
-              {deleting ? "Deleting..." : "Delete account"}
+              {deleting ? "Archiving..." : "Archive student"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
