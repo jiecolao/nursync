@@ -65,7 +65,8 @@ export default function HelpPage() {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     if (params.get("tour") !== "1") return;
-    const topic = topics.find((item) => item.route === location.pathname)\n      ?? (location.pathname.startsWith("/records/") ? topics.find((item) => item.route === "/records") : undefined);
+    const topic = topics.find((item) => item.route === location.pathname)
+      ?? (location.pathname.startsWith("/records/") ? topics.find((item) => item.route === "/records") : undefined);
     if (!topic || (topic.permission && !user?.permissions?.[topic.permission])) {
       navigate(location.pathname, { replace: true });
       return;
