@@ -69,7 +69,7 @@ export class StudentBulkImportService {
       if (!/\.pdf$/i.test(filename)) return { path: raw, valid: false, reason: 'Only PDF files are supported.' };
       const category = categoryFor(categoryFolder);
       if (!category) return { path: raw, valid: false, reason: `Unknown category folder "${categoryFolder}".` };
-      const nameParts = studentFolder.replace(/,+\\s*$/, '').split(',').map((part) => part.trim());
+      const nameParts = studentFolder.replace(/,+\s*$/, '').split(',').map((part) => part.trim());
       if (nameParts.length !== 2 || nameParts.some((part) => !part)) {
         return { path: raw, valid: false, reason: 'Student folder must be LAST NAME, First Name Middle Name.' };
       }
@@ -92,7 +92,7 @@ export class StudentBulkImportService {
       if (isNonGraduateBatch && !matchedStudent.isNonGraduate) {
         return { path: raw, valid: false, reason: 'Student is not marked as a non-graduate in the database.' };
       }
-      if (!isNonGraduateBatch && (matchedStudent.isNonGraduate || Number(matchedStudent.yrGraduated) !== Number(batchFolder.replace(/^BATCH\\s+/i, '')))) {
+      if (!isNonGraduateBatch && (matchedStudent.isNonGraduate || Number(matchedStudent.yrGraduated) !== Number(batchFolder.replace(/^BATCH\s+/i, '')))) {
         return { path: raw, valid: false, reason: 'Batch year does not match the student graduation year in the database.' };
       }
       return {
