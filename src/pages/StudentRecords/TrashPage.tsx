@@ -33,6 +33,7 @@ export default function TrashPage() {
   const [search, setSearch] = useState('');
   const [pending, setPending] = useState<PendingAction | null>(null);
   const [preview, setPreview] = useState<TrashDocument | null>(null);
+  const [now, setNow] = useState(() => Date.now());
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -50,6 +51,21 @@ export default function TrashPage() {
   }, []);
 
   useEffect(() => { void refresh(); }, [refresh]);
+
+  // Keep each retention badge current while the Trash page remains open.
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const retentionLabel = (deletedAt: string | null | undefined) => {
+    const deletedTime = deletedAt ? new Date(deletedAt).getTime() : Number.NaN;
+    if (!Number.isFinite(deletedTime)) return 'Retention date unavailable';
+    const remaining = deletedTime + 30 * 24 * 60 * 60 * 1000 - now;
+    if (remaining <= 0) return 'Deletion overdue';
+    const days = Math.ceil(remaining / (24 * 60 * 60 * 1000));
+    return `Deletes in ${days} day${days === 1 ? '' : 's'}`;
+  };
 
   const visibleDocuments = useMemo(() => {
     const term = search.trim().toLocaleLowerCase();
@@ -126,7 +142,7 @@ export default function TrashPage() {
                     </td>
                     <td className="px-5 py-4 text-stone-600">{[doc.student?.lastName, doc.student?.firstName].filter(Boolean).join(', ') || '—'}</td>
                     <td className="px-5 py-4 text-stone-600">{doc.documentCategories?.docuName || '—'}</td>
-                    <td className="whitespace-nowrap px-5 py-4 text-stone-500">{formatDate(doc.updatedAt)}</td>
+                    <td className="whitespace-nowrap px-5 py-4 text-stone-500"><div>{formatDate(doc.updatedAt)}</div><span className={`mt-1 inline-flex rounded-full px-2 py-1 text-xs font-medium ${retentionLabel(doc.updatedAt) === 'Deletion overdue' ? 'bg-red-100 text-red-700' : 'bg-amber-50 text-amber-700'}`} aria-label={`30-day retention: ${retentionLabel(doc.updatedAt)}`}>{retentionLabel(doc.updatedAt)}</span></td>
                     <td className="px-5 py-4"><div className="flex justify-end gap-1">
                       {/\.pdf$/i.test(doc.filename || '') && <Button variant="ghost" size="icon" title="View PDF" aria-label={`View ${doc.filename}`} onClick={() => setPreview(doc)}><Eye className="size-4" /></Button>}
                       <Button variant="outline" size="sm" onClick={() => setPending({ kind: 'restore', document: doc })}><RotateCcw className="mr-2 size-4" />Restore</Button>
