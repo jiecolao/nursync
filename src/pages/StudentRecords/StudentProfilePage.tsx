@@ -180,7 +180,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 /* ------------------------------------------------------------------ */
 
 export default function StudentProfilePage() {
-  const { studentUuid } = useParams<{ studentUuid: string }>();
+  const { batchNo = "", studentUuid } = useParams<{ batchNo: string; studentUuid: string }>();
   const [saved, setSaved] = useState<Student>(EMPTY_STUDENT);
   const [draft, setDraft] = useState<Student>(EMPTY_STUDENT);
   const [genders, setGenders] = useState<Gender[]>([]);
@@ -357,7 +357,7 @@ export default function StudentProfilePage() {
       }
       setConfirmOpen(false);
       notify.success("Student deleted");
-      navigate("/students");
+      navigate(`/records/${encodeURIComponent(batchNo)}`);
     } catch (cause) {
       notify.error("Unable to delete student", {
         description: cause instanceof Error ? cause.message : "Please try again.",
