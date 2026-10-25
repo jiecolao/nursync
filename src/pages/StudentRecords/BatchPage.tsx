@@ -395,7 +395,7 @@ export default function BatchPage(){
                 enableRowSelection={true}
                 pageSizeOptions={[10, 20, 50]}
                 defaultVisibleColumnIds={["student_id", "full_name", "dob", "is_non_graduate"]}
-                onRowClick={(student) => navigate(`/students/profile/${student.student_uuid}`)}
+                onRowClick={(student) => navigate(`/records/${encodeURIComponent(batchNo)}/${student.student_uuid}`)}
               />
               {isImportOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="presentation">
