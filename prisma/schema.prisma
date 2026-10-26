@@ -64,10 +64,8 @@ model UserAccountRole {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  userAccount          UserAccount           @relation(fields: [userAccId], references: [userAccId])
-  role                 Role                  @relation(fields: [roleId], references: [roleId])
-  fileModificationLogs FileModificationLog[]
-  activityLogs         ActivityLog[]
+  userAccount UserAccount @relation(fields: [userAccId], references: [userAccId])
+  role        Role        @relation(fields: [roleId], references: [roleId])
 
   @@id([userAccId, roleId])
   @@map("User_account_roles")
@@ -114,8 +112,6 @@ model FileModificationLog {
   fileLoc      String   @map("file_loc") @db.Text
   createdAt    DateTime @default(now()) @map("created_at")
 
-  user UserAccountRole @relation(fields: [userAccId, roleId], references: [userAccId, roleId])
-
   @@map("File_modification_logs")
 }
 
@@ -127,8 +123,6 @@ model ActivityLog {
   action       String   @db.Text
   description  String   @db.Text
   createdAt    DateTime @default(now()) @map("created_at")
-
-  user UserAccountRole @relation(fields: [userAccId, roleId], references: [userAccId, roleId])
 
   @@map("Activity_logs")
 }

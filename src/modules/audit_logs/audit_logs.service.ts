@@ -5,14 +5,6 @@ import { CreateActivityLogDto } from './dto/create-activity-log.dto';
 import { CreateFileModificationLogDto } from './dto/create-file-modification-log.dto';
 import { getFileModificationFilename } from './file-modification.util';
 
-const activityLogInclude = {
-  user: { include: { role: true, userAccount: true } },
-} as const;
-
-const fileModificationLogInclude = {
-  user: { include: { role: true, userAccount: true } },
-} as const;
-
 type TransactionClient = Prisma.TransactionClient;
 
 @Injectable()
@@ -37,7 +29,6 @@ export class AuditLogsService {
 
   getActivityLogs() {
     return this.prisma.activityLog.findMany({
-      include: activityLogInclude,
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -45,7 +36,6 @@ export class AuditLogsService {
   async getActivityLog(activityUuid: string) {
     const log = await this.prisma.activityLog.findUnique({
       where: { activityUuid },
-      include: activityLogInclude,
     });
     if (!log) throw new NotFoundException('Activity log not found');
     return log;
@@ -71,7 +61,6 @@ export class AuditLogsService {
         action: body.action,
         description,
       },
-      include: activityLogInclude,
     });
   }
 
@@ -84,7 +73,6 @@ export class AuditLogsService {
 
   async getFileModificationLogs() {
     const logs = await this.prisma.fileModificationLog.findMany({
-      include: fileModificationLogInclude,
       orderBy: { createdAt: 'desc' },
     });
 
@@ -97,7 +85,6 @@ export class AuditLogsService {
   async getFileModificationLog(fileModUuid: string) {
     const log = await this.prisma.fileModificationLog.findUnique({
       where: { fileModUuid },
-      include: fileModificationLogInclude,
     });
     if (!log) throw new NotFoundException('File modification log not found');
     return log;
@@ -126,7 +113,6 @@ export class AuditLogsService {
         fileModified: body.fileModified || state,
         fileLoc: body.fileLoc,
       },
-      include: fileModificationLogInclude,
     });
   }
 
