@@ -101,6 +101,9 @@ echo Backend:  http://localhost:5151
 echo Press Ctrl+C to stop the development servers.
 echo.
 
+:: Launch browser in background after a 3-second delay to allow Vite to boot up
+start /b cmd /c "timeout /t 3 /nobreak >nul && start http://localhost:5173/"
+
 call npm.cmd run dev
 set "EXIT_CODE=%ERRORLEVEL%"
 
