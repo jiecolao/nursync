@@ -37,6 +37,7 @@ export class AuthService {
         suffix: account.user.suffix,
         genderId: account.user.genderId,
         genderName: account.user.gender?.genderName ?? null,
+        photoPath: account.user.photoPath,
         createdAt: account.user.createdAt.toISOString(),
         status: account.status,
       },

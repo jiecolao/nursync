@@ -4,6 +4,8 @@ import { AppModule } from './app.module';
 import { PrismaClientExceptionFilter } from './integrations/prisma/prisma.filter';
 import cookieParser from 'cookie-parser';
 import { ValidationPipe } from '@nestjs/common';
+import express from 'express';
+import path from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -16,6 +18,10 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api');
   app.use(cookieParser())
+  app.getHttpAdapter().getInstance().use(
+    '/admin-profile-pictures',
+    express.static(path.resolve(process.env.ADMIN_PROFILE_PIC_PATH || './Database/Admin/Pictures')),
+  );
 
   app.enableCors({
     origin: process.env.FRONTEND_ORIGIN ?? `http://localhost:${frontend}`,

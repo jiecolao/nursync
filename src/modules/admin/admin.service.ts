@@ -5,6 +5,9 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
+import { promises as fs } from 'fs';
+import path from 'path';
+import type { Express } from 'express';
 import { PrismaService } from '../../integrations/prisma/prisma.service';
 import { CreateAdminDto } from './dto/create-admin.dto';
 import { UpdateAdminDto } from './dto/update-admin.dto';
@@ -36,6 +39,7 @@ const adminSelect = {
   middleName: true,
   suffix: true,
   genderId: true,
+  photoPath: true,
   createdAt: true,
   updatedAt: true,
   account: {
@@ -163,6 +167,71 @@ export class AdminService {
     });
     if (!account) throw new NotFoundException('User account not found');
     return this.updateAdmin(account.userId, body, userAccId);
+  }
+
+  async updateOwnProfilePhoto(userAccId: string, photo?: Express.Multer.File) {
+    if (!photo) throw new BadRequestException('An image file is required');
+
+    const account = await this.prisma.userAccount.findUnique({
+      where: { userAccId },
+      select: { userId: true, user: { select: { lastName: true, photoPath: true } } },
+    });
+    if (!account) throw new NotFoundException('User account not found');
+
+    const directory = path.resolve(process.env.ADMIN_PROFILE_PIC_PATH || './Database/Admin/Pictures');
+    await fs.mkdir(directory, { recursive: true });
+
+    const extension = this.imageExtension(photo.mimetype);
+    const fileName = `${this.sanitizeLastName(account.user.lastName)}_${account.userId.slice(-4)}.${extension}`;
+    const targetPath = path.join(directory, fileName);
+    const relativePath = `/admin-profile-pictures/${encodeURIComponent(fileName)}`;
+
+    await fs.writeFile(targetPath, photo.buffer);
+    try {
+      const updated = await this.prisma.$transaction(async (tx) => {
+        const result = await tx.user.update({
+          where: { userId: account.userId },
+          data: { photoPath: relativePath },
+          select: { photoPath: true },
+        });
+        const actor = await this.LogsService.resolveActorInTransaction(tx, userAccId);
+        await this.LogsService.createActivityLogInTransaction(
+          tx,
+          { userAccId: actor.userAccId, roleId: actor.roleId, action: 'admin.photo_update' },
+          actor.adminName,
+          JSON.stringify({ userId: account.userId, photoPath: relativePath }),
+        );
+        return result;
+      });
+
+      if (account.user.photoPath && account.user.photoPath !== relativePath) {
+        const oldFileName = decodeURIComponent(path.basename(account.user.photoPath));
+        if (oldFileName !== fileName) {
+          await fs.rm(path.join(directory, oldFileName), { force: true });
+        }
+      }
+      return updated;
+    } catch (error) {
+      await fs.rm(targetPath, { force: true });
+      throw error;
+    }
+  }
+
+  private sanitizeLastName(lastName: string) {
+    const sanitized = lastName.toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    return sanitized || 'USER';
+  }
+
+  private imageExtension(mimeType: string) {
+    const extensions: Record<string, string> = {
+      'image/jpeg': 'jpg',
+      'image/png': 'png',
+      'image/gif': 'gif',
+      'image/webp': 'webp',
+      'image/bmp': 'bmp',
+      'image/avif': 'avif',
+    };
+    return extensions[mimeType.toLowerCase()] ?? 'bin';
   }
 
   async updateOwnPassword(userAccId: string, currentPassword: string, newPassword: string) {

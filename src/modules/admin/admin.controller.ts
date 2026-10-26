@@ -1,6 +1,10 @@
 import {
   Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Put, UseGuards, Req,
+  UploadedFile, UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
+import type { Express } from 'express';
 import type { Request } from 'express';
 type AuthenticatedRequest = Request & { user: { sub: string } };
 import { AdminService } from './admin.service';
@@ -20,6 +24,21 @@ export class AdminController {
   @Put('me/profile')
   updateOwnProfile(@Body() admin: UpdateAdminDto, @Req() req: AuthenticatedRequest) {
     return this.adminService.updateOwnProfile(req.user.sub, admin);
+  }
+
+  @Put('me/profile-photo')
+  @UseInterceptors(FileInterceptor('photo', {
+    storage: memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: (_req, file, callback) => {
+      callback(null, /^image\/(jpeg|png|gif|webp|bmp|avif)$/i.test(file.mimetype));
+    },
+  }))
+  updateOwnProfilePhoto(
+    @UploadedFile() photo: Express.Multer.File | undefined,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.adminService.updateOwnProfilePhoto(req.user.sub, photo);
   }
 
   @Put('me/password')

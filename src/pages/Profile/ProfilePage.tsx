@@ -34,7 +34,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { authRequest, type AuthUser } from "@/lib/auth";
+import { API_BASE, authRequest, type AuthUser } from "@/lib/auth";
 
 /* ------------------------------------------------------------------ */
 /* Types (mirrors the ERD)                                             */
@@ -44,6 +44,7 @@ type Status = "active" | "inactive" | "disabled";
 
 interface Faculty {
   image: string | null;
+  photoPath: string | null;
   faculty_id: string;
   username: string;
   last_name: string;
@@ -63,6 +64,7 @@ const GENDERS = [
 
 const INITIAL_FACULTY: Faculty = {
   image: null,
+  photoPath: null,
   faculty_id: "FAC-2019-0042",
   username: "mreyes",
   last_name: "Reyes",
@@ -290,6 +292,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -304,7 +307,8 @@ export default function ProfilePage() {
         if (!profile) throw new Error("Your profile details are unavailable.");
 
         const faculty: Faculty = {
-          image: null,
+          image: profile.photoPath ? `${API_BASE}${profile.photoPath}` : null,
+          photoPath: profile.photoPath,
           faculty_id: profile.facultyId ?? "",
           username: profile.username,
           last_name: profile.lastName,
@@ -318,6 +322,7 @@ export default function ProfilePage() {
         };
         setSaved(faculty);
         setDraft(faculty);
+        setPhotoFile(null);
         setLoadError(null);
       } catch (cause) {
         if (cause instanceof DOMException && cause.name === "AbortError") return;
@@ -339,6 +344,7 @@ export default function ProfilePage() {
 
   const startEdit = () => {
     setDraft(saved);
+    setPhotoFile(null);
     setErrors({});
     setNotice(null);
     setEditing(true);
@@ -346,6 +352,7 @@ export default function ProfilePage() {
 
   const cancelEdit = () => {
     setDraft(saved);
+    setPhotoFile(null);
     setErrors({});
     setEditing(false);
   };
@@ -373,11 +380,20 @@ export default function ProfilePage() {
           email: draft.email.trim(),
         }),
       });
+      if (photoFile) {
+        const formData = new FormData();
+        formData.append("photo", photoFile);
+        await authRequest("/api/admin/me/profile-photo", {
+          method: "PUT",
+          body: formData,
+        });
+      }
       const updated = await authRequest<{ user: AuthUser }>("/api/auth/session");
       const profile = updated.user.profile;
       if (!profile) throw new Error("Updated profile details are unavailable.");
       const faculty: Faculty = {
-        image: draft.image,
+        image: profile.photoPath ? `${API_BASE}${profile.photoPath}` : null,
+        photoPath: profile.photoPath,
         faculty_id: profile.facultyId ?? "",
         username: profile.username,
         last_name: profile.lastName,
@@ -420,6 +436,7 @@ export default function ProfilePage() {
   const pickImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setPhotoFile(file);
     const reader = new FileReader();
     reader.onload = () => set("image", reader.result as string);
     reader.readAsDataURL(file);

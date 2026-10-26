@@ -15,6 +15,7 @@ export type AuthUser = {
     suffix: string | null;
     genderId: number | null;
     genderName: string | null;
+    photoPath: string | null;
     createdAt: string;
     status: boolean;
   };
@@ -43,7 +44,9 @@ export async function authRequest<T>(path: string, init: RequestInit = {}): Prom
   const request = () => fetch(`${API_BASE}${path}`, {
     ...init,
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json', ...init.headers },
+    headers: init.body instanceof FormData
+      ? init.headers
+      : { 'Content-Type': 'application/json', ...init.headers },
   });
 
   let response = await request();
