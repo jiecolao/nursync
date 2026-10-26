@@ -2,6 +2,7 @@
 CREATE TABLE `Users` (
     `user_id` VARCHAR(64) NOT NULL,
     `faculty_id` VARCHAR(20) NULL,
+    `photo_path` TEXT NULL,
     `last_name` VARCHAR(255) NOT NULL,
     `fast_name` VARCHAR(255) NOT NULL,
     `middle_name` VARCHAR(255) NULL,
