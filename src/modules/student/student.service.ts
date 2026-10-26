@@ -44,6 +44,16 @@ function studentFolderFor(student: {
   return folder;
 }
 
+async function ensureBatchFolder(yrGraduated: number | null) {
+  if (yrGraduated === null) return;
+
+  const batchPath = path.resolve(STUDENT_DOCUMENTS_ROOT, batchFolderFor({ yrGraduated }));
+  if (!batchPath.startsWith(STUDENT_DOCUMENTS_ROOT + path.sep)) {
+    throw new Error("Invalid student batch directory path.");
+  }
+  await fs.mkdir(batchPath, { recursive: true });
+}
+
 @Injectable()
 export class StudentService {
   constructor(
@@ -111,7 +121,7 @@ export class StudentService {
   }
 
   async updateProfile(studUuid: string, body: UpdateStudentDto, actorUserId: string) {
-    return this.prisma.$transaction(async (tx) => {
+    const updated = await this.prisma.$transaction(async (tx) => {
       const actor = await this.auditLogs.resolveActorInTransaction(tx, actorUserId);
       const oldState = await tx.student.findUnique({ where: { studentUuid: studUuid } });
       if (!oldState) throw new NotFoundException('Student not found');
@@ -129,6 +139,14 @@ export class StudentService {
       }, actor.adminName, JSON.stringify({ studentUuid: studUuid, changedFields: Object.keys(body).filter((key) => key !== 'password') }));
       return updated;
     });
+
+    if (Object.prototype.hasOwnProperty.call(body, "yrGraduated")
+      && body.yrGraduated !== null
+      && body.yrGraduated !== undefined) {
+      await ensureBatchFolder(body.yrGraduated);
+    }
+
+    return updated;
   }
 
   async deleteProfile(studentUuid: string, actorUserId: string) {
