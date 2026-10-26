@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
 import { Download, FileSpreadsheet, Upload, X } from "lucide-react";
+import { normalizeFirstName } from "@/lib/utils";
 
 type PreviewRow = { row: number; payload: Record<string, unknown>; errors: string[] };
 
@@ -43,7 +44,7 @@ export default function StudentImportDialog({ open, onOpenChange, onComplete }: 
       const parsed = source.map((sourceRow, index) => {
         const values = new Map(Object.entries(sourceRow).map(([key, value]) => [normalize(key), value]));
         const get = (key: string) => { const alias = aliases[key].find((candidate) => values.has(candidate)); return alias ? String(values.get(alias) ?? "").trim() : ""; };
-        const firstName = get("firstName"), lastName = get("lastName"), middleName = get("middleName");
+        const firstName = normalizeFirstName(get("firstName")), lastName = get("lastName"), middleName = get("middleName");
         const yrAdmitted = Number(get("yrAdmitted")), yrResidency = Number(get("yrResidency"));
         const optionalInt = (key: string) => get(key) ? Number(get(key)) : undefined;
         const genderId = optionalInt("genderId"), yrGraduated = optionalInt("yrGraduated");

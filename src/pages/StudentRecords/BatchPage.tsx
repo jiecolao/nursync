@@ -14,7 +14,7 @@ import { DialogBox } from "@/components/layout/DialogBox";
 import { AddStudentPanel } from "./AddStudentPanel";
 import { useNavigate, useParams, type NavigateFunction } from "react-router-dom";
 import { notify } from "@/components/layout/Toasty";
-import { parseSafeDate } from "@/lib/utils";
+import { normalizeFirstName, parseSafeDate } from "@/lib/utils";
 
 
 function toStudentTableRecord(student: StudentApiRecord): StudentTableType {
@@ -221,7 +221,7 @@ export default function BatchPage(){
           return null;
         };
         const studentId = get("studentId");
-        const firstName = get("firstName");
+        const firstName = normalizeFirstName(get("firstName"));
         const lastName = get("lastName");
         const middleName = get("middleName");
         const genderId = parseOptionalInteger("genderId");

@@ -27,6 +27,13 @@ function batchFolderFor(student: {
   return "NON-GRADUATE";
 }
 
+function normalizeFirstName(firstName: string) {
+  const trimmed = firstName.trim().replace(/\s+/g, " ");
+  return trimmed
+    ? trimmed.charAt(0).toLocaleUpperCase() + trimmed.slice(1).toLocaleLowerCase()
+    : trimmed;
+}
+
 function studentFolderFor(student: {
   firstName: string;
   middleName?: string | null;
@@ -82,7 +89,7 @@ export class StudentService {
     const student = await this.prisma.$transaction(async (tx) => {
       const actor = await this.auditLogs.resolveActorInTransaction(tx, actorUserId);
       const created = await tx.student.create({ data: {
-        studentId: body.studentId, firstName: body.firstName, lastName: body.lastName.toUpperCase(),
+        studentId: body.studentId, firstName: normalizeFirstName(body.firstName), lastName: body.lastName.toUpperCase(),
         middleName: body.middleName,
         gender: body.genderId ? { connect: { genderId: body.genderId } } : undefined,
         dob: body.dob ? new Date(body.dob) : undefined, contactNo: body.contactNo,
@@ -115,7 +122,7 @@ export class StudentService {
       const oldState = await tx.student.findUnique({ where: { studentUuid: studUuid } });
       if (!oldState) throw new NotFoundException('Student not found');
       const updateData: UpdateStudentDto = {
-        studentId: body.studentId, firstName: body.firstName, lastName: body.lastName?.toUpperCase(),
+        studentId: body.studentId, firstName: body.firstName === undefined ? undefined : normalizeFirstName(body.firstName), lastName: body.lastName?.toUpperCase(),
         middleName: body.middleName, genderId: body.genderId,
         dob: body.dob ? new Date(body.dob) : undefined, contactNo: body.contactNo,
         email: body.email, provincialAddr: body.provincialAddr, cityAddr: body.cityAddr,

@@ -35,7 +35,7 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useNavigate, useParams } from "react-router-dom";
-import { formatDateTime, formatDate } from "@/lib/utils";
+import { formatDateTime, formatDate, normalizeFirstName } from "@/lib/utils";
 import { notify } from "@/components/layout/Toasty";
 import { DataTable, type DataTableAction } from "@/components/layout/DataTable";
 import { DocumentsTableType } from "./student.type";
@@ -134,7 +134,7 @@ function toStudent(student: ApiStudent): Student {
     student_uuid: student.studentUuid,
     student_id: student.studentId ?? "",
     last_name: student.lastName.toUpperCase(),
-    first_name: student.firstName,
+    first_name: normalizeFirstName(student.firstName),
     middle_name: student.middleName ?? "",
     gender_id: student.genderId,
     dob: student.dob ? student.dob.slice(0, 10) : "",
@@ -291,7 +291,7 @@ export default function StudentProfilePage() {
         body: JSON.stringify({
           studentId: draft.student_id || undefined,
           lastName: draft.last_name.trim().toUpperCase(),
-          firstName: draft.first_name.trim(),
+          firstName: normalizeFirstName(draft.first_name),
           middleName: draft.middle_name?.trim() || undefined,
           genderId: draft.gender_id ?? undefined,
           dob: draft.dob || undefined,
