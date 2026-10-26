@@ -39,7 +39,7 @@ export default function StudentImportDialog({ open, onOpenChange, onComplete }: 
         middleName:["middlename"], genderId:["genderid","gender"], dob:["dob","dateofbirth","birthdate"], contactNo:["contactno","contactnumber","phonenumber","phone"],
         email:["email","emailaddress"], provincialAddr:["provincialaddr","provincialaddress"], cityAddr:["cityaddr","cityaddress"],
         yrAdmitted:["yradmitted","yearadmitted","admittedyear"], yrResidency:["yrresidency","yearresidency","yearofresidency","residencyyear"],
-        yrGraduated:["yrgraduated","yeargraduated","graduationyear"], isNonGraduate:["isnongraduate","nongraduate"]
+        yrGraduated:["yrgraduated","yeargraduated","graduationyear"]
       };
       const parsed = source.map((sourceRow, index) => {
         const values = new Map(Object.entries(sourceRow).map(([key, value]) => [normalize(key), value]));
@@ -48,8 +48,6 @@ export default function StudentImportDialog({ open, onOpenChange, onComplete }: 
         const yrAdmitted = Number(get("yrAdmitted")), yrResidency = Number(get("yrResidency"));
         const optionalInt = (key: string) => get(key) ? Number(get(key)) : undefined;
         const genderId = optionalInt("genderId"), yrGraduated = optionalInt("yrGraduated");
-        const boolValue = get("isNonGraduate").toLowerCase();
-        const isNonGraduate = !boolValue ? undefined : ["true","1","yes"].includes(boolValue) ? true : ["false","0","no"].includes(boolValue) ? false : null;
         const errors: string[] = [];
         if (!firstName) errors.push("First Name is required.");
         if (!lastName) errors.push("Last Name is required.");
@@ -58,7 +56,6 @@ export default function StudentImportDialog({ open, onOpenChange, onComplete }: 
         if (get("email") && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(get("email"))) errors.push("Email address is invalid.");
         if (genderId !== undefined && !Number.isInteger(genderId)) errors.push("Gender ID must be a whole number.");
         if (yrGraduated !== undefined && !Number.isInteger(yrGraduated)) errors.push("Year Graduated must be a whole number.");
-        if (isNonGraduate === null) errors.push("Is Non-Graduate must be true or false.");
         const date = get("dob") ? new Date(get("dob")) : null;
         if (date && Number.isNaN(date.getTime())) errors.push("Date of Birth is invalid.");
         const payload: Record<string, unknown> = { firstName, lastName, yrAdmitted, yrResidency };
@@ -67,7 +64,6 @@ export default function StudentImportDialog({ open, onOpenChange, onComplete }: 
         if (genderId !== undefined && Number.isInteger(genderId)) payload.genderId = genderId;
         if (date && !Number.isNaN(date.getTime())) payload.dob = date.toISOString();
         if (yrGraduated !== undefined && Number.isInteger(yrGraduated)) payload.yrGraduated = yrGraduated;
-        if (isNonGraduate !== undefined && isNonGraduate !== null) payload.isNonGraduate = isNonGraduate;
         return { row: index + 2, payload, errors };
       });
       const response = await fetch("/api/student", { credentials: "include" });
@@ -160,7 +156,6 @@ export default function StudentImportDialog({ open, onOpenChange, onComplete }: 
               <tr><td className="px-3 py-2 font-medium">yrAdmitted</td><td className="px-3 py-2">Required whole year from 1900 to 2100</td><td className="px-3 py-2"><code>2026</code></td></tr>
               <tr><td className="px-3 py-2 font-medium">yrResidency</td><td className="px-3 py-2">Required whole number</td><td className="px-3 py-2"><code>1</code></td></tr>
               <tr><td className="px-3 py-2 font-medium">yrGraduated</td><td className="px-3 py-2">Optional whole-number year</td><td className="px-3 py-2"><code>2026</code></td></tr>
-              <tr><td className="px-3 py-2 font-medium">isNonGraduate</td><td className="px-3 py-2">Optional boolean: <code>true/false</code>, <code>yes/no</code>, or <code>1/0</code></td><td className="px-3 py-2"><code>false</code></td></tr>
             </tbody>
           </table>
         </div>

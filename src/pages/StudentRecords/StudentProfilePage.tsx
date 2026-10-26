@@ -32,7 +32,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useNavigate, useParams } from "react-router-dom";
 import { formatDateTime, formatDate, normalizeFirstName } from "@/lib/utils";
@@ -64,7 +63,6 @@ interface Student {
   yr_admitted: number | null;
   yr_residency: number | null;
   yr_graduated?: number | null;
-  is_non_graduate: boolean;
   status: Status;
   created_at: string; // ISO
   updated_at: string; // ISO
@@ -85,7 +83,6 @@ type ApiStudent = {
   yrAdmitted: number;
   yrResidency: number;
   yrGraduated?: number | null;
-  isNonGraduate?: boolean;
   status?: boolean;
   createdAt?: string;
   updatedAt?: string;
@@ -97,7 +94,7 @@ const EMPTY_STUDENT: Student = {
   image: null, student_uuid: "", student_id: "", last_name: "", first_name: "",
   middle_name: "", gender_id: null, dob: "", contact_no: "", email: "",
   provincial_addr: "", city_addr: "", yr_admitted: null, yr_residency: null,
-  yr_graduated: null, is_non_graduate: false, status: "active",
+  yr_graduated: null, status: "active",
   created_at: "", updated_at: "",
 };
 
@@ -145,7 +142,6 @@ function toStudent(student: ApiStudent): Student {
     yr_admitted: student.yrAdmitted,
     yr_residency: student.yrResidency,
     yr_graduated: student.yrGraduated,
-    is_non_graduate: student.isNonGraduate ?? false,
     status: student.status === false ? "disabled" : "active",
     created_at: student.createdAt ?? "",
     updated_at: student.updatedAt ?? "",
@@ -301,8 +297,9 @@ export default function StudentProfilePage() {
           cityAddr: draft.city_addr?.trim() || undefined,
           yrAdmitted: draft.yr_admitted,
           yrResidency: draft.yr_residency,
-          yrGraduated: draft.yr_graduated ?? undefined,
-          isNonGraduate: draft.is_non_graduate,
+          // Send null explicitly so clearing the field is persisted instead of
+          // being treated as an omitted partial-update property.
+          yrGraduated: draft.yr_graduated,
         }),
       });
       if (!response.ok) {
@@ -426,7 +423,7 @@ export default function StudentProfilePage() {
               <Badge variant="outline" className={`capitalize ${STATUS_STYLES[saved.status]}`}>
                 {saved.status}
               </Badge>
-              {s.is_non_graduate && (
+              {s.yr_graduated === null && (
                 <Badge variant="outline" className="border-white/40 text-inherit">
                   HD
                 </Badge>
@@ -638,16 +635,11 @@ export default function StudentProfilePage() {
                 <ReadValue value={s.yr_graduated} />
               )}
             </Field>
-            <Field label="Non Graduate?" htmlFor="is_non_graduating" className="md:col-span-3">
-              <div className={`flex min-h-9 items-center gap-3 rounded-md px-2 ${fieldClass("is_non_graduate")}`}>
-                <Switch
-                  id="is_non_graduating"
-                  checked={s.is_non_graduate}
-                  disabled={!editing}
-                  onCheckedChange={(v) => set("is_non_graduate", v)}
-                  className="data-[state=checked]:bg-[var(--color-primary)]"
-                />
-                <span className="text-[15px] text-neutral-900">{s.is_non_graduate ? "Yes" : "No"}</span>
+            <Field label="Graduation status" className="md:col-span-3">
+              <div className="flex min-h-9 items-center">
+                <span className="text-[15px] text-neutral-900">
+                  {s.yr_graduated === null ? "Active / non-graduate" : "Graduated"}
+                </span>
               </div>
             </Field>
             <Field label="Status" className="md:col-span-3">

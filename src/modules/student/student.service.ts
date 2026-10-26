@@ -13,17 +13,11 @@ const STUDENT_DOCUMENTS_ROOT = path.resolve(
 
 function batchFolderFor(student: {
   yrGraduated: number | null;
-  isNonGraduate?: boolean | null;
 }) {
-  if (student.isNonGraduate) {
-    return "NON-GRADUATE";
-  }
-
   if (student.yrGraduated) {
     return `BATCH ${student.yrGraduated}`;
   }
 
-  // TODO: Any non-graduates and no yr graduates automatically falls in this. 
   return "NON-GRADUATE";
 }
 
@@ -95,7 +89,7 @@ export class StudentService {
         dob: body.dob ? new Date(body.dob) : undefined, contactNo: body.contactNo,
         email: body.email, provincialAddr: body.provincialAddr, cityAddr: body.cityAddr,
         yrAdmitted: body.yrAdmitted, yrResidency: body.yrResidency,
-        yrGraduated: body.yrGraduated, isNonGraduate: body.isNonGraduate, status: body.status,
+        yrGraduated: body.yrGraduated, status: body.status,
       }});
       await this.auditLogs.createActivityLogInTransaction(tx, {
         userAccId: actor.userAccId, roleId: actor.roleId, action: 'student.create',
@@ -127,7 +121,7 @@ export class StudentService {
         dob: body.dob ? new Date(body.dob) : undefined, contactNo: body.contactNo,
         email: body.email, provincialAddr: body.provincialAddr, cityAddr: body.cityAddr,
         yrAdmitted: body.yrAdmitted, yrResidency: body.yrResidency,
-        yrGraduated: body.yrGraduated, isNonGraduate: body.isNonGraduate, status: body.status,
+        yrGraduated: body.yrGraduated, status: body.status,
       };
       const updated = await tx.student.update({ where: { studentUuid: studUuid }, data: updateData });
       await this.auditLogs.createActivityLogInTransaction(tx, {

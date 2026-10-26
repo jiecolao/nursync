@@ -51,7 +51,6 @@ export class StudentBulkImportService {
         firstName: true,
         middleName: true,
         yrGraduated: true,
-        isNonGraduate: true,
       },
     });
     const items = await Promise.all(paths.map(async (raw) => {
@@ -88,11 +87,11 @@ export class StudentBulkImportService {
           : 'No matching student found. Create the student record before importing their documents.' };
       }
       const matchedStudent = matches[0];
-      const isNonGraduateBatch = /^NON-GRADUATE$/i.test(batchFolder);
-      if (isNonGraduateBatch && !matchedStudent.isNonGraduate) {
-        return { path: raw, valid: false, reason: 'Student is not marked as a non-graduate in the database.' };
+      const nonGraduateFolder = /^NON-GRADUATE$/i.test(batchFolder);
+      if (nonGraduateFolder && matchedStudent.yrGraduated !== null) {
+        return { path: raw, valid: false, reason: 'Student has a graduation year and belongs to a batch folder.' };
       }
-      if (!isNonGraduateBatch && (matchedStudent.isNonGraduate || Number(matchedStudent.yrGraduated) !== Number(batchFolder.replace(/^BATCH\s+/i, '')))) {
+      if (!nonGraduateFolder && (matchedStudent.yrGraduated === null || Number(matchedStudent.yrGraduated) !== Number(batchFolder.replace(/^BATCH\s+/i, '')))) {
         return { path: raw, valid: false, reason: 'Batch year does not match the student graduation year in the database.' };
       }
       const name = sanitize(path.basename(filename));

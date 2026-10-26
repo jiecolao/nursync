@@ -33,7 +33,6 @@ function toStudentTableRecord(student: StudentApiRecord): StudentTableType {
     yr_admitted: student.yrAdmitted,
     yr_residency: student.yrResidency,
     yr_graduated: student.yrGraduated ?? 0,
-    is_non_graduate: student.isNonGraduate ? "Yes" : "No",
     status: student.status,
     created_at: student.createdAt,
     date_modified: student.updatedAt,
@@ -49,7 +48,7 @@ function createColumns(navigate: NavigateFunction, batchNo: string): ColumnDef<S
     accessorFn: (row) => `${row.last_name.toUpperCase()}, ${row.first_name} ${row.middle_name}`,
   },
   { accessorKey: "dob", header: "Date of Birth" },
-  { accessorKey: "is_non_graduate", header: "Non-Graduate" },
+  { accessorKey: "yr_graduated", header: "Year Graduated" },
   { 
     id: "actions", 
     enableHiding: false, 
@@ -183,7 +182,6 @@ export default function BatchPage(){
     yrAdmitted: ["yradmitted", "yearadmitted", "admittedyear"],
     yrResidency: ["yrresidency", "yearresidency", "yearofresidency", "residencyyear"],
     yrGraduated: ["yrgraduated", "yeargraduated", "graduationyear"],
-    isNonGraduate: ["isnongraduate", "nongraduate"],
   };
 
   const handleImportFile = async (file?: File) => {
@@ -213,13 +211,6 @@ export default function BatchPage(){
           const value = get(key);
           return value ? Number(value) : undefined;
         };
-        const parseOptionalBoolean = (key: string) => {
-          const value = get(key).toLowerCase();
-          if (!value) return undefined;
-          if (["true", "1", "yes"].includes(value)) return true;
-          if (["false", "0", "no"].includes(value)) return false;
-          return null;
-        };
         const studentId = get("studentId");
         const firstName = normalizeFirstName(get("firstName"));
         const lastName = get("lastName");
@@ -235,7 +226,6 @@ export default function BatchPage(){
         const yrAdmitted = Number(get("yrAdmitted"));
         const yrResidency = Number(get("yrResidency"));
         const yrGraduated = parseOptionalInteger("yrGraduated");
-        const isNonGraduate = parseOptionalBoolean("isNonGraduate");
         const errors: string[] = [];
         if (!firstName) errors.push("First Name is required.");
         if (!lastName) errors.push("Last Name is required.");
@@ -250,7 +240,6 @@ export default function BatchPage(){
         if (!Number.isInteger(yrAdmitted) || yrAdmitted < 1900 || yrAdmitted > 2100) errors.push("Year Admitted must be a year from 1900 to 2100.");
         if (!Number.isInteger(yrResidency)) errors.push("Year of Residency must be a whole number.");
         if (yrGraduated !== undefined && !Number.isInteger(yrGraduated)) errors.push("Year Graduated must be a whole number.");
-        if (isNonGraduate === null) errors.push("Is Non-Graduate must be true or false.");
         const payload: Record<string, unknown> = {
           firstName, lastName, yrAdmitted, yrResidency,
           ...(studentId && { studentId }),
@@ -262,7 +251,6 @@ export default function BatchPage(){
           ...(provincialAddr && { provincialAddr }),
           ...(cityAddr && { cityAddr }),
           ...(yrGraduated !== undefined && Number.isInteger(yrGraduated) && { yrGraduated }),
-          ...(isNonGraduate !== null && isNonGraduate !== undefined && { isNonGraduate }),
         };
         return { row: index + 2, payload, errors };
       });
@@ -396,7 +384,7 @@ export default function BatchPage(){
 
         const records: StudentApiRecord[] = await response.json();
         const normalizedBatch = decodeURIComponent(batchNo).trim().toLocaleUpperCase();
-        const batchRecords = normalizedBatch === "NON-GRADUATE" ? records.filter((student) => student.isNonGraduate) : records.filter((student) => !student.isNonGraduate && String(student.yrGraduated ?? "").trim() === normalizedBatch);
+        const batchRecords = normalizedBatch === "NON-GRADUATE" ? records.filter((student) => student.yrGraduated === null) : records.filter((student) => student.yrGraduated !== null && String(student.yrGraduated).trim() === normalizedBatch);
         setStudents(batchRecords.map(toStudentTableRecord));
       } catch (requestError) {
         if (requestError instanceof DOMException && requestError.name === "AbortError") {
@@ -459,7 +447,6 @@ export default function BatchPage(){
                             <tr><td className="px-3 py-2 font-medium">yrAdmitted</td><td className="px-3 py-2">Required whole year</td><td className="px-3 py-2"><code>2026</code></td></tr>
                             <tr><td className="px-3 py-2 font-medium">yrResidency</td><td className="px-3 py-2">Required whole number</td><td className="px-3 py-2"><code>1</code></td></tr>
                             <tr><td className="px-3 py-2 font-medium">yrGraduated</td><td className="px-3 py-2">Optional whole-number year</td><td className="px-3 py-2"><code>2026</code></td></tr>
-                            <tr><td className="px-3 py-2 font-medium">isNonGraduate</td><td className="px-3 py-2">Optional; <code>true/false</code>, <code>yes/no</code>, or <code>1/0</code></td><td className="px-3 py-2"><code>false</code></td></tr>
                           </tbody>
                         </table>
                       </div>

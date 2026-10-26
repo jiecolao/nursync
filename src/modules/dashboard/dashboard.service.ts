@@ -17,13 +17,12 @@ export class DashboardService {
       documentsByCategory,
     ] = await this.prisma.$transaction([
       this.prisma.student.count(),
-      this.prisma.student.count({ where: { status: true, isNonGraduate: false } }),
-      this.prisma.student.count({ where: { isNonGraduate: true } }),
+      this.prisma.student.count({ where: { status: true } }),
+      this.prisma.student.count({ where: { yrGraduated: null } }),
       this.prisma.student.groupBy({
         by: ['yrGraduated'],
         _count: { _all: true },
         where: {
-          isNonGraduate: false,
           NOT: { yrGraduated: null },
         },
         orderBy: { yrGraduated: 'asc' },

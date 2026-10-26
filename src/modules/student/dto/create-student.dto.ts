@@ -65,11 +65,7 @@ export class CreateStudentDto {
 
   @IsOptional()
   @IsInt()
-  yrGraduated?: number;
-
-  @IsOptional()
-  @IsBoolean()
-  isNonGraduate?: boolean;
+  yrGraduated?: number | null;
 
   @IsOptional()
   @IsBoolean()

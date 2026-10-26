@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { normalizeFirstName } from "@/lib/utils";
-import { Switch } from "@/components/ui/switch";
 import {
   Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader,
   SheetTitle,
@@ -17,13 +16,13 @@ type StudentPayload = {
   studentId?: string; lastName: string; firstName: string; middleName?: string;
   genderId?: number; dob?: string; contactNo?: string; email?: string;
   provincialAddr?: string; cityAddr?: string; yrAdmitted: number;
-  yrResidency: number; yrGraduated?: number; isNonGraduate: boolean;
+  yrResidency: number; yrGraduated?: number;
 };
 
 const emptyForm = {
   studentIdPrefix: "", studentIdSuffix: "", lastName: "", firstName: "", middleName: "", genderId: "",
   dob: "", contactNo: "", email: "", provincialAddr: "", cityAddr: "",
-  yrAdmitted: "", yrResidency: "", yrGraduated: "", isNonGraduate: false,
+  yrAdmitted: "", yrResidency: "", yrGraduated: "",
 };
 
 type Props = {
@@ -74,7 +73,6 @@ export function AddStudentPanel({ open, onOpenChange, onCreated }: Props) {
       firstName: normalizeFirstName(form.firstName),
       yrAdmitted: Number(form.yrAdmitted),
       yrResidency: Number(form.yrResidency),
-      isNonGraduate: form.isNonGraduate,
       ...(studentIdPrefix && studentIdSuffix
         ? { studentId: `${studentIdPrefix}-${studentIdSuffix}` }
         : {}),
@@ -214,11 +212,6 @@ export function AddStudentPanel({ open, onOpenChange, onCreated }: Props) {
               <div className="space-y-2"><Label htmlFor="yrGraduated">Year Graduated</Label>
                 <Input id="yrGraduated" type="number" min="1900" max="2100" step="1" placeholder="e.g. 2026" value={form.yrGraduated}
                   onChange={(e) => setField("yrGraduated", e.target.value)} /></div>
-              <div className="flex items-center justify-between gap-4 rounded-md border p-3">
-                <div><Label htmlFor="isNonGraduate">Non-graduate</Label><p className="text-xs text-muted-foreground">Mark if the student did not graduate.</p></div>
-                <Switch id="isNonGraduate" checked={form.isNonGraduate}
-                  onCheckedChange={(checked) => setField("isNonGraduate", checked)} />
-              </div>
             </div>
           </section>
           {error && <p role="alert" className="text-sm text-destructive">{error}</p>}

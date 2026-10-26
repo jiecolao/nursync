@@ -72,7 +72,6 @@ export default function StudentArchivePage() {
     { accessorKey: "yrAdmitted", header: "Year Admitted" },
     { accessorKey: "yrResidency", header: "Year Residency" },
     { accessorKey: "yrGraduated", header: "Year Graduated" },
-    { accessorKey: "isNonGraduate", header: "Non-Graduate" },
     { accessorKey: "status", header: "Status" },
     { accessorKey: "createdAt", header: "Created At" },
     { accessorKey: "updatedAt", header: "Date Modified" },

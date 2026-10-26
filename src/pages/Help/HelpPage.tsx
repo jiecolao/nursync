@@ -164,7 +164,7 @@ export default function HelpPage() {
               <li><strong>First Name</strong>, <strong>Last Name</strong>, <strong>Year Admitted</strong>, and <strong>Year of Residency</strong> are required. Optional fields may be blank.</li>
               <li>Student ID is optional, but if provided it must contain 4 alphanumeric characters, a hyphen, then at least 5 alphanumeric characters, and be no more than 20 characters (example: <code>2026-12345</code>). IDs must be unique and not already in the system.</li>
               <li>Names may be at most 255 characters. Email must be valid and at most 100 characters; contact number must be at most 50 characters. Gender ID and year fields must be whole numbers; Year Admitted must be 1900–2100. Date of Birth should be a valid <code>YYYY-MM-DD</code> date.</li>
-              <li>For <code>isNonGraduate</code>, use <code>true/false</code>, <code>yes/no</code>, or <code>1/0</code>. Gender IDs are <code>1</code> for Male and <code>2</code> for Female.</li>
+              <li>Leave <code>yrGraduated</code> blank for active/non-graduate students; provide a valid year for graduated students. Gender IDs are <code>1</code> for Male and <code>2</code> for Female.</li>
               <li>Review every row in the validation preview and correct all errors before submitting. The import is blocked while any row is invalid.</li>
             </ol>
           </article>
