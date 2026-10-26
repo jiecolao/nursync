@@ -114,7 +114,6 @@ CREATE TABLE `Students` (
     `yr_admitted` INTEGER NOT NULL,
     `yr_residency` INTEGER NOT NULL,
     `yr_graduated` INTEGER NULL,
-    `is_non_graduate` BOOLEAN NOT NULL DEFAULT false,
     `status` BOOLEAN NOT NULL DEFAULT true,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
