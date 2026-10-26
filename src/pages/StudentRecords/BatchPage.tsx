@@ -142,17 +142,30 @@ export default function BatchPage(){
     },
   ]
 
-  const downloadStudentTemplate = () => {
-    const csv = [
-      "studentID,lastName,firstName,middleName,genderId,dob,contactNo,email,provincialAddr,cityAddr,yrAdmitted,yrResidency,yrGraduated,isNonGraduate",
-      "2026-12345,Santos,Jamie,,1,2000-01-15,09171234567,jamie.santos@example.com,Manila,Cebu,2026,1,,false",
-    ].join("\r\n");
-    const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8;" }));
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "student-import-template.csv";
-    link.click();
-    URL.revokeObjectURL(url);
+  const downloadStudentTemplate = async () => {
+    try {
+      // Points directly to public/templates/import-template.xlsx
+      const response = await fetch('/templates/import-template.xlsx');
+
+      // 1. Check if HTTP status is OK (200) before downloading
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "import-template.xlsx";
+      document.body.appendChild(link);
+      link.click();
+      
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Failed to download template:", error);
+    }
   };
 
   const normalizeHeader = (value: unknown) => String(value ?? "").trim().toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -450,7 +463,7 @@ export default function BatchPage(){
                           </tbody>
                         </table>
                       </div>
-                      <p className="mt-3">A sample row is available from <strong>Download CSV Template</strong>. Header aliases such as <code>studentNo</code>, <code>surname</code>, <code>givenName</code>, and <code>yearAdmitted</code> are also recognized.</p>
+                      <p className="mt-3">A sample row is available from <strong>Download XLSX Template</strong>. Header aliases such as <code>studentNo</code>, <code>surname</code>, <code>givenName</code>, and <code>yearAdmitted</code> are also recognized.</p>
                     </div>
                     <div className="my-5 flex flex-col gap-3">
                       <div
@@ -507,7 +520,7 @@ export default function BatchPage(){
                         </div>
                       )}
                       <Button type="button" variant="outline" className="self-start" onClick={downloadStudentTemplate}>
-                        <Download className="mr-2 size-4" />Download CSV Template
+                        <Download className="mr-2 size-4" />Download XSLX Template
                       </Button>
                     </div>
                     {importMessage && <p role="status" className="mb-3 text-sm">{importMessage}</p>}

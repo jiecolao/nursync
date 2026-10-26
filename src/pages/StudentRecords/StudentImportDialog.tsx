@@ -17,9 +17,10 @@ export default function StudentImportDialog({ open, onOpenChange, onComplete }: 
   const [rows, setRows] = useState<PreviewRow[]>([]);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const [isDraggingFile, setIsDraggingFile] = useState(false);
   if (!open) return null;
 
-  const reset = () => { setFile(null); setRows([]); setMessage(""); if (inputRef.current) inputRef.current.value = ""; };
+  const reset = () => { setFile(null); setRows([]); setMessage(""); setIsDraggingFile(false); if (inputRef.current) inputRef.current.value = ""; };
   const parse = async (selected?: File) => {
     reset();
     if (!selected) return;
@@ -95,10 +96,30 @@ export default function StudentImportDialog({ open, onOpenChange, onComplete }: 
       setMessage(`Loaded ${validated.length} row(s); ${validated.filter((r) => r.errors.length).length} need attention.`);
     } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to read the file."); }
   };
-  const downloadTemplate = () => {
-    const csv = "studentID,lastName,firstName,middleName,genderId,dob,contactNo,email,provincialAddr,cityAddr,yrAdmitted,yrResidency,yrGraduated,isNonGraduate\r\n2026-12345,Santos,Jamie,,1,2000-01-15,09171234567,jamie@example.com,Manila,Cebu,2026,1,,false";
-    const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8;" }));
-    const link = document.createElement("a"); link.href = url; link.download = "student-import-template.csv"; link.click(); URL.revokeObjectURL(url);
+  const downloadTemplate = async () => {
+    try {
+      // Points directly to public/templates/import-template.xlsx
+      const response = await fetch('/templates/import-template.xlsx');
+
+      // 1. Check if HTTP status is OK (200) before downloading
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "import-template.xlsx";
+      document.body.appendChild(link);
+      link.click();
+      
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Failed to download template:", error);
+    }
   };
   const submit = async () => {
     if (!rows.length || rows.some((r) => r.errors.length)) return;
@@ -142,10 +163,41 @@ export default function StudentImportDialog({ open, onOpenChange, onComplete }: 
             </tbody>
           </table>
         </div>
-        <p className="mt-3">A sample row is available from <strong>Download CSV Template</strong>. Header aliases such as <code>studentNo</code>, <code>surname</code>, <code>givenName</code>, and <code>yearAdmitted</code> are also recognized.</p>
+        <p className="mt-3">A sample row is available from <strong>Download XLSX Template</strong>. Header aliases such as <code>studentNo</code>, <code>surname</code>, <code>givenName</code>, and <code>yearAdmitted</code> are also recognized.</p>
       </div>
-      <div className="my-5 rounded-xl border border-dashed p-6 text-center"><input ref={inputRef} type="file" accept=".csv,.xlsx,.xls" className="hidden" onChange={(e) => void parse(e.target.files?.[0])}/><FileSpreadsheet className="mx-auto size-9 text-primary"/><p className="mt-2 text-sm">{file?.name ?? "Choose a CSV or Excel file"}</p><Button className="mt-3" variant="outline" onClick={() => inputRef.current?.click()} disabled={busy}><Upload className="mr-2 size-4" />Choose File</Button></div>
-      <Button variant="outline" size="sm" onClick={downloadTemplate}><Download className="mr-2 size-4"/>Download CSV Template</Button>
+      <div
+        role="button"
+        tabIndex={0}
+        aria-label="Choose a student import file"
+        className={`my-5 rounded-xl border-2 border-dashed p-6 text-center transition-colors ${
+          isDraggingFile
+            ? "border-primary bg-primary/10"
+            : "border-muted-foreground/30 hover:border-primary/60 hover:bg-muted/40"
+        }`}
+        onDragOver={(event) => {
+          event.preventDefault();
+          setIsDraggingFile(true);
+        }}
+        onDragLeave={() => setIsDraggingFile(false)}
+        onDrop={(event) => {
+          event.preventDefault();
+          setIsDraggingFile(false);
+          void parse(event.dataTransfer.files[0]);
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            inputRef.current?.click();
+          }
+        }}
+      >
+        <input ref={inputRef} type="file" accept=".csv,.xlsx,.xls" className="sr-only" onChange={(e) => void parse(e.target.files?.[0])}/>
+        <FileSpreadsheet className="mx-auto size-9 text-primary"/>
+        <p className="mt-2 text-sm">{isDraggingFile ? "Drop your file here" : file?.name ?? "Drag and drop your file here"}</p>
+        <p className="mt-1 text-xs text-muted-foreground">CSV, XLSX, or XLS files only</p>
+        <Button type="button" className="mt-3" variant="outline" onClick={() => inputRef.current?.click()} disabled={busy}><Upload className="mr-2 size-4" />Choose File</Button>
+      </div>
+      <Button variant="outline" size="sm" onClick={downloadTemplate}><Download className="mr-2 size-4"/>Download XLSX Template</Button>
       {message && <p role="status" className="my-3 text-sm">{message}</p>}
       {!!rows.length && <div className="mt-4 max-h-56 overflow-auto rounded border p-3 text-sm"><p className="mb-2 font-medium">{rows.length} row(s)</p>{rows.map((r) => <p key={r.row} className={r.errors.length ? "text-red-600" : "text-green-700"}>Row {r.row}: {String(r.payload.firstName)} {String(r.payload.lastName)}{r.errors.length ? " — " + r.errors.join(" ") : " — Valid"}</p>)}</div>}
       <div className="mt-5 flex justify-end gap-2"><Button variant="outline" disabled={busy} onClick={() => { reset(); onOpenChange(false); }}>Cancel</Button><Button disabled={busy || !rows.length || rows.some((r) => r.errors.length)} onClick={() => void submit()}>{busy ? "Importing…" : `Import ${rows.length || ""} Students`}</Button></div>
