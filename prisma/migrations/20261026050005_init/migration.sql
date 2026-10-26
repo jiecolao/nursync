@@ -186,12 +186,6 @@ ALTER TABLE `User_account_roles` ADD CONSTRAINT `User_account_roles_role_id_fkey
 ALTER TABLE `Roles` ADD CONSTRAINT `Roles_permission_id_fkey` FOREIGN KEY (`permission_id`) REFERENCES `Permissions`(`permission_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `File_modification_logs` ADD CONSTRAINT `File_modification_logs_user_acc_id_role_id_fkey` FOREIGN KEY (`user_acc_id`, `role_id`) REFERENCES `User_account_roles`(`user_acc_id`, `role_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Activity_logs` ADD CONSTRAINT `Activity_logs_user_acc_id_role_id_fkey` FOREIGN KEY (`user_acc_id`, `role_id`) REFERENCES `User_account_roles`(`user_acc_id`, `role_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE `Students` ADD CONSTRAINT `Students_genderId_fkey` FOREIGN KEY (`genderId`) REFERENCES `Genders`(`gender_id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
