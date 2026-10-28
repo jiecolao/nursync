@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useParams } from "react-router-dom";
 import { Ban, Camera, Eye, EyeOff, KeyRound, Pencil, RotateCcw, Save, X } from "lucide-react";
 
 import {
@@ -282,6 +283,8 @@ function ChangePasswordDialog({
 /* ------------------------------------------------------------------ */
 
 export default function ProfilePage() {
+  const { userId } = useParams<{ userId: string }>();
+  const isOwnProfile = !userId;
   const [saved, setSaved] = useState<Faculty>(INITIAL_FACULTY);
   const [draft, setDraft] = useState<Faculty>(INITIAL_FACULTY);
   const [editing, setEditing] = useState(false);
@@ -299,34 +302,77 @@ export default function ProfilePage() {
     const controller = new AbortController();
 
     const loadProfile = async () => {
+      setLoading(true);
+      setLoadError(null);
       try {
-        const result = await authRequest<{ user: AuthUser }>("/api/auth/session", {
-          signal: controller.signal,
-        });
-        const profile = result.user.profile;
-        if (!profile) throw new Error("Your profile details are unavailable.");
-
-        const faculty: Faculty = {
-          image: profile.photoPath ? `${API_BASE}${profile.photoPath}` : null,
-          photoPath: profile.photoPath,
-          faculty_id: profile.facultyId ?? "",
-          username: profile.username,
-          last_name: profile.lastName,
-          first_name: profile.firstName,
-          middle_name: profile.middleName ?? "",
-          suffix: profile.suffix ?? "",
-          genderId: profile.genderId,
-          email: result.user.email,
-          status: profile.status ? "active" : "disabled",
-          created_at: profile.createdAt,
-        };
+        let faculty: Faculty;
+        if (userId) {
+          if (!userId.trim()) {
+            setLoadError("User Not Found");
+            return;
+          }
+          const response = await fetch(`/api/admin/${encodeURIComponent(userId)}`, {
+            credentials: "include",
+            signal: controller.signal,
+          });
+          if (response.status === 404) {
+            setLoadError("User Not Found");
+            return;
+          }
+          const result = await response.json().catch(() => null);
+          if (!response.ok) {
+            throw new Error(
+              typeof result?.message === "string"
+                ? result.message
+                : "Unable to load this user's profile.",
+            );
+          }
+          const account = result?.account;
+          if (!result?.userId || result.userId !== userId) {
+            setLoadError("User Not Found");
+            return;
+          }
+          faculty = {
+            image: null,
+            photoPath: null,
+            faculty_id: result.facultyId ?? result.userId,
+            username: account?.username ?? "",
+            last_name: result.lastName ?? "",
+            first_name: result.fastName ?? "",
+            middle_name: result.middleName ?? "",
+            suffix: result.suffix ?? "",
+            genderId: null,
+            email: account?.email ?? "",
+            status: account?.status === false || result.status === false ? "disabled" : "active",
+            created_at: result.createdAt ?? new Date().toISOString(),
+          };
+        } else {
+          const result = await authRequest<{ user: AuthUser }>("/api/auth/session", {
+            signal: controller.signal,
+          });
+          const profile = result.user.profile;
+          if (!profile) throw new Error("Your profile details are unavailable.");
+          faculty = {
+            image: profile.photoPath ? `${API_BASE}${profile.photoPath}` : null,
+            photoPath: profile.photoPath,
+            faculty_id: profile.facultyId ?? "",
+            username: profile.username,
+            last_name: profile.lastName,
+            first_name: profile.firstName,
+            middle_name: profile.middleName ?? "",
+            suffix: profile.suffix ?? "",
+            genderId: profile.genderId,
+            email: result.user.email,
+            status: profile.status ? "active" : "disabled",
+            created_at: profile.createdAt,
+          };
+        }
         setSaved(faculty);
         setDraft(faculty);
         setPhotoFile(null);
-        setLoadError(null);
       } catch (cause) {
         if (cause instanceof DOMException && cause.name === "AbortError") return;
-        setLoadError(cause instanceof Error ? cause.message : "Unable to load your profile.");
+        setLoadError(cause instanceof Error ? cause.message : "Unable to load the profile.");
       } finally {
         if (!controller.signal.aborted) setLoading(false);
       }
@@ -334,7 +380,7 @@ export default function ProfilePage() {
 
     void loadProfile();
     return () => controller.abort();
-  }, []);
+  }, [userId]);
 
   const isDisabled = saved.status === "disabled";
   const f = editing ? draft : saved;
@@ -453,11 +499,12 @@ export default function ProfilePage() {
     <div className="min-h-screen" style={{ backgroundColor: SECONDARY }}>
       <div className="mx-auto max-w space-y-6">
         <h2 className="text-2xl font-semibold tracking-tight" style={{ color: PRIMARY }}>
-          Profile Overview
+          {isOwnProfile ? "Profile Overview" : "User Profile"}
         </h2>
 
-        {loading && <p role="status" className="text-sm text-neutral-500">Loading your profile…</p>}
-        {loadError && (
+        {loading && <p role="status" className="text-sm text-neutral-500">Loading {isOwnProfile ? "your profile" : "user profile"}…</p>}
+        {!loading && loadError === "User Not Found" && <p role="status" className="rounded-lg border px-4 py-3 text-sm">User Not Found</p>}
+        {loadError && loadError !== "User Not Found" && (
           <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
             {loadError}
           </p>
@@ -530,7 +577,7 @@ export default function ProfilePage() {
 
             <Separator className="bg-white/20" />
 
-            <div className="flex flex-col gap-2">
+            {isOwnProfile && <div className="flex flex-col gap-2">
               {editing ? (
                 <>
                   <Button
@@ -572,7 +619,7 @@ export default function ProfilePage() {
                   </Button> */}
                 </>
               )}
-            </div>
+            </div>}
           </aside>
 
           {/* ---------------- Details ---------------- */}
@@ -682,13 +729,13 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      <ChangePasswordDialog
+      {isOwnProfile && <ChangePasswordDialog
         open={passwordOpen}
         onOpenChange={setPasswordOpen}
         onChanged={() => setNotice("Password updated.")}
-      />
+      />}
 
-      <AlertDialog open={confirmDisable} onOpenChange={setConfirmDisable}>
+      {isOwnProfile && <AlertDialog open={confirmDisable} onOpenChange={setConfirmDisable}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Disable this account?</AlertDialogTitle>
@@ -707,7 +754,7 @@ export default function ProfilePage() {
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
-      </AlertDialog>
+      </AlertDialog>}
     </div>
   );
 }
