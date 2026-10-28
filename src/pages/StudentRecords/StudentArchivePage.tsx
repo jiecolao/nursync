@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { DataTable } from "@/components/layout/DataTable";
 import type { ColumnDef } from "@tanstack/react-table";
 import { RotateCcw, Trash2 } from "lucide-react";
@@ -7,6 +8,7 @@ import { notify } from "@/components/layout/Toasty";
 import type { StudentApiRecord } from "./student.type";
 
 export default function StudentArchivePage() {
+  const navigate = useNavigate();
   const [students, setStudents] = useState<StudentApiRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -97,6 +99,7 @@ export default function StudentArchivePage() {
       {error && <p role="alert" className="mb-4 text-sm text-red-600">{error}</p>}
       {!loading && !error && (
         <DataTable columns={columns} data={students} searchPlaceholder="Search archived students"
+          onRowClick={(student) => navigate(`/student-archive/${encodeURIComponent(student.studentUuid)}`)}
           exportFileName="Student Archive" defaultVisibleColumnIds={["studentId", "fullName", "dob", "yrGraduated", "actions"]} />
       )}
     </>
