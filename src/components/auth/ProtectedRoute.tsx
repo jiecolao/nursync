@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { API_BASE, authRequest, type AuthUser } from '@/lib/auth';
+import { authRequest, ensureLoggedOut, type AuthUser } from '@/lib/auth';
 
 type AuthContextValue = { user: AuthUser | null; loading: boolean; refresh: () => Promise<void> };
 const AuthContext = createContext<AuthContextValue>({ user: null, loading: true, refresh: async () => {} });
@@ -32,14 +32,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let active = true;
-    const onLoginRoute = window.location.pathname === '/login';
     const checkSession = async () => {
       if (window.location.pathname === '/login') {
         setUser(null);
         clearClientSession();
-        try {
-          await fetch(`${API_BASE}/api/auth/logout`, { method: 'POST', credentials: 'include', cache: 'no-store' });
-        } catch { /* Cookies are cleared by the server when reachable; remain logged out locally. */ }
+        await ensureLoggedOut();
         if (active) setLoading(false);
         return;
       }
