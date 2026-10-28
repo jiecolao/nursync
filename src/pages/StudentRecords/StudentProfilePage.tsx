@@ -210,12 +210,13 @@ export default function StudentProfilePage() {
       setLoading(false);
       return;
     }
+    const resolvedStudentUuid = studentUuid;
 
     const controller = new AbortController();
     async function loadProfile() {
       try {
         const [studentResponse, gendersResponse] = await Promise.all([
-          fetch(`/api/student/${encodeURIComponent(studentUuid)}`, { credentials: "include", signal: controller.signal }),
+          fetch(`/api/student/${encodeURIComponent(resolvedStudentUuid)}`, { credentials: "include", signal: controller.signal }),
           fetch("/api/lookups/genders", { credentials: "include", signal: controller.signal }),
         ]);
         if (studentResponse.status === 404) {
@@ -226,7 +227,7 @@ export default function StudentProfilePage() {
         if (!gendersResponse.ok) throw new Error(`Unable to load gender options (${gendersResponse.status}).`);
 
         const apiStudent = await studentResponse.json() as ApiStudent;
-        if (!apiStudent?.studentUuid || apiStudent.studentUuid !== studentUuid) {
+        if (!apiStudent?.studentUuid || apiStudent.studentUuid !== resolvedStudentUuid) {
           setError("Student Not Found");
           return;
         }
@@ -675,7 +676,10 @@ export default function StudentProfilePage() {
         </form>
       </div>
 
-      <StudentDocumentsPanel studentUuid={saved.student_uuid} />
+      <StudentDocumentsPanel
+        studentUuid={saved.student_uuid}
+        isArchived={saved.status === "disabled"}
+      />
       </main>
       <aside className="hidden xl:block">
         <nav aria-label="Student profile sections" className="sticky top-6 space-y-1 rounded-xl border bg-white p-3 shadow-sm">

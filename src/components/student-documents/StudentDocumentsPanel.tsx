@@ -25,8 +25,10 @@ type Category = { name: string; count: number; documents: DocumentRecord[] };
 
 export default function StudentDocumentsPanel({
   studentUuid,
+  isArchived = false,
 }: {
   studentUuid: string;
+  isArchived?: boolean;
 }) {
   const [categories, setCategories] = useState<Category[]>(
     CATEGORIES.map((name) => ({ name, count: 0, documents: [] })),
@@ -216,7 +218,7 @@ export default function StudentDocumentsPanel({
                 </div>
               </div>
               <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
-                {!completionByStudent[studentUuid]?.[category.name] && (
+                {!isArchived && !completionByStudent[studentUuid]?.[category.name] && (
                   <Button
                     size="sm"
                     onClick={() =>
@@ -229,25 +231,27 @@ export default function StudentDocumentsPanel({
                     Upload
                   </Button>
                 )}
-                <label
-                  className={`inline-flex cursor-pointer items-center gap-2 rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
-                    completionByStudent[studentUuid]?.[category.name]
-                      ? 'border-emerald-200 text-emerald-700 '
-                      : 'border-slate-200 bg-white/80 text-slate-700 hover:border-emerald-200 hover:bg-white'
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    className="size-4 accent-emerald-600"
-                    checked={Boolean(completionByStudent[studentUuid]?.[category.name])}
-                    onChange={(event) => toggleCategoryCompletion(category.name, event.target.checked)}
-                    aria-label={`Mark ${category.name} complete`}
-                  />
-                  Complete
-                </label>
+                {!isArchived && (
+                  <label
+                    className={`inline-flex cursor-pointer items-center gap-2 rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
+                      completionByStudent[studentUuid]?.[category.name]
+                        ? 'border-emerald-200 text-emerald-700 '
+                        : 'border-slate-200 bg-white/80 text-slate-700 hover:border-emerald-200 hover:bg-white'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="size-4 accent-emerald-600"
+                      checked={Boolean(completionByStudent[studentUuid]?.[category.name])}
+                      onChange={(event) => toggleCategoryCompletion(category.name, event.target.checked)}
+                      aria-label={`Mark ${category.name} complete`}
+                    />
+                    Complete
+                  </label>
+                )}
               </div>
             </div>
-            {uploadCategory === category.name && (
+            {!isArchived && uploadCategory === category.name && (
               <div className="border-b p-4">
                 <StudentFileUploader
                   studentUuid={studentUuid}
