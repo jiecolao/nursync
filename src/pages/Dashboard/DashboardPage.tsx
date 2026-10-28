@@ -45,6 +45,7 @@ type StudentSummary = {
   firstName: string;
   lastName: string;
   middleName?: string | null;
+  yrGraduated?: number | null;
 };
 
 function formatColumnHeader(key: string) {
@@ -89,7 +90,10 @@ function createActionColumn(
                   .map(normalizeStudentName)
                   .includes(normalizeStudentName(row.original.student_name));
               });
-              if (student) navigate(`/students/profile/${student.studentUuid}`);
+              if (student) {
+                const batchNo = student.yrGraduated ? String(student.yrGraduated) : "NON-GRADUATE";
+                navigate(`/records/${encodeURIComponent(batchNo)}/${encodeURIComponent(student.studentUuid)}`);
+              }
             }}
             disabled={!students.some((student) => {
               const names = [
