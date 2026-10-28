@@ -333,18 +333,18 @@ export default function ProfilePage() {
             return;
           }
           faculty = {
-            image: null,
-            photoPath: null,
+            image: result.photoPath ? `${API_BASE}${result.photoPath}` : null,
+            photoPath: result.photoPath ?? null,
             faculty_id: result.facultyId ?? result.userId,
             username: account?.username ?? "",
             last_name: result.lastName ?? "",
             first_name: result.fastName ?? "",
             middle_name: result.middleName ?? "",
             suffix: result.suffix ?? "",
-            genderId: null,
+            genderId: result.genderId ?? null,
             email: account?.email ?? "",
-            status: account?.status === false || result.status === false ? "disabled" : "active",
-            created_at: result.createdAt ?? new Date().toISOString(),
+            status: account?.status === false ? "disabled" : "active",
+            created_at: account?.createdAt ?? result.createdAt ?? new Date().toISOString(),
           };
         } else {
           const result = await authRequest<{ user: AuthUser }>("/api/auth/session", {
@@ -528,7 +528,7 @@ export default function ProfilePage() {
           </p>
         )}
 
-        <div className="grid items-start gap-6 lg:grid-cols-[300px_1fr]">
+        {!loading && !loadError && <div className="grid items-start gap-6 lg:grid-cols-[300px_1fr]">
           {/* ---------------- Identity + actions ---------------- */}
           <aside
             className="space-y-6 rounded-2xl p-6 text-center lg:sticky lg:top-8 h-full"
@@ -726,7 +726,7 @@ export default function ProfilePage() {
               </Field>
             </Section>
           </form>
-        </div>
+        </div>}
       </div>
 
       {isOwnProfile && <ChangePasswordDialog
