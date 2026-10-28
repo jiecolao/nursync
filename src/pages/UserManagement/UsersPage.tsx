@@ -61,7 +61,10 @@ type UserRow = {
   raw: UserRecord;
 };
 const SUPERADMIN_USER_ID = 'superadmin-001';
-const getColumns = (onDelete: (user: UserRecord) => void): ColumnDef<UserRow>[] => [
+const getColumns = (
+  onDelete: (user: UserRecord) => void,
+  onStatusChange: (user: UserRecord) => void,
+): ColumnDef<UserRow>[] => [
   { accessorKey: 'user_id', header: 'User ID' },
   { accessorKey: 'name', header: 'Name' },
   { accessorKey: 'username', header: 'Username' },
@@ -73,32 +76,62 @@ const getColumns = (onDelete: (user: UserRecord) => void): ColumnDef<UserRow>[] 
     enableHiding: false,
     enableSorting: false,
     cell: ({ row }) => (
-      <DropdownMenu>
-        <DropdownMenuTrigger>
-          <Button variant="ghost" size="icon" className="size-8">
-            <MoreHorizontal className="size-4" />
-            <span className="sr-only">Open menu</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => 
-            window.dispatchEvent(
-              new CustomEvent('nursync:edit-user', { detail: row.original.raw }),
-            )}>
-            Edit
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            className="text-destructive"
-            disabled={row.original.raw.userId === SUPERADMIN_USER_ID}
-            onClick={() => onDelete(row.original.raw)}
-          >
-            {row.original.raw.userId === SUPERADMIN_USER_ID
-              ? 'Delete (Protected)'
-              : 'Delete'}
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <div onClick={(event) => event.stopPropagation()}>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-8"
+                aria-label="Open user actions"
+              >
+                <MoreHorizontal className="size-4" />
+                <span className="sr-only">Open menu</span>
+              </Button>
+            }
+          />
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              onClick={() =>
+                window.dispatchEvent(
+                  new CustomEvent('nursync:edit-user', {
+                    detail: row.original.raw,
+                  }),
+                )
+              }
+            >
+              Edit
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className={
+                row.original.raw.account?.status === false
+                  ? 'text-emerald-700 focus:bg-emerald-50 focus:text-emerald-800'
+                  : 'text-amber-700 focus:bg-amber-50 focus:text-amber-800'
+              }
+              disabled={
+                row.original.raw.userId === SUPERADMIN_USER_ID
+              }
+              onClick={() => onStatusChange(row.original.raw)}
+            >
+              {row.original.raw.account?.status === false
+                ? 'Enable'
+                : 'Disable'}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="text-destructive"
+              disabled={row.original.raw.userId === SUPERADMIN_USER_ID}
+              onClick={() => onDelete(row.original.raw)}
+            >
+              {row.original.raw.userId === SUPERADMIN_USER_ID
+                ? 'Delete (Protected)'
+                : 'Delete'}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     ),
   }
 ];
@@ -126,6 +159,7 @@ export default function UsersPage() {
   const [editing, setEditing] = useState<UserRecord | null>(null);
   const [pendingDelete, setPendingDelete] = useState<UserRecord | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [statusChangingUserId, setStatusChangingUserId] = useState<string | null>(null);
   async function loadUsers(signal?: AbortSignal) {
     try {
       const response = await fetch('/api/admin', {
@@ -168,7 +202,7 @@ export default function UsersPage() {
       }
       setPendingDelete(null);
       notify.success('User deleted', {
-        description: 'The account has been disabled.',
+        description: 'The account and its profile were permanently deleted.',
       });
       setLoading(true);
       await loadUsers();
@@ -179,6 +213,46 @@ export default function UsersPage() {
       });
     } finally {
       setDeleting(false);
+    }
+  }
+  async function changeUserStatus(user: UserRecord) {
+    if (user.userId === SUPERADMIN_USER_ID || statusChangingUserId !== null) {
+      return;
+    }
+    const status = user.account?.status === false;
+    setStatusChangingUserId(user.userId);
+    try {
+      const response = await fetch(
+        `/api/admin/${encodeURIComponent(user.userId)}/status`,
+        {
+          method: 'PUT',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status }),
+        },
+      );
+      const result = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(
+          Array.isArray(result?.message)
+            ? result.message.join(', ')
+            : result?.message || `Unable to ${status ? 'enable' : 'disable'} user.`,
+        );
+      }
+      notify.success(status ? 'User enabled' : 'User disabled', {
+        description: status
+          ? 'The account can sign in again.'
+          : 'The account can no longer sign in.',
+      });
+      setLoading(true);
+      await loadUsers();
+    } catch (cause) {
+      notify.error(`Unable to ${status ? 'enable' : 'disable'} user`, {
+        description:
+          cause instanceof Error ? cause.message : 'Please try again.',
+      });
+    } finally {
+      setStatusChangingUserId(null);
     }
   }
   useEffect(() => {
@@ -224,7 +298,7 @@ export default function UsersPage() {
         </p>
       )}
       <DataTable
-        columns={getColumns(setPendingDelete)}
+        columns={getColumns(setPendingDelete, changeUserStatus)}
         data={users}
         dateKey="date_modified"
         searchPlaceholder="Search users…"
