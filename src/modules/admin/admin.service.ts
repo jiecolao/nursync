@@ -287,9 +287,36 @@ export class AdminService {
       const actor = await this.LogsService.resolveActorInTransaction(tx, actorUserId);
       const oldState = await tx.user.findFirst({ where: { userId, account: { isNot: null } }, select: adminSelect });
       if (!oldState) throw new NotFoundException('User account not found');
-      const updated = await tx.user.update({ where: { userId }, data: { account: { update: { status: false } } }, select: adminSelect });
-      await this.LogsService.createActivityLogInTransaction(tx, { userAccId: actor.userAccId, roleId: actor.roleId, action: 'admin.deactivate' }, actor.adminName, JSON.stringify({ userId, previousStatus: oldState.account?.status, newStatus: false }));
-      return updated;
+      const account = await tx.userAccount.findUnique({
+        where: { userId },
+        select: {
+          userAccId: true,
+          role: { select: { roleId: true, role: { select: { permissionId: true } } } },
+        },
+      });
+      if (!account) throw new NotFoundException('User account not found');
+
+      const roleId = account.role?.roleId;
+      const permissionId = account.role?.role.permissionId;
+      if (roleId !== undefined) {
+        await tx.userAccountRole.delete({
+          where: { userAccId_roleId: { userAccId: account.userAccId, roleId } },
+        });
+        await tx.role.delete({ where: { roleId } });
+      }
+      await tx.userAccount.delete({ where: { userAccId: account.userAccId } });
+      await tx.user.delete({ where: { userId } });
+      if (permissionId !== undefined) {
+        await tx.permission.delete({ where: { permissionId } });
+      }
+
+      await this.LogsService.createActivityLogInTransaction(
+        tx,
+        { userAccId: actor.userAccId, roleId: actor.roleId, action: 'admin.delete' },
+        actor.adminName,
+        JSON.stringify({ userId, previousStatus: oldState.account?.status }),
+      );
+      return { deleted: true };
     });
   }
 }

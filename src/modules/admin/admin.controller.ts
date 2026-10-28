@@ -68,6 +68,12 @@ export class AdminController {
   @RequirePermissions('user_write')
   updateAdmin(@Param('id') id: string, @Body() admin: UpdateAdminDto, @Req() req: AuthenticatedRequest) { return this.adminService.updateAdmin(id, admin, req.user.sub); }
 
+  @Put(':id/status')
+  @RequirePermissions('user_write')
+  updateStatus(@Param('id') id: string, @Body() body: UpdateStatusDto, @Req() req: AuthenticatedRequest) {
+    return this.adminService.updateStatus(id, body.status, req.user.sub);
+  }
+
   @Delete(':id')
   @RequireRoles('Superadmin')
   deleteAdmin(@Param('id') id: string, @Req() req: AuthenticatedRequest) { return this.adminService.deleteAdmin(id, req.user.sub); }
