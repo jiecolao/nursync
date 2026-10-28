@@ -22,6 +22,22 @@ export type AuthUser = {
 };
 
 let refreshPromise: Promise<void> | null = null;
+let logoutPromise: Promise<void> | null = null;
+
+/** Revoke any existing cookie session before allowing a fresh sign-in. */
+export function ensureLoggedOut(): Promise<void> {
+  if (!logoutPromise) {
+    logoutPromise = fetch(`${API_BASE}/api/auth/logout`, {
+      method: 'POST',
+      credentials: 'include',
+      cache: 'no-store',
+    }).then(() => undefined).catch(() => undefined).finally(() => {
+      logoutPromise = null;
+    });
+  }
+  return logoutPromise;
+}
+
 
 export async function refreshAuthSession() {
   if (!refreshPromise) {
