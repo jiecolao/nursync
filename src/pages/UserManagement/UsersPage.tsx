@@ -1,6 +1,7 @@
 import { DataTable, type DataTableAction } from '@/components/layout/DataTable';
 import type { ColumnDef } from '@tanstack/react-table';
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Plus, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AddUserPanel } from './AddUserPanel';
@@ -117,6 +118,7 @@ function toRow(user: UserRecord): UserRow {
   };
 }
 export default function UsersPage() {
+  const navigate = useNavigate();
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -228,6 +230,7 @@ export default function UsersPage() {
         searchPlaceholder="Search users…"
         exportFileName="system-users"
         actions={actions}
+        onRowClick={(row) => navigate(`/system-users/${encodeURIComponent(row.raw.userId)}`)}
         pageSizeOptions={[10]}
         defaultVisibleColumnIds={["name", "username", "email", "role", "status"]}
       />
