@@ -201,7 +201,7 @@ export default function MainLayout() {
               className="ml-auto text-muted-foreground transition-all duration-200 hover:scale-110 hover:text-primary hover:drop-shadow-sm"
               aria-label="Go back"
               onClick={() => {
-                if (isStudentProfilePath || isArchivedStudentPath) {
+                if (isStudentProfilePath) {
                   setIsOpen(true);
                 } else {
                   navigate(backPath);
@@ -212,12 +212,12 @@ export default function MainLayout() {
             </Button>
           )}
 
-          {(isStudentProfilePath || isArchivedStudentPath) && (
+          {isStudentProfilePath && (
             <DialogBox
               title="Proceed?"
               open={isOpen}
               onOpenChange={setIsOpen}
-              onClick={() => navigate(isArchivedStudentPath ? "/student-archive" : profileBackPath)}
+              onClick={() => navigate(profileBackPath)}
               yesBtnName="Discard"
               yesBtnStyle="bg-red-700 hover:bg-red-600"
             >

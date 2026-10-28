@@ -62,7 +62,7 @@ export class StudentService {
   ) {}
 
   async getProfile(studUuid: string) {
-    const student = await this.prisma.student.findFirst({ where: { studentUuid: studUuid, status: true } });
+    const student = await this.prisma.student.findUnique({ where: { studentUuid: studUuid } });
     if (!student) throw new NotFoundException('Student not found');
     return student;
   }
