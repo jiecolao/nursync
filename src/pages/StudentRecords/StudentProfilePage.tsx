@@ -203,8 +203,10 @@ export default function StudentProfilePage() {
   ]
 
   useEffect(() => {
-    if (!studentUuid) {
-      setError("Student ID is missing.");
+    setLoading(true);
+    setError(null);
+    if (!studentUuid || !studentUuid.trim()) {
+      setError("Student Not Found");
       setLoading(false);
       return;
     }
@@ -213,13 +215,21 @@ export default function StudentProfilePage() {
     async function loadProfile() {
       try {
         const [studentResponse, gendersResponse] = await Promise.all([
-          fetch(`/api/student/${studentUuid}`, { credentials: "include", signal: controller.signal }),
+          fetch(`/api/student/${encodeURIComponent(studentUuid)}`, { credentials: "include", signal: controller.signal }),
           fetch("/api/lookups/genders", { credentials: "include", signal: controller.signal }),
         ]);
+        if (studentResponse.status === 404) {
+          setError("Student Not Found");
+          return;
+        }
         if (!studentResponse.ok) throw new Error(`Unable to load student profile (${studentResponse.status}).`);
         if (!gendersResponse.ok) throw new Error(`Unable to load gender options (${gendersResponse.status}).`);
 
         const apiStudent = await studentResponse.json() as ApiStudent;
+        if (!apiStudent?.studentUuid || apiStudent.studentUuid !== studentUuid) {
+          setError("Student Not Found");
+          return;
+        }
         const nextStudent = toStudent(apiStudent);
         setSaved(nextStudent);
         setDraft(nextStudent);
@@ -390,7 +400,7 @@ export default function StudentProfilePage() {
   }
 
   if (error) {
-    return <p role="alert" className="p-6 text-red-600">{error}</p>;
+    return <div className="p-6 space-y-3"><p role="alert" className={error === "Student Not Found" ? "text-neutral-700" : "text-red-600"}>{error}</p><Button variant="outline" onClick={() => navigate("/student-archive")}>Back to Student Archive</Button></div>;
   }
 
   return (
