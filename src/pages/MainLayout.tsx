@@ -163,12 +163,27 @@ export default function MainLayout() {
     { path: "/records/:batchNo", end: true },
     pathname
   );
+  const archivedStudentMatch = matchPath(
+    { path: "/student-archive/:studentUuid", end: true },
+    pathname
+  );
+  const userProfileMatch = matchPath(
+    { path: "/system-users/:userId", end: true },
+    pathname
+  );
   const isStudentProfilePath = Boolean(studentProfileMatch);
+  const isArchivedStudentPath = Boolean(archivedStudentMatch);
   const isBatchPath = Boolean(batchMatch);
-  const hasUndoAction = isStudentProfilePath || isBatchPath;
+  const isUserProfilePath = Boolean(userProfileMatch);
+  const hasUndoAction = isStudentProfilePath || isArchivedStudentPath || isBatchPath || isUserProfilePath;
   const profileBackPath = studentProfileMatch?.params.batchNo
     ? `/records/${encodeURIComponent(studentProfileMatch.params.batchNo)}`
     : "/records";
+  const backPath = isArchivedStudentPath
+    ? "/student-archive"
+    : isUserProfilePath
+      ? "/system-users"
+      : "/records";
 
   return (
     <SidebarProvider>
@@ -184,12 +199,12 @@ export default function MainLayout() {
               variant="ghost"
               size="icon"
               className="ml-auto text-muted-foreground transition-all duration-200 hover:scale-110 hover:text-primary hover:drop-shadow-sm"
-              aria-label="Leave student profile"
+              aria-label="Go back"
               onClick={() => {
-                if (isStudentProfilePath) {
+                if (isStudentProfilePath || isArchivedStudentPath) {
                   setIsOpen(true);
                 } else {
-                  navigate("/records");
+                  navigate(backPath);
                 }
               }}
             >
@@ -197,12 +212,12 @@ export default function MainLayout() {
             </Button>
           )}
 
-          {isStudentProfilePath && (
+          {(isStudentProfilePath || isArchivedStudentPath) && (
             <DialogBox
               title="Proceed?"
               open={isOpen}
               onOpenChange={setIsOpen}
-              onClick={() => navigate(profileBackPath)}
+              onClick={() => navigate(isArchivedStudentPath ? "/student-archive" : profileBackPath)}
               yesBtnName="Discard"
               yesBtnStyle="bg-red-700 hover:bg-red-600"
             >
