@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import LogoFull from "@/assets/icons/logo-full.png"
 import { notify } from "@/components/layout/Toasty"
-import { authRequest } from "@/lib/auth"
+import { authRequest, ensureLoggedOut } from "@/lib/auth"
 import { useAuth } from "@/components/auth/ProtectedRoute"
 
 // White fields sit on the cream page; the border and focus ring use the brand green.
@@ -37,6 +37,7 @@ export default function LoginPage() {
     setSubmitting(true)
 
     try {
+      await ensureLoggedOut()
       await authRequest("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password }) })
       await refresh()
       notify.success("Login Successful")
