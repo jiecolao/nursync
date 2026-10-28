@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 
 // Layouts & Guards
 import { RootLayout } from './RootLayout';
@@ -70,15 +70,16 @@ export default function App() {
                   <CanAccess
                     permissions={['students_read']}
                     fallback={
-                      <p className="p-8">
-                        You do not have permission to view student archive.
-                      </p>
+                      <p className="p-8">You do not have permission to view student archive.</p>
                     }
                   >
-                    <StudentArchivePage />
+                    <Outlet />
                   </CanAccess>
                 }
-              />
+              >
+                <Route index element={<StudentArchivePage />} />
+                <Route path=":studentUuid" element={<StudentProfilePage />} />
+              </Route>
               <Route
                 path="trash"
                 element={
@@ -107,10 +108,13 @@ export default function App() {
                       </p>
                     }
                   >
-                    <UsersPage />
+                    <Outlet />
                   </CanAccess>
                 }
-              />
+              >
+                <Route index element={<UsersPage />} />
+                <Route path=":userId" element={<ProfilePage />} />
+              </Route>
               <Route
                 path="file-logs"
                 element={

@@ -21,7 +21,9 @@ export const pageTitles: Record<string, string> = {
 
   "/trash": "Trash",
   "/student-archive": "Student Archive",
+  "/student-archive/:studentUuid": "Student Archive",
   "/system-users": "System Users",
+  "/system-users/:userId": "User Profile",
   "/file-logs": "File History",
   "/activity-logs": "Activity Log",
   "/my-account": "My Account",
