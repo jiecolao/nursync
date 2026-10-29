@@ -41,7 +41,7 @@ export default function LoginPage() {
       await authRequest("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password }) })
       await refresh()
       notify.success("Login Successful")
-      navigate("/dashboard", { replace: true })
+      navigate("/dashboard")
     } catch {
       setError("Your email or password is incorrect. Try again.")
     } finally {
