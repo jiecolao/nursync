@@ -42,11 +42,29 @@ export class AuthController {
     return { message: 'Tokens refreshed successfully' };
   }
 
-  @UseGuards(JwtAuthGuard)
+  // Intentionally callable without an access token: visiting /login must be able
+  // to revoke a still-valid refresh session and clear stale cookies.
   @Post('logout')
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    const user = req.user as { sub: string };
-    await this.authService.logout(user.sub);
+    const refreshToken = req.cookies?.refresh_token;
+    const accessToken = req.cookies?.access_token;
+    let userId: string | undefined;
+
+    for (const token of [refreshToken, accessToken]) {
+      if (!token) continue;
+      try {
+        const payload = this.jwtService.verify(token) as { sub?: string; purpose?: string };
+        if (payload.sub && (!payload.purpose || payload.purpose === 'refresh')) {
+          userId = payload.sub;
+          break;
+        }
+      } catch { /* Expired/invalid cookies are still cleared below. */ }
+    }
+
+    if (userId) {
+      try { await this.authService.logout(userId); }
+      catch { /* Always clear browser credentials, even for stale sessions. */ }
+    }
     res.clearCookie('access_token', BASE_COOKIE_OPTIONS);
     res.clearCookie('refresh_token', BASE_COOKIE_OPTIONS);
     return { message: 'Logged out successfully' };
