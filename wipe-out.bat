@@ -43,13 +43,29 @@ if errorlevel 1 (
 echo MySQL database 'nursync' reset successfully.
 echo.
 
-echo Emptying directory .\Database\Students...
+echo Cleaning up target database directories...
+
+:: Wipe .\Database\Students
 if exist ".\Database\Students" (
     rmdir /S /Q ".\Database\Students"
 )
 mkdir ".\Database\Students"
-echo Directory .\Database\Students cleared successfully.
-echo.
+echo  - Cleared .\Database\Students
 
+:: Wipe .\Database\Trash
+if exist ".\Database\Trash" (
+    rmdir /S /Q ".\Database\Trash"
+)
+mkdir ".\Database\Trash"
+echo  - Cleared .\Database\Trash
+
+:: Wipe .\Database\Admin\Pictures
+if exist ".\Database\Admin\Pictures" (
+    rmdir /S /Q ".\Database\Admin\Pictures"
+)
+mkdir ".\Database\Admin\Pictures"
+echo  - Cleared .\Database\Admin\Pictures
+
+echo.
 echo Environment reset completed.
 pause
