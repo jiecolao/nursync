@@ -292,6 +292,11 @@ export class StudentBulkImportService {
           }),
         );
         return records;
+      }, {
+        // Imports can contain hundreds of documents and their audit rows.
+        // Prisma's default interactive transaction timeout (5s) is too short.
+        maxWait: 10_000,
+        timeout: 60_000,
       });
       return { count: saved.length, documents: saved };
     } catch (error) {
