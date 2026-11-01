@@ -583,18 +583,30 @@ export class StudentDocumentsService implements OnModuleInit, OnModuleDestroy {
     }
 
     const filepath = path.relative(process.cwd(), file).split(path.sep).join('/');
-    try {
-      const result = await this.prisma.studentDocument.deleteMany({
-        where: {
-          filepath,
-          documentStatus: { docuStatusName: { not: 'Trashed' } },
-        },
-      });
-      if (result.count > 0) {
-        this.logger.log(`Removed ${result.count} stale student document record(s) for ${filepath}`);
+    // File watcher events can overlap with bulk-import transactions. Retry
+    // Prisma serialization/deadlock conflicts rather than dropping the cleanup.
+    const maxAttempts = 5;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        const result = await this.prisma.studentDocument.deleteMany({
+          where: {
+            filepath,
+            documentStatus: { docuStatusName: { not: 'Trashed' } },
+          },
+        });
+        if (result.count > 0) {
+          this.logger.log(`Removed ${result.count} stale student document record(s) for ${filepath}`);
+        }
+        return;
+      } catch (error) {
+        const code = (error as { code?: string }).code;
+        const retryable = code === 'P2034' || /write conflict|deadlock/i.test(String(error));
+        if (!retryable || attempt === maxAttempts) {
+          this.logger.error(`Could not remove stale document metadata for ${filepath}: ${String(error)}`);
+          return;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 100 * 2 ** (attempt - 1)));
       }
-    } catch (error) {
-      this.logger.error(`Could not remove stale document metadata for ${filepath}: ${String(error)}`);
     }
   }
 }
