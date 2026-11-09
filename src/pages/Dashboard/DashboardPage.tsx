@@ -194,66 +194,68 @@ export default function DashboardPage() {
   }, []);
 
   return (
-    <div className="flex flex-col gap-3">
+    <div id="dashboard-page" className="flex flex-col gap-3">
       <div>
         <h2 className="m-0 text-3xl font-bold text-primary">Dashboard</h2>
         {loading && <p className="mt-1 text-sm text-stone-500">Loading dashboard data…</p>}
         {summaryError && <p role="alert" className="mt-1 text-sm text-red-600">{summaryError}</p>}
       </div>
 
-      <div className="relative">
-        <h1 className="mb-3 border-primary text-lg font-bold text-primary font-header border-b-3">
-          STUDENTS
-        </h1>
-        <div className="flex flex-row flex-wrap gap-3">
-          <DashboardCard
-            bg_color="bg-yellow-300"
-            data={summary?.students.total ?? 0}
-            legend="Total Students"
-          />
-          {/* <DashboardCard
-            bg_color="bg-white"
-            data={summary?.students.active ?? 0}
-            legend="Active Students"
-          /> */}
-          <DashboardCard
-            bg_color="bg-yellow-300"
-            data={summary?.students.nonGraduates ?? 0}
-            legend="Non-Graduates"
-          />
-          {summary?.students.byYearGraduated.map((item) => (
+      <div id="dashboard-cards" className="relative flex flex-col gap-3">
+        <div className="relative">
+          <h1 className="mb-3 border-primary text-lg font-bold text-primary font-header border-b-3">
+            STUDENTS
+          </h1>
+          <div className="flex flex-row flex-wrap gap-3">
             <DashboardCard
-              key={`batch-${item.year}`}
-              bg_color="bg-white"
-              data={item.count}
-              legend={item.year ? `Batch ${item.year}` : "No Year Graduated"}
+              bg_color="bg-yellow-300"
+              data={summary?.students.total ?? 0}
+              legend="Total Students"
             />
-          ))}
+            {/* <DashboardCard
+              bg_color="bg-white"
+              data={summary?.students.active ?? 0}
+              legend="Active Students"
+            /> */}
+            <DashboardCard
+              bg_color="bg-yellow-300"
+              data={summary?.students.nonGraduates ?? 0}
+              legend="Non-Graduates"
+            />
+            {summary?.students.byYearGraduated.map((item) => (
+              <DashboardCard
+                key={`batch-${item.year}`}
+                bg_color="bg-white"
+                data={item.count}
+                legend={item.year ? `Batch ${item.year}` : "No Year Graduated"}
+              />
+            ))}
+          </div>
+        </div>
+
+        <div className="relative">
+          <h1 className="mb-3 border-primary text-lg font-bold text-primary font-header border-b-3">
+            DOCUMENTS
+          </h1>
+          <div className="flex flex-row flex-wrap gap-3">
+            <DashboardCard
+              bg_color="bg-yellow-300"
+              data={summary?.documents.total ?? 0}
+              legend="Total Documents"
+            />
+            {summary?.documents.byCategory.map((item) => (
+              <DashboardCard
+                key={`category-${item.categoryId}`}
+                bg_color="bg-white"
+                data={item.count}
+                legend={item.category}
+              />
+            ))}
+          </div>
         </div>
       </div>
 
-      <div className="relative">
-        <h1 className="mb-3 border-primary text-lg font-bold text-primary font-header border-b-3">
-          DOCUMENTS
-        </h1>
-        <div className="flex flex-row flex-wrap gap-3">
-          <DashboardCard
-            bg_color="bg-yellow-300"
-            data={summary?.documents.total ?? 0}
-            legend="Total Documents"
-          />
-          {summary?.documents.byCategory.map((item) => (
-            <DashboardCard
-              key={`category-${item.categoryId}`}
-              bg_color="bg-white"
-              data={item.count}
-              legend={item.category}
-            />
-          ))}
-        </div>
-      </div>
-
-      <div>
+      <div id="recent-table">
         <h1 className="my-4 text-lg font-bold text-primary font-header">RECENT</h1>
         {recentLoading && <p className="mb-4 text-sm text-stone-500">Loading recent changes…</p>}
         {recentError && <p role="alert" className="mb-4 text-sm text-red-600">{recentError}</p>}

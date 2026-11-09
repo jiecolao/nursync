@@ -80,23 +80,32 @@ export default function MainLayout() {
     ];
     const pageSteps: Record<string, TourStep[]> = {
       "/dashboard": [
-        { title: "Dashboard navigation", text: "Use this active sidebar tab to return to your workspace overview.", selector: routeLink },
-        { title: "Student overview", text: "These summary cards give you a quick snapshot of student counts and admission batches.", selector: 'main h1' },
-        { title: "Recent activity", text: "Review recent file changes here. Search the table or use the date filter to find a specific event.", selector: '[data-tour="table-search"]' },
-        { title: "Explore the records", text: "The table shows recent activity and supports sorting, paging, and export tools.", selector: '[data-tour="table-results"]' },
+        { title: "Dashboard", text: "Use this active sidebar tab to return to your workspace overview.", selector: '#main' }, // TODO: Revise text to dashboard definition
+        { title: "Student overview", text: "These summary cards give you a quick snapshot of student counts and admission batches.", selector: '#dashboard-cards' },
+        { title: "Recent activity", text: "Review recent file changes here. Search the table or use the date filter to find a specific event.", selector: '#recent-table' },
+        { title: "Explore the records", text: "The table shows recent activity and supports sorting, paging, and export tools.", selector: '#recent-table' },
       ],
       "/records": [
-        { title: "Browse student folders", text: "Open a folder to browse its files. Use the Database breadcrumb to return to the directory root.", selector: '[aria-label="Breadcrumb"]' },
+        { title: "Students", text: "", selector: '#main' }, // TODO: Define students page
+        { title: "Browse student folders", text: "Open a folder to browse its files. Use the Database breadcrumb to return to the directory root.", selector: '#students-page' },
+        { title: "Navigating the directory", text: "Use the Database breadcrumb to return to the directory root.", selector: '#students-breadcrumb' },
         { title: "Search the directory", text: "Search for files and folders by name, then switch between grid and list views to change how results are displayed.", selector: '[aria-label="Search files and folders"]' },
-        { title: "Import student data", text: "Import opens the supported student record and document import workflows. Choose the workflow that matches the files you are importing.", selector: 'button' },
+        { title: "Import student data", text: "Import opens the supported student record and document import workflows. Choose the workflow that matches the files you are importing.", selector: '#students-import' }, // TODO: Revise import definition
       ],
       "/trash": [
-        { title: "Trash tab", text: "Open Trash from this sidebar tab to review deleted records.", selector: routeLink },
-        { title: "Find a deleted record", text: "Use search and any available filters to locate the record you need.", selector: '[data-tour="table-search"]' },
-        { title: "Review available actions", text: "Check the records carefully before choosing any recovery or removal action.", selector: '[data-tour="table-results"]' },
+        { title: "Trash", text: "Open Trash from this sidebar tab to review deleted files.", selector: '#main' }, // TODO: Redefine trash page
+        { title: "Find a deleted record", text: "Use search to locate the file you recently need.", selector: '#trash-search' },
+        { title: "Trash actions", text: "Use Refresh to sync any trash changes. Use Empty Trash to clean the trash bin.", selector: '#trash-actions' },
+      ],
+      "/student-archive": [
+        { title: "Student Archive", text: "", selector: '#main' }, // TODO: Define Student Archive page
+        { title: "Archived students", text: "Review recently archived students.", selector: '#archive-table' },
+        { title: "Search a student", text: "Search to locate recently archived students.", selector: '[data-tour="table-search"]' },
+        { title: "Archive actions", text: "Use Reactive to unarchive a student. Use Permanently Delete to delete a student", selector: '#archive-table' },
+        { title: "Table tools", text: "Use the available table controls to refine, sort, or export the account list.", selector: '[data-tour="table-tools"]' },
       ],
       "/system-users": [
-        { title: "System Users tab", text: "This area is for authorized users to review accounts and access.", selector: routeLink },
+        { title: "System Users", text: "This area is for authorized users to review accounts and access.", selector: '#main' },
         { title: "Find an account", text: "Search the list to locate a user account by the information available in the table.", selector: '[data-tour="table-search"]' },
         { title: "Review user access", text: "Review the account details and assigned role before making access changes.", selector: '[data-tour="table-results"]' },
         { title: "Table tools", text: "Use the available table controls to refine, sort, or export the account list.", selector: '[data-tour="table-tools"]' },
@@ -114,8 +123,9 @@ export default function MainLayout() {
         { title: "Use table controls", text: "Sort columns, move through result pages, or export the activity list where available.", selector: '[data-tour="table-tools"]' },
       ],
       "/my-account": [
-        { title: "My Account tab", text: "This is your personal account area.", selector: routeLink },
-        { title: "Review your information", text: "Review the profile details and settings shown on this page.", selector: 'main form, main [data-slot="card"], main section' },
+        { title: "My Account tab", text: "This is your personal account area.", selector: '#main' },
+        { title: "Review your information", text: "Review the profile details and settings shown on this page.", selector: '#account-info' },
+        { title: "Account settings", text: "You can edit your personal information or change your password.", selector: '#account-settings' },
       ],
     };
     const steps = pageSteps[pathname] ?? commonSteps;
@@ -236,7 +246,7 @@ export default function MainLayout() {
           )}
         </header>
 
-        <main className="flex-1 min-w-0 w-full max-w-full px-6 py-5">
+        <main id="main" className="flex-1 min-w-0 w-full max-w-full px-6 py-5">
           <Outlet />
         </main>
       </SidebarInset>

@@ -577,7 +577,7 @@ export default function ProfilePage() {
 
             <Separator className="bg-white/20" />
 
-            {isOwnProfile && <div className="flex flex-col gap-2">
+            {isOwnProfile && <div id="account-settings" className="flex flex-col gap-2">
               {editing ? (
                 <>
                   <Button
@@ -624,6 +624,7 @@ export default function ProfilePage() {
 
           {/* ---------------- Details ---------------- */}
           <form
+            id="account-info"
             onSubmit={(e) => {
               e.preventDefault();
               if (editing) void save();

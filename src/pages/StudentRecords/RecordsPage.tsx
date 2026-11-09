@@ -262,46 +262,7 @@ export default function RecordsPage() {
     : '';
 
   return (
-    <div className="flex min-w-0 flex-col gap-6">
-      {/* <section className="relative overflow-hidden rounded-2xl bg-primary px-6 py-6 text-secondary shadow-sm sm:px-8">
-        <div className="pointer-events-none absolute -right-12 -top-24 size-64 rounded-full border border-white/10" />
-        <div className="pointer-events-none absolute -right-2 -top-12 size-44 rounded-full border border-white/10" />
-        <div className="relative flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
-          <div>
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium tracking-wide">
-              <HardDrive className="size-3.5" /> STUDENT RECORDS STORAGE
-            </div>
-            <h2 className="text-3xl font-semibold tracking-tight">Directory</h2>
-            <p className="mt-2 max-w-xl text-sm leading-6 text-secondary/75">
-              Browse your files and folders in one place. Changes on disk appear here automatically.
-            </p>
-          </div>
-          <div className="flex items-center gap-2 self-start rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs sm:self-auto">
-            {connected ? <Wifi className="size-4 text-emerald-200" /> : <WifiOff className="size-4 text-amber-200" />}
-            <span>{connected ? 'Live sync connected' : 'Connecting to live sync'}</span>
-            <span className={`size-2 rounded-full ${connected ? 'bg-emerald-300' : 'animate-pulse bg-amber-300'}`} />
-          </div>
-        </div>
-      </section> */}
-
-      {/* <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="rounded-xl border border-stone-200/80 bg-white p-4">
-          <div className="flex items-center justify-between text-sm text-stone-500"><span>Files</span><FileText className="size-4" /></div>
-          <div className="mt-2 text-2xl font-semibold tracking-tight text-stone-900">{totalFiles.toLocaleString()}</div>
-          <div className="mt-1 text-xs text-stone-500">Across all folders</div>
-        </div>
-        <div className="rounded-xl border border-stone-200/80 bg-white p-4">
-          <div className="flex items-center justify-between text-sm text-stone-500"><span>Folders</span><FolderOpen className="size-4" /></div>
-          <div className="mt-2 text-2xl font-semibold tracking-tight text-stone-900">{totalFolders.toLocaleString()}</div>
-          <div className="mt-1 text-xs text-stone-500">Organized directory tree</div>
-        </div>
-        <div className="rounded-xl border border-stone-200/80 bg-white p-4">
-          <div className="flex items-center justify-between text-sm text-stone-500"><span>Watcher status</span><Activity className="size-4" /></div>
-          <div className="mt-2 text-lg font-semibold tracking-tight text-primary">{connected ? 'Operational' : 'Reconnecting…'}</div>
-          <div className="mt-1 truncate text-xs text-stone-500">{lastEventAt ? `Updated ${formatDate(lastEventAt)}` : 'Waiting for filesystem events'}</div>
-        </div>
-      </section> */}
-
+    <div id='students-page' className="flex min-w-0 flex-col gap-6">
       <section className="min-w-0 overflow-hidden rounded-2xl border border-stone-200/80 bg-white shadow-sm">
         <div className="flex flex-col gap-4 border-b border-stone-100 p-4 sm:p-5">
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
@@ -309,7 +270,7 @@ export default function RecordsPage() {
               <h3 className="font-semibold text-stone-900">Student Records</h3>
               <p className="mt-1 text-xs text-stone-500">{root || 'Loading watched directory…'}</p>
             </div>
-              <Button type="button" onClick={() => setIsImportOpen(true)} disabled={importBusy} className="ml-auto shrink-0"><Upload className="mr-2 size-4" />Import</Button>
+              <Button id='students-import' type="button" onClick={() => setIsImportOpen(true)} disabled={importBusy} className="ml-auto shrink-0"><Upload className="mr-2 size-4" />Import</Button>
             <div className="flex items-center gap-2 self-start rounded-lg border border-stone-200 bg-secondary/60 p-1">
               <Button type="button" variant={view === 'grid' ? 'default' : 'ghost'} size="icon" aria-label="Grid view" onClick={() => setView('grid')}><LayoutGrid className="size-4" /></Button>
               <Button type="button" variant={view === 'list' ? 'default' : 'ghost'} size="icon" aria-label="List view" onClick={() => setView('list')}><List className="size-4" /></Button>
@@ -317,7 +278,7 @@ export default function RecordsPage() {
           </div>
 
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1 overflow-x-auto text-sm">
+            <nav id='students-breadcrumb' aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1 overflow-x-auto text-sm">
               <button type="button" onClick={() => { setCurrentPath(''); setSearch(''); }} className={`shrink-0 rounded px-2 py-1.5 font-medium hover:bg-secondary ${!currentPath ? 'text-primary' : 'text-stone-500'}`}>Database</button>
               {breadcrumbs.map((crumb) => (
                 <span key={crumb.path} className="flex shrink-0 items-center gap-1">

@@ -113,7 +113,7 @@ export default function TrashPage() {
           <p className="text-[.95rem] text-stone-600">Restore deleted documents or permanently remove them.</p>
           <p className="mt-2 text-sm text-stone-500">{documents.length} document{documents.length === 1 ? '' : 's'} in Trash</p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div id='trash-actions' className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => void refresh()} disabled={loading || busy}><RefreshCw className={`mr-2 size-4 ${loading ? 'animate-spin' : ''}`} />Refresh</Button>
           <Button variant="destructive" onClick={() => setPending({ kind: 'empty' })} disabled={!documents.length || busy}><Trash className="mr-2 size-4" />Empty Trash</Button>
         </div>
@@ -123,7 +123,7 @@ export default function TrashPage() {
 
       <section className="overflow-hidden rounded-2xl border border-stone-200/80 bg-white shadow-sm">
         <div className="border-b border-stone-100 p-4 sm:p-5">
-          <div className="relative w-full md:max-w-sm">
+          <div id='trash-search' className="relative w-full md:max-w-sm">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-stone-400" />
             <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search filename, student, or category…" className="pl-9" aria-label="Search trashed documents" />
           </div>

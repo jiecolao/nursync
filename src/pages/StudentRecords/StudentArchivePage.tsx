@@ -98,9 +98,11 @@ export default function StudentArchivePage() {
       {loading && <p className="mb-4 text-sm text-stone-500">Loading inactive student records…</p>}
       {error && <p role="alert" className="mb-4 text-sm text-red-600">{error}</p>}
       {!loading && !error && (
-        <DataTable columns={columns} data={students} searchPlaceholder="Search archived students"
-          onRowClick={(student) => navigate(`/student-archive/${encodeURIComponent(student.studentUuid)}`)}
-          exportFileName="Student Archive" defaultVisibleColumnIds={["studentId", "fullName", "dob", "yrGraduated", "actions"]} />
+        <div id="archive-table" className="relative">
+          <DataTable columns={columns} data={students} searchPlaceholder="Search archived students"
+            onRowClick={(student) => navigate(`/student-archive/${encodeURIComponent(student.studentUuid)}`)}
+            exportFileName="Student Archive" defaultVisibleColumnIds={["studentId", "fullName", "dob", "yrGraduated", "actions"]} />
+        </div>
       )}
     </>
   );
