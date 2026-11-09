@@ -105,9 +105,15 @@ export default function HelpPage() {
       try { window.localStorage.setItem(storageKey, "true"); } catch { /* no-op */ }
       navigate(location.pathname, { replace: true });
     });
-    tour.on("cancel", () => navigate(location.pathname, { replace: true }));
+    let isCleaningUp = false;
+    tour.on("cancel", () => {
+      if (!isCleaningUp) navigate(location.pathname, { replace: true });
+    });
     tour.start();
-    return () => { tour.cancel(); };
+    return () => {
+      isCleaningUp = true;
+      if (tour.isActive()) tour.cancel();
+    };
   }, [location.pathname, location.search, navigate, user?.permissions]);
 
   return (

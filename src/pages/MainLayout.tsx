@@ -86,7 +86,9 @@ export default function MainLayout() {
         { title: "Explore the records", text: "The table shows recent activity and supports sorting, paging, and export tools.", selector: '[data-tour="table-results"]' },
       ],
       "/records": [
-        // Update
+        { title: "Browse student folders", text: "Open a folder to browse its files. Use the Database breadcrumb to return to the directory root.", selector: '[aria-label="Breadcrumb"]' },
+        { title: "Search the directory", text: "Search for files and folders by name, then switch between grid and list views to change how results are displayed.", selector: '[aria-label="Search files and folders"]' },
+        { title: "Import student data", text: "Import opens the supported student record and document import workflows. Choose the workflow that matches the files you are importing.", selector: 'button' },
       ],
       "/trash": [
         { title: "Trash tab", text: "Open Trash from this sidebar tab to review deleted records.", selector: routeLink },
@@ -148,9 +150,17 @@ export default function MainLayout() {
       try { window.localStorage.setItem(storageKey, "true"); } catch { /* storage may be unavailable */ }
       navigate(pathname, { replace: true });
     });
-    tour.on("cancel", () => navigate(pathname, { replace: true }));
+    let isCleaningUp = false;
+    tour.on("cancel", () => {
+      if (!isCleaningUp) navigate(pathname, { replace: true });
+    });
     tour.start();
-    return () => { tour.cancel(); };
+    return () => {
+      // StrictMode runs an effect setup/cleanup cycle on mount in development.
+      // Do not let that internal cancellation consume the ?tour=1 request.
+      isCleaningUp = true;
+      if (tour.isActive()) tour.cancel();
+    };
   }, [pathname, search, navigate, user?.permissions]);
 
   // Resolve page title dynamically
