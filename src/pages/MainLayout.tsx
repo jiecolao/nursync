@@ -80,44 +80,44 @@ export default function MainLayout() {
     ];
     const pageSteps: Record<string, TourStep[]> = {
       "/dashboard": [
-        { title: "Dashboard", text: "Use this active sidebar tab to return to your workspace overview.", selector: '#main' }, // TODO: Revise text to dashboard definition
-        { title: "Student overview", text: "These summary cards give you a quick snapshot of student counts and admission batches.", selector: '#dashboard-cards' },
-        { title: "Recent activity", text: "Review recent file changes here. Search the table or use the date filter to find a specific event.", selector: '#recent-table' },
-        { title: "Explore the records", text: "The table shows recent activity and supports sorting, paging, and export tools.", selector: '#recent-table' },
+        { title: "Dashboard", text: "Review student and document totals, then use recent activity to see the latest file changes.", selector: '#main' },
+        { title: "Student and document overview", text: "These cards summarize student totals, graduation groups, and document categories available to your account.", selector: '#dashboard-cards' },
+        { title: "Recent activity", text: "Review the latest file changes here. Search the table or use its date filter to find a specific event.", selector: '#recent-table' },
+        { title: "Explore the activity table", text: "Use the table to inspect events, sort columns, move between pages, and export the visible data.", selector: '#recent-table' },
       ],
       "/records": [
-        { title: "Students", text: "", selector: '#main' }, // TODO: Define students page
-        { title: "Browse student folders", text: "Open a folder to browse its files. Use the Database breadcrumb to return to the directory root.", selector: '#students-page' },
-        { title: "Navigating the directory", text: "Use the Database breadcrumb to return to the directory root.", selector: '#students-breadcrumb' },
+        { title: "Student Records", text: "Browse the student document directory, open folders, search files, and use the available file actions.", selector: '#main' },
+        { title: "Browse student folders", text: "Open a folder to browse its files. Use the Database breadcrumb or path segments to move back to an earlier location.", selector: '#students-page' },
+        { title: "Navigate the directory", text: "Use Database to return to the root, or select a breadcrumb segment to jump to that folder.", selector: '#students-breadcrumb' },
         { title: "Search the directory", text: "Search for files and folders by name, then switch between grid and list views to change how results are displayed.", selector: '[aria-label="Search files and folders"]' },
-        { title: "Import student data", text: "Import opens the supported student record and document import workflows. Choose the workflow that matches the files you are importing.", selector: '#students-import' }, // TODO: Revise import definition
+        { title: "Import student data", text: "Import either student records from a structured CSV or spreadsheet, or student documents from a folder. Choose the workflow that matches what you are importing.", selector: '#students-import' },
       ],
       "/trash": [
-        { title: "Trash", text: "Open Trash from this sidebar tab to review deleted files.", selector: '#main' }, // TODO: Redefine trash page
-        { title: "Find a deleted record", text: "Use search to locate the file you recently need.", selector: '#trash-search' },
-        { title: "Trash actions", text: "Use Refresh to sync any trash changes. Use Empty Trash to clean the trash bin.", selector: '#trash-actions' },
+        { title: "Trash", text: "Review deleted student documents here, restore them when needed, or permanently remove them.", selector: '#main' },
+        { title: "Find a deleted document", text: "Search by filename, path, student, or category to locate a deleted document.", selector: '#trash-search' },
+        { title: "Trash actions", text: "Refresh the list to retrieve the latest changes. Restore a document when it should return to active storage, or empty Trash to permanently remove all deleted documents.", selector: '#trash-actions' },
       ],
       "/student-archive": [
-        { title: "Student Archive", text: "", selector: '#main' }, // TODO: Define Student Archive page
-        { title: "Archived students", text: "Review recently archived students.", selector: '#archive-table' },
-        { title: "Search a student", text: "Search to locate recently archived students.", selector: '[data-tour="table-search"]' },
-        { title: "Archive actions", text: "Use Reactive to unarchive a student. Use Permanently Delete to delete a student", selector: '#archive-table' },
-        { title: "Table tools", text: "Use the available table controls to refine, sort, or export the account list.", selector: '[data-tour="table-tools"]' },
+        { title: "Student Archive", text: "Review inactive student records and either reactivate them or permanently delete them.", selector: '#main' },
+        { title: "Archived students", text: "This table lists inactive student records and their profile information.", selector: '#archive-table' },
+        { title: "Search archived students", text: "Search the table to find an inactive student by the available record details.", selector: '[data-tour="table-search"]' },
+        { title: "Archive actions", text: "Use Reactivate to return a student to the active records, or Permanently Delete to remove the record and its data. Permanent deletion cannot be undone.", selector: '#archive-table' },
+        { title: "Table tools", text: "Use the table controls to sort, choose visible columns, move between pages, or export the archive.", selector: '[data-tour="table-tools"]' },
       ],
       "/system-users": [
-        { title: "System Users", text: "This area is for authorized users to review accounts and access.", selector: '#main' },
+        { title: "System Users", text: "Review user accounts, roles, and access details here. Only authorized users can manage this area.", selector: '#main' },
         { title: "Find an account", text: "Search the list to locate a user account by the information available in the table.", selector: '[data-tour="table-search"]' },
         { title: "Review user access", text: "Review the account details and assigned role before making access changes.", selector: '[data-tour="table-results"]' },
         { title: "Table tools", text: "Use the available table controls to refine, sort, or export the account list.", selector: '[data-tour="table-tools"]' },
       ],
       "/file-logs": [
-        { title: "File History tab", text: "This tab opens file-related history for your account.", selector: routeLink },
+        { title: "File History tab", text: "This tab records file-related changes across the system, including who made a change and when.", selector: routeLink },
         { title: "Search file events", text: "Search by user, student, action, or file details to narrow down events.", selector: '[data-tour="table-search"]' },
         { title: "Read an event", text: "Use the event columns and timestamps to understand what changed and when.", selector: '[data-tour="table-results"]' },
         { title: "Filter or export", text: "Use date filters and export tools to focus on a time period or save the results.", selector: '[data-tour="table-tools"]' },
       ],
       "/activity-logs": [
-        { title: "Activity Log tab", text: "This tab opens recorded system activity.", selector: routeLink },
+        { title: "Activity Log tab", text: "This tab records broader system activity, such as account and administrative actions.", selector: routeLink },
         { title: "Find an activity", text: "Search for a user or action to narrow down the activity entries.", selector: '[data-tour="table-search"]' },
         { title: "Review the event details", text: "Read the action and timestamp columns to help investigate unexpected behavior.", selector: '[data-tour="table-results"]' },
         { title: "Use table controls", text: "Sort columns, move through result pages, or export the activity list where available.", selector: '[data-tour="table-tools"]' },
